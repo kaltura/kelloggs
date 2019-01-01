@@ -4,7 +4,7 @@ import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import Results from './results/results';
+import ResultsData from './results/resultsData';
 import ResultsLoader from './results/resultsLoader';
 import ResultsViewer from './results/ResultsViewer';
 
@@ -47,23 +47,36 @@ const styles = {
 class SearchResult extends React.Component {
 
   _loader = new ResultsLoader();
-  _results = new Results();
   _cancelToken = null;
 
   state = {
-    isReady: true,
-    isProcessing: false,
+    resultsData: null,
+    isReady: false,
+    isProcessing: true,
   }
 
   componentDidMount() {
-    // TODO get url from queryparams
-    this._loader.loadUrl("http://lbd.kaltura.com/chunked.php");
+    const parameters = {
 
+    };
+
+    // TODO get url from queryparams
+    this._loader.loadUrl("http://lbd.kaltura.com/chunked.php",parameters);
+    let resultsData= null;
     this._cancelToken = setInterval ( ()=> {
       let queue= this._loader.popQueue();
       if (queue.length>0) {
         queue.forEach(element => {
-          this._results.append(element);
+          if (!resultsData) {
+            resultsData = new ResultsData(element);
+            this.setState({
+              isProcessing: false,
+              resultsData:resultsData
+            });
+
+          } else {
+            resultsData.append(element);
+          }
         });
       }
     },100)
@@ -79,12 +92,12 @@ class SearchResult extends React.Component {
 
   render() {
     const { classes, onClose} = this.props;
-    const { isProcessing, isReady } = this.state;
+    const { isProcessing, resultsData } = this.state;
 
 
     return (
       <div className={classes.root}>
-        { isReady && <ResultsViewer results={this._results}></ResultsViewer> }
+        { resultsData && <ResultsViewer results={resultsData}></ResultsViewer> }
         {isProcessing &&
         <React.Fragment>
           <div className={classes.backdrop}></div>
