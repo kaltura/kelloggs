@@ -11,7 +11,7 @@ export default class ResultsTable extends React.PureComponent {
     this.results=props.results;
     this.table = React.createRef();
 
-    this.severityOptions=  this.results.getColumn("severity").options;
+    this.columnCache={};
 
     this.state = {
       overscanRowCount: 20,
@@ -26,9 +26,12 @@ export default class ResultsTable extends React.PureComponent {
     this._severityCellRenderer = this._severityCellRenderer.bind(this);
     this._indexCellRenderer = this._indexCellRenderer.bind(this);
     this._timestampCellRenderer = this._timestampCellRenderer.bind(this);
+    this._floatCellRenderer = this._floatCellRenderer.bind(this);
+
 
     this._getRowHeight = this._getRowHeight.bind(this);
   }
+
   scrollTo(index) {
     console.warn("scrolling to ",index)
     this.table.current.scrollToRow(index);
@@ -60,7 +63,7 @@ export default class ResultsTable extends React.PureComponent {
                 headerClassName="results-header"
                 ref={this.table}
                 height={800}
-                headerHeight={30}
+                headerHeight={20}
                 overscanRowCount={overscanRowCount}
                 noRowsRenderer={this._noRowsRenderer}
                 rowCount={rowCount}
@@ -69,8 +72,9 @@ export default class ResultsTable extends React.PureComponent {
                 rowGetter={({ index }) => this.results.items[index]}
                 width={width}>
                   {
-                      this.results.schema.columns.filter( column=> !column.hidden).map(element =>{
+                      this.results.schema.columns.filter( column=> !column.hidden).map((element,index) =>{
                           let cellRenderer=this._getCellRenderer(element);
+                          this.columnCache[index]=this.results.getColumn(element.name);
                           return <Column
                               label={element.label ? element.label : element.name}
                               dataKey={element.name}
@@ -91,6 +95,7 @@ export default class ResultsTable extends React.PureComponent {
       case "severity": return this._severityCellRenderer;
       case "timestamp": return this._timestampCellRenderer;
       case "index": return this._indexCellRenderer;
+      case "float": return this._floatCellRenderer;
       case "richText": return this._textCellRenderer;
       default: return undefined;
     }
@@ -103,7 +108,7 @@ export default class ResultsTable extends React.PureComponent {
 
   _severityCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
 
-    let color = this.severityOptions[cellData];
+    let color =  this.columnCache[columnIndex].options[cellData];
 
     return <div style={{...style, "backgroundColor": color, position: "absolute", width: "5px", bottom:"3px",top: "3px"}}>
             </div>
@@ -116,6 +121,23 @@ export default class ResultsTable extends React.PureComponent {
   _indexCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
     return <span style={{...style}}>{rowIndex}</span>
   }
+
+  _floatCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
+
+      let color= "black";
+      let levels= this.columnCache[columnIndex].levels;
+      if (cellData>levels[0]) {
+        color="orange"
+      }
+      if (cellData>levels[1]) {
+          color="red"
+      }
+      return  <span style={{...style, "userSelect": "text",  "whiteSpace": "pre", "color": color}}>
+              {
+                  cellData
+              }
+            </span>  }
+
 
   _getRowHeight({index} ){
     return this.results.items[index].lines*13;
