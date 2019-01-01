@@ -54,9 +54,14 @@ export default class ResultsTable extends React.PureComponent {
       scrollToIndex
     } = this.state;
 
-    return (
+    let columns = this.results.schema.columns.filter( column=> !column.hidden);
 
-        <div style={{flexGrow: 1}}>
+    let totalWidth=columns.reduce( (acc,column)=> {
+      return acc+column.width;
+    },0);
+
+    return (
+        <div style={{flexGrow: 1, width: "100%", overflow: "scroll"}}>
           <AutoSizer>
             {({width,height}) => {
               return <Table
@@ -72,9 +77,9 @@ export default class ResultsTable extends React.PureComponent {
                 rowHeight={this._getRowHeight}
                 scrollToIndex={scrollToIndex}
                 rowGetter={({ index }) => this.results.items[index]}
-                width={width-15}>
+                width={totalWidth}>
                   {
-                      this.results.schema.columns.filter( column=> !column.hidden).map((element,index) =>{
+                      columns.map((element,index) =>{
                           let cellRenderer=this._getCellRenderer(element);
                           this.columnCache[index]=this.results.getColumn(element.name);
                           return <Column

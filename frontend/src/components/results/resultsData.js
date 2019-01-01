@@ -22,6 +22,9 @@ const defaultColumnsProperties  ={
     },
     indent: {
         hidden: true
+    },
+    body: {
+        width: 2000
     }
 }
 
