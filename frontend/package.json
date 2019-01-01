@@ -12,7 +12,6 @@
     "prop-types": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "react-lazylog": "^3.2.0",
     "react-scripts": "latest",
     "react-virtualized": "^9.21.0",
     "shortid": "^2.2.14"
