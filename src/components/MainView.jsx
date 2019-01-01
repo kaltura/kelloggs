@@ -8,6 +8,7 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import ExpandLess from '@material-ui/icons/ExpandLess';
+import SearchResult from './SearchResult';
 
 const drawerHeight = 200;
 const drawerPaddingTop = 24;
@@ -79,7 +80,7 @@ const styles = {
 class MainView extends React.Component {
 
   state = {
-    expanded: true,
+    expanded: false,
   }
 
   componentDidMount() {
@@ -137,6 +138,7 @@ class MainView extends React.Component {
             }
           </Button>
           <div className={classes.result}>
+            <SearchResult onClose={this._abortSearch}/>
           </div>
         </div>
       </div>
