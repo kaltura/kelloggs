@@ -4,6 +4,9 @@ import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Results from './results/results';
+import ResultsLoader from './results/resultsLoader';
+import ResultsViewer from './results/ResultsViewer';
 
 const styles = {
   root: {
@@ -43,21 +46,50 @@ const styles = {
 
 class SearchResult extends React.Component {
 
+  _loader = new ResultsLoader();
+  _results = new Results();
+  _cancelToken = null;
+
   state = {
+    isReady: true,
     isProcessing: false,
   }
 
   componentDidMount() {
+    this._performRequest();
+  }
 
+  componentWillUnmount() {
+      if (this._cancelToken) {
+        clearInterval(this._cancelToken);
+      }
+
+      // TODO notify loader that it should abort request
+  }
+
+  _performRequest() {
+    // TODO get url from queryparams
+    this._loader.loadUrl("http://lbd.kaltura.com/chunked.php");
+
+    this._cancelToken = setInterval ( ()=> {
+      let queue= this._loader.popQueue();
+      if (queue.length>0) {
+        queue.forEach(element => {
+          this._results.append(element);
+        });
+      }
+    },100)
   }
 
 
   render() {
     const { classes, onClose} = this.props;
-    const { isProcessing } = this.state;
+    const { isProcessing, isReady } = this.state;
+
 
     return (
       <div className={classes.root}>
+        { isReady && <ResultsViewer results={this._results}></ResultsViewer> }
         {isProcessing &&
         <React.Fragment>
           <div className={classes.backdrop}></div>
