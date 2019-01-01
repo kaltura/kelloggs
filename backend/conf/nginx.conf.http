@@ -1,0 +1,72 @@
+sendfile on;
+tcp_nopush on;
+tcp_nodelay on;
+keepalive_timeout 65;
+types_hash_max_size 2048;
+
+include /etc/nginx/mime.types;
+default_type application/octet-stream;
+
+# logging
+log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+	'$status $bytes_sent $request_time "$http_referer" '
+	'"$http_user_agent" "$http_x_kaltura_f5_https" $http_x_kaltura_f5_remote_addr '
+	'"$sent_http_x_kaltura" "$http_host" $pid $sent_http_x_kaltura_session - '
+	'$request_length "$sent_http_content_range" "$http_x_forwarded_for" ';
+
+access_log /var/log/nginx/access_log.gz main gzip flush=5m;
+
+# gzip
+gzip on;
+gzip_disable "msie6";
+
+# proxy
+proxy_connect_timeout 60;
+proxy_send_timeout 60;
+proxy_read_timeout 60;
+
+server {
+	listen 80 default_server;
+
+	server_name _;
+	add_header X-Kelloggs-Me $hostname;
+
+#	# kaltura shell app
+#	location / {
+#		root /opt/swiv/kaltura/kmc-shell;
+#		try_files $uri /index.html =404;
+#		expires 10d;
+#	}
+
+	location /api/ {
+		gzip off;
+		fastcgi_buffering off;
+		fastcgi_param SCRIPT_FILENAME /opt/kelloggs/backend/api/index-v0.php;
+		fastcgi_param REQUEST_URI     $request_uri;
+		fastcgi_param QUERY_STRING    $query_string;
+		fastcgi_param REQUEST_METHOD  $request_method;
+		fastcgi_param CONTENT_TYPE    $content_type;
+		fastcgi_param CONTENT_LENGTH  $content_length;
+
+		fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+	}
+
+	location /api-new/ {
+		gzip off;
+		fastcgi_buffering off;
+		fastcgi_param SCRIPT_FILENAME /opt/kelloggs/backend/api/index.php;
+		fastcgi_param REQUEST_URI     $request_uri;
+		fastcgi_param QUERY_STRING    $query_string;
+		fastcgi_param REQUEST_METHOD  $request_method;
+		fastcgi_param CONTENT_TYPE    $content_type;
+		fastcgi_param CONTENT_LENGTH  $content_length;
+
+		fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+	}
+
+
+#	location /fonts/ {
+#		root /opt/swiv/assets/;
+#		expires 10d;
+#	}
+}
