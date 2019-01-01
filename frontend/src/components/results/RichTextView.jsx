@@ -1,8 +1,23 @@
 import * as React from "react";
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import ToolTip from '@material-ui/core/Tooltip'
+import PropTypes from 'prop-types';
+import { withStyles } from '@material-ui/core/styles';
 
-export default class RichTextView extends React.PureComponent {
+const styles = theme => ({
+
+    lightTooltip: {
+        fontSize: 11,
+        userSelect: "text",
+        whiteSpace: "pre",
+        width: "auto",
+        maxWidth: "800px",
+        height: "auto"
+    }
+});
+
+class RichTextView extends React.PureComponent {
     state = {
         anchorEl: null,
     };
@@ -19,19 +34,42 @@ export default class RichTextView extends React.PureComponent {
         this.setState({ anchorEl: null });
     };
 
+    clickCommand(cmd) {
+        this.handleClose()
+        switch(cmd.action) {
+            case "link": {
+                window.open(cmd.data);
+                return;
+            }
+        }
+        alert (cmd.data);
+    }
     render() {
         const { anchorEl } = this.state;
+        const { classes } = this.props;
 
-        return <span style={{...this.props.style}}>
+
+        return <div  style={{...this.props.style, paddingLeft: this.props.indent*35+"px"}}>
             {
                 this.props.data.map(data => {
                     if (data.commands) {
+
+                        let toolTipAction=data.commands.find(cmd=>cmd.action==="tooltip");
+                        //let otherActions=data.commands.filter(cmd=>cmd.action!=="tooltip")
                         return  <React.Fragment>
-                                    <a href="#"
-                                        onClick={this.handleClick}
-                                    >
-                                        {data.text}
-                                    </a>
+                                    {
+                                        <ToolTip  title={toolTipAction.data}
+                                                  classes={{ tooltip: classes.lightTooltip }}
+                                        >
+                                            <a href="#"
+                                               onClick={this.handleClick}
+                                            >
+                                                {data.text}
+                                            </a>
+                                        </ToolTip>
+                                    }
+
+
                                     <Menu
                                         id="simple-menu"
                                         anchorEl={anchorEl}
@@ -39,8 +77,8 @@ export default class RichTextView extends React.PureComponent {
                                         onClose={this.handleClose}
                                         >
                                     {
-                                            data.commands.map(cmd => {
-                                            return <MenuItem onClick={ ()=> { this.handleClose(); alert(cmd.data)}}>{cmd.label}</MenuItem>
+                                        data.commands.map(cmd => {
+                                            return <MenuItem onClick={ ()=> { this.clickCommand(cmd)}}>{cmd.label}</MenuItem>
                                         })
                                     }
                                     </Menu>
@@ -49,7 +87,14 @@ export default class RichTextView extends React.PureComponent {
                     return data.text;
                 })
             }
-        </span>
+        </div>
     }
 
 }
+
+
+RichTextView.propTypes = {
+    classes: PropTypes.object.isRequired,
+};
+
+export default withStyles(styles)(RichTextView);

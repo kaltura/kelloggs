@@ -77,7 +77,7 @@ export default class ResultsTable extends React.PureComponent {
                 rowHeight={this._getRowHeight}
                 scrollToIndex={scrollToIndex}
                 rowGetter={({ index }) => this.results.items[index]}
-                width={totalWidth}>
+                width={width}>
                   {
                       columns.map((element,index) =>{
                           let cellRenderer=this._getCellRenderer(element);
@@ -151,7 +151,7 @@ export default class ResultsTable extends React.PureComponent {
     return this.results.items[index].lines*13;
   }
   _textCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
-    return  <ToolTip title={cellData}>
+    return  <ToolTip key={key} title={cellData}>
               <span style={{...style, "userSelect": "text",  "whiteSpace": "pre"}}>
                 {cellData}
               </span>
@@ -160,7 +160,9 @@ export default class ResultsTable extends React.PureComponent {
 
 
   _richTextCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
-      return <RichTextView style={{...style, "userSelect": "text",  "whiteSpace": "pre"}} data={cellData}>
+
+      let key1=columnIndex+"-"+rowIndex;
+      return <RichTextView key={key1} indent={0} style={{...style, "userSelect": "text",  "whiteSpace": "pre"}} data={cellData}>
                 {cellData}
              </RichTextView>
     }
