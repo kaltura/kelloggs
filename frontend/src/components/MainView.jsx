@@ -6,14 +6,14 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
-import IconButton from '@material-ui/core/IconButton';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import ExpandLess from '@material-ui/icons/ExpandLess';
-import Tooltip from '@material-ui/core/Tooltip';
+import MainMenu from './MainMenu';
 // import Modal from '@material-ui/core/Modal';
 // import CircularProgress from '@material-ui/core/CircularProgress';
 import Parameters from './parameters/Parameters';
 import SearchResult from "./SearchResult";
+import GlobalCommands from "./GlobalCommands";
 
 const drawerHeight = 200;
 const drawerPaddingTop = 24;
@@ -85,9 +85,9 @@ const styles = {
 class MainView extends React.Component {
 
   state = {
-    expanded: false,
-    canCollapse: true,
-    parameters: {}
+    expanded: true,
+    canCollapse: false,
+    parameters: null
   }
 
   componentDidMount() {
@@ -125,16 +125,13 @@ class MainView extends React.Component {
 
     return (
       <div className={classes.root}>
+        <GlobalCommands>
         <AppBar position="relative" classes={{root: classes.appBar}}>
           <Toolbar>
             <Typography variant="h6" color="inherit" className={classes.grow}>
               Kelloggs!
             </Typography>
-            <Tooltip title="Copy URL" >
-              <IconButton color="inherit">
-                <svg fill={'white'} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-              </IconButton>
-            </Tooltip>
+            <MainMenu/>
           </Toolbar>
         </AppBar>
         <div className={classnames(classes.parameters, !expanded && classes.parametersShift)}>
@@ -145,14 +142,14 @@ class MainView extends React.Component {
             {expanded ? (
                 <React.Fragment>
                   <ExpandLess fontSize="small"/>
-                  Hide Parameters
+                  Hide Search Parameters
                 </React.Fragment>
               )
               :
               (
                 <React.Fragment>
                   <ExpandMore fontSize="small"/>
-                  Show Parameters
+                  Modify Search Parameters
                 </React.Fragment>
               )
             }
@@ -169,7 +166,7 @@ class MainView extends React.Component {
         {/*<Button onClick={this._abortSearch} variant={'text'} className={'marginTop'}>Abort</Button>*/}
         {/*</div>*/}
         {/*</Modal>*/}
-
+        </GlobalCommands>
       </div>
 
     )

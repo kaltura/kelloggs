@@ -8,12 +8,14 @@
     "classnames": "^2.2.6",
     "echarts": "^4.2.0-rc.2",
     "echarts-for-react": "^2.0.15-beta.0",
+    "hoist-non-react-statics": "^3.2.1",
     "moment": "^2.23.0",
     "prop-types": "latest",
     "react": "latest",
     "react-dom": "latest",
     "react-scripts": "latest",
     "react-virtualized": "^9.21.0",
+    "recompose": "^0.30.0",
     "shortid": "^2.2.14"
   },
   "scripts": {

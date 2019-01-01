@@ -4,9 +4,25 @@ import ResultsTable from "./ResultsTable.jsx";
 import ReactEcharts from 'echarts-for-react';
 import 'echarts/lib/chart/bar';
 import moment from 'moment';
-import Commands from './Commands'
 import Chip from '@material-ui/core/Chip';
+import Paper from '@material-ui/core/Paper';
+import {withGlobalCommands} from "../GlobalCommands";
+import { compose } from 'recompose'
+import {withStyles} from "@material-ui/core";
 
+const styles = {
+  metadata: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
+    padding: '4px',
+    alignItems: 'center',
+    margin: '10px'
+  },
+  metadataChip: {
+    margin: '4px'
+  }
+}
 
 class ResultsViewer extends React.Component {
 
@@ -14,8 +30,15 @@ class ResultsViewer extends React.Component {
     super();
   }
 
+  componentWillUnmount() {
+    const { globalCommands } = this.props;
+    globalCommands.clearItems();
+  }
+
   componentDidMount() {
-    const { results } = this.props;
+    const { results, globalCommands } = this.props;
+
+    globalCommands.updateItems(results.commands);
 
     this.resultsTable = React.createRef()
     this.calculateChart();
@@ -91,8 +114,9 @@ class ResultsViewer extends React.Component {
   handleChangeIndex = index => {
     this.setState({ value: index });
   };
+
   render() {
-    const { results } = this.props;
+    const { results, classes } = this.props;
 
     if (!results || !results.schema) {
       return null;
@@ -110,28 +134,23 @@ class ResultsViewer extends React.Component {
             lazyUpdate={true}/>
           : ""
         }
-        <div style={{ display: "flex" }}>
-          <Commands commands={results.commands}></Commands>
-          <div>
-              Labels:
+          <Paper classes={{root: classes.metadata}}>
               {
-                results.metadata.map( meta=> {
-                  return <Chip label={meta.label+"="+meta.value} style={{margin: "theme.spacing.unit"}}></Chip>
+                results.metadata.map( (meta, index) => {
+                  return <Chip key={index} label={meta.label+" = "+meta.value} className={classes.metadataChip}></Chip>
                 })
               }
-
-
-          </div>
-
-        </div>
+          </Paper>
         <ResultsTable ref={this.resultsTable} results={results}></ResultsTable>
       </div>
     );
   }
 }
 
-
-export default ResultsViewer;
+export default compose(
+  withStyles(styles),
+  withGlobalCommands
+)(ResultsViewer);
 
 
 /*
