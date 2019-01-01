@@ -3,59 +3,19 @@ function roundTime(time,seconds=60) {
     return new Date(Math.round(time.getTime()/align)*align);
 }
 
-let defaultSchema = {
-    heatmap: {
-        key: "severity"
-    },
-    fields: [
-        {             
-            key: "severity",
-            type: "severity",
-            width: 5,
-            options: {
-                "ERR": "red", 
-                "DEBUG": "blue",
-                "INFO": "green",
-                "VERBOSE": "cyan",
-                "WARN": 'yellow',
-                "NOTICE": 'yellow'
-            },
-        },
-        { 
-            key: "index",
-            type: "index",
-            width: 50
-        },
-        { 
-            key: "time",
-            type: "time",
-            width: 200
-        },
-        { 
-            key: "category",
-            type: "string",
-            width: 200
-        },
-        { 
-            key: "text",
-            type: "text"
-        }
-    ]
-}
+export default  class ResultsData {
 
-export default  class Results {
+    constructor(schema) {
 
-    constructor(schema=defaultSchema) {
-  
         this.items=[];
         this.cb=null;
         this.histogram =  {
             times: [],
-            values: {}, 
+            values: {},
             indexes: []
         }
         this.setSchema(schema);
-  
+
         let lastItemCount=0;
         setInterval( ()=> {
             if (lastItemCount!==this.items.length) {
@@ -75,7 +35,7 @@ export default  class Results {
         let options = this.getHistrogramOptions();
         for(let option in options) {
             this.histogram.values[option]=[];
-        } 
+        }
     }
 
     getField(key) {
@@ -107,7 +67,7 @@ export default  class Results {
         }
         this.items.push(result);
     }
-  
+
     _addToHistogram(key,value,index) {
         try {
             if (this.histogram.times.length===0 || this.histogram.times[this.histogram.times.length-1]<key) {
@@ -117,7 +77,7 @@ export default  class Results {
                     this.histogram.values[valueName].push(0);
                 }
 
-                this.histogram.indexes.push(index);      
+                this.histogram.indexes.push(index);
             }
             let arr=this.histogram.values[value];
             arr[arr.length-1]++;

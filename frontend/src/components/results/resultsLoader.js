@@ -1,7 +1,47 @@
+const mockHeader =  {
+  heatmap: {
+    key: "severity"
+  },
+  fields: [
+    {
+      key: "severity",
+      type: "severity",
+      width: 5,
+      options: {
+        "ERR": "red",
+        "DEBUG": "blue",
+        "INFO": "green",
+        "VERBOSE": "cyan",
+        "WARN": 'yellow',
+        "NOTICE": 'yellow'
+      },
+    },
+    {
+      key: "index",
+      type: "index",
+      width: 50
+    },
+    {
+      key: "time",
+      type: "time",
+      width: 200
+    },
+    {
+      key: "category",
+      type: "string",
+      width: 200
+    },
+    {
+      key: "text",
+      type: "text"
+    }
+  ]
+}
+
 export default class ResultsLoader {
 
     constructor() {
-        this.queue=[];
+        this.queue=[mockHeader];
     }
 
     popQueue() {
@@ -44,12 +84,12 @@ export default class ResultsLoader {
         });
     }
 
-    async loadUrl(url) {
-        let response = await fetch(url)        
+    async loadUrl(url, params) {
+        let response = await fetch(url)
         const body = response.body
         this.reader = body.getReader();
         let decoder= new TextDecoder("utf-8");
-        let currentLine="";        
+        let currentLine="";
         do {
             try {
                 const result = await this.reader.read();
@@ -63,7 +103,7 @@ export default class ResultsLoader {
                 let newText=decoder.decode(buffer);
                 //console.warn("ResultsLoader: adding #",buffer.length, " bytes")
                 let startIndex=0;
-                while(true) {            
+                while(true) {
                     let index=newText.indexOf('\n',startIndex)
                     if (index>-1) {
                         const newLine=newText.substring(startIndex, index);
@@ -90,5 +130,4 @@ export default class ResultsLoader {
         } while(true);
     }
 }
-    
-   
+

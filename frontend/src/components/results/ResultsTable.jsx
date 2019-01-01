@@ -1,11 +1,10 @@
 import * as React from 'react';
 import { AutoSizer, Table,Column} from 'react-virtualized';
 import 'react-virtualized/styles.css';
-import styles from './ResultsTable.css';
+import './ResultsTable.css';
 
 
 export default class ResultsTable extends React.PureComponent {
-
 
   constructor(props) {
     super(props);

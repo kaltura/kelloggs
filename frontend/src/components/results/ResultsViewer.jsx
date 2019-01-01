@@ -10,12 +10,15 @@ class ResultsViewer extends React.Component {
 
   constructor(props) {
     super();
-    this.results = props.results;
+  }
+
+  componentDidMount() {
+    const { results } = this.props;
+
     this.resultsTable = React.createRef()
     this.calculateChart();
 
-
-    this.results.cb=()=> {
+    results.cb=()=> {
       if (this.resultsTable.current) {
         this.resultsTable.current.update();
       }
@@ -32,11 +35,8 @@ class ResultsViewer extends React.Component {
     }
   }
 
-  componentDidMount() {
-
-  }
-
   calculateChart() {
+    const { results } = this.props;
 
     //console.warn(this.results.histogram.values);
     let option = {
@@ -44,7 +44,7 @@ class ResultsViewer extends React.Component {
       xAxis: [{
         time: 'time',
         splitNumber:10,
-        data: this.results.histogram.times,
+        data: results.histogram.times,
         axisLabel: {
           formatter: x=> {
             return moment(x).format("HH:mm:ss");
@@ -55,7 +55,7 @@ class ResultsViewer extends React.Component {
       series: []
     };
 
-    let options=this.results.getHistrogramOptions();
+    let options=results.getHistrogramOptions();
     for(let opt in options) {
       option.series.push({
         name: opt,
@@ -64,7 +64,7 @@ class ResultsViewer extends React.Component {
         itemStyle: {
           color: options[opt]
         },
-        data: this.results.histogram.values[opt]
+        data: results.histogram.values[opt]
       });
     }
     this.setState( { option } );
@@ -72,6 +72,7 @@ class ResultsViewer extends React.Component {
   }
 
   state = {
+    results: null,
     option: {}
   };
 
@@ -83,10 +84,16 @@ class ResultsViewer extends React.Component {
     this.setState({ value: index });
   };
   render() {
+    const { results } = this.props;
+
+    if (!results || !results.schema) {
+      return null;
+    }
+
     return (
       <div style={{"width":"100%", "height":"100%", "position":"absolute"}}>
         {
-          this.results.schema.heatmap ?
+          results.schema.heatmap ?
            <ReactEcharts
             option={this.state.option}
             onEvents={this.onChartsEvents}
@@ -94,7 +101,7 @@ class ResultsViewer extends React.Component {
             lazyUpdate={true}/>
           : ""
         }
-        <ResultsTable ref={this.resultsTable} results={this.results}></ResultsTable>
+        <ResultsTable ref={this.resultsTable} results={results}></ResultsTable>
       </div>
     );
   }
