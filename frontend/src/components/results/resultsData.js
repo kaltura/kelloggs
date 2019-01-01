@@ -1,6 +1,28 @@
-function roundTime(time,seconds=60) {
-    let align=seconds*1000;
-    return new Date(Math.round(time.getTime()/align)*align);
+import moment from 'moment';
+
+
+const defaultColumnsProperties  ={
+    severity: {
+        width: 10,
+        options: {
+            "error": "red",
+            "debug": "blue",
+            "info": "green",
+            "notice": "cyan"
+        }
+    },
+    timestamp: {
+        width: 150
+    },
+    executionTime: {
+        width: 60
+    },
+    function: {
+        width: 200
+    },
+    indent: {
+        hidden: true
+    }
 }
 
 function char_count(str, letter)
@@ -18,13 +40,12 @@ function char_count(str, letter)
 
 
 
-
 function getLineCount(body){
 
     return body.reduce ( (count,item)=>{
         let lines=char_count(item.text,'\n');
-        return count+lines+1;
-    },0);
+        return count+lines;
+    },1);
 }
 
 export default  class ResultsData {
@@ -50,25 +71,21 @@ export default  class ResultsData {
                 }
             }
 
-        },2000)
+        },100)
     }
     setSchema(schema) {
 
         this.schema=schema;
         this.schema.heatmap= { key: "severity"};
-        this.schema.columns.shift = {
+        /*
+        this.schema.columns.shift( {
             name: "index",
             type: "index"
-        }
-        let severityColumn=this.getColumn("severity")
-        if (severityColumn) {
-            severityColumn.options={
-                "error": "red",
-                "debug": "blue",
-                "info": "green",
-                "notice": "cyan"
-            }
-        }
+        });*/
+
+        this.schema.columns.forEach( column=>{
+            Object.assign(column,{},defaultColumnsProperties[column.name])
+        });
 
         let options = this.getHistrogramOptions();
         for(let option in options) {
@@ -100,9 +117,19 @@ export default  class ResultsData {
     }
 
     append(result) {
+
+
+        if (result.timestamp) {
+            result.timestamp=moment(result.timestamp*1000);
+        } else {
+            result.timestamp=moment();
+            result.severity="ERR";
+        }
+
+
         if (this.schema.heatmap) {
             let value=this.schema.heatmap.key ? result[this.schema.heatmap.key] : "count";
-            this._addToHistogram(roundTime(result.timestamp),value,this.items.length) ;;
+            this._addToHistogram(result.timestamp.startOf('minute'),value,this.items.length) ;;
         }
         result.lines=getLineCount(result.body);
         this.items.push(result);

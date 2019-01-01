@@ -25,6 +25,8 @@ export default class ResultsTable extends React.PureComponent {
     this._getRowClassName = this._getRowClassName.bind(this);
     this._severityCellRenderer = this._severityCellRenderer.bind(this);
     this._indexCellRenderer = this._indexCellRenderer.bind(this);
+    this._timestampCellRenderer = this._timestampCellRenderer.bind(this);
+
     this._getRowHeight = this._getRowHeight.bind(this);
   }
   scrollTo(index) {
@@ -67,15 +69,15 @@ export default class ResultsTable extends React.PureComponent {
                 rowGetter={({ index }) => this.results.items[index]}
                 width={width}>
                   {
-                    this.results.schema.columns.map(element =>{
-                      let cellRenderer=this._getCellRenderer(element);
-                      return <Column
-                          label={element.label ? element.label : element.name}
-                          dataKey={element.name}
-                          cellRenderer={cellRenderer}
-                          width={element.width}
-                        />
-                    })
+                      this.results.schema.columns.filter( column=> !column.hidden).map(element =>{
+                          let cellRenderer=this._getCellRenderer(element);
+                          return <Column
+                              label={element.label ? element.label : element.name}
+                              dataKey={element.name}
+                              cellRenderer={cellRenderer}
+                              width={element.width}
+                          />
+                      })
                   }
               </Table>
             }}
@@ -87,11 +89,14 @@ export default class ResultsTable extends React.PureComponent {
   _getCellRenderer(element) {
     switch (element.type) {
       case "severity": return this._severityCellRenderer;
+      case "timestamp": return this._timestampCellRenderer;
       case "index": return this._indexCellRenderer;
       case "richText": return this._textCellRenderer;
       default: return undefined;
     }
   }
+
+
 
   //cellRenderer={this._textCellRenderer}
   //flexGrow={1}
@@ -103,6 +108,10 @@ export default class ResultsTable extends React.PureComponent {
     return <div style={{...style, "backgroundColor": color, position: "absolute", width: "5px", bottom:"3px",top: "3px"}}>
             </div>
   }
+
+  _timestampCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
+        return <span style={{...style}}>{cellData.format('YYYY/MM/DD HH:mm:ss')}</span>
+    }
 
   _indexCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
     return <span style={{...style}}>{rowIndex}</span>
@@ -130,7 +139,7 @@ export default class ResultsTable extends React.PureComponent {
     }
     let item = this.results.items[index];
     let ret=  "results-row";
-    if (item.severity=== "ERR") {
+    if (item.severity=== "debug") {
       ret+=" results-row-error";
     }
     return ret;

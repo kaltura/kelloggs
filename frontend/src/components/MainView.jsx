@@ -85,9 +85,9 @@ const styles = {
 class MainView extends React.Component {
 
   state = {
-    expanded: true,
-    canCollapse: false,
-    parameters: null
+    expanded: false,
+    canCollapse: true,
+    parameters: {}
   }
 
   componentDidMount() {
