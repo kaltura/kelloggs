@@ -1,7 +1,6 @@
 import * as React from "react";
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
-import Button from '@material-ui/core/Button';
 
 export default class RichTextView extends React.PureComponent {
     state = {

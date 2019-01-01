@@ -81,7 +81,7 @@ export default  class ResultsData {
     setSchema(schema) {
 
         this.schema=schema;
-        this.schema.heatmap= { key: "severity"};
+        //this.schema.heatmap= { key: "severity"};
         /*
         this.schema.columns.shift( {
             name: "index",
@@ -97,6 +97,10 @@ export default  class ResultsData {
             this.histogram.values[option]=[];
         }
 
+    }
+
+    get commands() {
+        return this.schema.commands;
     }
 
     getColumn(key) {

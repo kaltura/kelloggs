@@ -4,7 +4,7 @@ import ResultsTable from "./ResultsTable.jsx";
 import ReactEcharts from 'echarts-for-react';
 import 'echarts/lib/chart/bar';
 import moment from 'moment';
-
+import Commands from './Commands'
 
 class ResultsViewer extends React.Component {
 
@@ -108,6 +108,9 @@ class ResultsViewer extends React.Component {
             lazyUpdate={true}/>
           : ""
         }
+        <div>
+          <Commands commands={results.commands}></Commands>
+        </div>
         <ResultsTable ref={this.resultsTable} results={results}></ResultsTable>
       </div>
     );
