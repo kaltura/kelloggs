@@ -46,7 +46,9 @@ export default class ResultsLoader {
                 const result = await this.reader.read();
                 if (result.done) {
                     console.warn("ResultsLoader: finished loading")
-                    this.parseLine(currentLine);
+                    if (currentLine.length>0) {
+                        this.parseLine(currentLine);
+                    }
                     this.reader=null;
                     return;
                 }

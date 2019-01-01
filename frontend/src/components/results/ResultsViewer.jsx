@@ -97,7 +97,7 @@ class ResultsViewer extends React.Component {
     }
 
     return (
-      <div style={{"width":"100%", "height":"100%", "position":"absolute"}}>
+      <div style={{"display":"flex","flexDirection":"column","height":"100%"}}>
         {
           results.schema.heatmap ?
            <ReactEcharts
