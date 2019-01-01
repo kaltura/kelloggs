@@ -103,6 +103,10 @@ export default  class ResultsData {
         return this.schema.commands;
     }
 
+    get metadata() {
+        return this.schema.metadata;
+    }
+
     getColumn(key) {
         return this.schema.columns.find( field=>  {
             return field.name===key;

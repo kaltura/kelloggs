@@ -5,6 +5,8 @@ import ReactEcharts from 'echarts-for-react';
 import 'echarts/lib/chart/bar';
 import moment from 'moment';
 import Commands from './Commands'
+import Chip from '@material-ui/core/Chip';
+
 
 class ResultsViewer extends React.Component {
 
@@ -108,8 +110,19 @@ class ResultsViewer extends React.Component {
             lazyUpdate={true}/>
           : ""
         }
-        <div>
+        <div style={{ display: "flex" }}>
           <Commands commands={results.commands}></Commands>
+          <div>
+              Labels:
+              {
+                results.metadata.map( meta=> {
+                  return <Chip label={meta.label+"="+meta.value} style={{margin: "theme.spacing.unit"}}></Chip>
+                })
+              }
+
+
+          </div>
+
         </div>
         <ResultsTable ref={this.resultsTable} results={results}></ResultsTable>
       </div>

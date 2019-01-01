@@ -22,7 +22,18 @@ export default class Commands extends React.PureComponent {
 
     render() {
         const { anchorEl } = this.state;
+        return <React.Fragment>
+            <span>Commands: </span>
+            {
+                this.props.commands.map(cmd => {
+                    return <Button onClick={()=>alert(cmd.data)}>
+                        {cmd.label}
+                    </Button>
+                })
+            }
+        </React.Fragment>
 
+        /*
         return <React.Fragment>
             <Button onClick={this.handleClick}>
                 Commands
@@ -38,7 +49,7 @@ export default class Commands extends React.PureComponent {
                     })
                 }
             </Menu>
-        </React.Fragment>
+        </React.Fragment>*/
     }
 
 }
