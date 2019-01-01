@@ -1,37 +1,4 @@
-const defaultScheme =  {
-  heatmap: {
-    key: "severity"
-  },
-  fields: [
-    {
-      key: "severity",
-      type: "severity",
-      width: 5,
-      options: {
-        "ERR": "red",
-        "DEBUG": "blue",
-        "INFO": "green",
-        "VERBOSE": "cyan",
-        "WARN": 'yellow',
-        "NOTICE": 'yellow'
-      },
-    },
-    {
-      key: "index",
-      type: "index",
-      width: 50
-    },
-    {
-      key: "category",
-      type: "string",
-      width: 200
-    },
-    {
-      key: "text",
-      type: "text"
-    }
-  ]
-}
+
 
 
 export default class ResultsLoader {
@@ -52,23 +19,11 @@ export default class ResultsLoader {
     }
 
     parseLine(line) {
-        this.lines++;
-        if ( this.lines>100000) {
-            // return;
-        }
         try {
             //console.warn(line);
             let o=JSON.parse(line);
-            if (o.timestamp) {
-                o.timestamp=new Date(o.timestamp*1000);
-            } else {
-                o.timestamp=new Date();
-                o.severity="ERR";
-            }
             this.queue.push(o);
         }catch(e) {
-            this.failedLines++;
-
             console.warn("ResultsLoader: Coudlnt parse line ",line, " error=",e)
         }
     }
@@ -91,7 +46,9 @@ export default class ResultsLoader {
                 const result = await this.reader.read();
                 if (result.done) {
                     console.warn("ResultsLoader: finished loading")
-                    this.parseLine(currentLine);
+                    if (currentLine.length>0) {
+                        this.parseLine(currentLine);
+                    }
                     this.reader=null;
                     return;
                 }

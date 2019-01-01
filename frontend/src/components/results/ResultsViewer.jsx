@@ -30,7 +30,7 @@ class ResultsViewer extends React.Component {
     this.onChartsEvents= {
       click(params) {
         console.log(params)
-        self.resultsTable.current.scrollTo(self.results.histogram.indexes[params.dataIndex]);
+        self.resultsTable.current.scrollTo(self.props.results.histogram.indexes[params.dataIndex]);
       }
     }
   }
@@ -38,19 +38,25 @@ class ResultsViewer extends React.Component {
   calculateChart() {
     const { results } = this.props;
 
-    //console.warn(this.results.histogram.values);
+    console.warn(results.histogram.times);
     let option = {
       tooltip: {},
       xAxis: [{
         time: 'time',
         splitNumber:10,
-        data: results.histogram.times,
+        data: results.histogram.times.map(t=>t.toDate()),
         axisLabel: {
           formatter: x=> {
             return moment(x).format("HH:mm:ss");
           }
         }
       }],
+      grid: {
+          left: 50,
+          top: 5,
+          right: 20,
+          bottom: 30
+      },
       yAxis: {},
       series: []
     };
@@ -91,10 +97,11 @@ class ResultsViewer extends React.Component {
     }
 
     return (
-      <div style={{"width":"100%", "height":"100%", "position":"absolute"}}>
+      <div style={{"display":"flex","flexDirection":"column","height":"100%"}}>
         {
           results.schema.heatmap ?
            <ReactEcharts
+            style={{height: '100px'}}
             option={this.state.option}
             onEvents={this.onChartsEvents}
             notMerge={true}
