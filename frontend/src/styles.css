@@ -1,0 +1,7 @@
+
+@font-face {
+  font-family:lucida console;
+  font-style:normal;
+  font-weight:400;
+  src: url("./assets/lucida-console.ttf") format('truetype')
+}
