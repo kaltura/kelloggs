@@ -11,7 +11,7 @@ export default class ResultsTable extends React.PureComponent {
     this.results=props.results;
     this.table = React.createRef();
 
-    this.severityOptions=  this.results.getField("severity").options;
+    this.severityOptions=  this.results.getColumn("severity").options;
 
     this.state = {
       overscanRowCount: 20,
@@ -67,11 +67,11 @@ export default class ResultsTable extends React.PureComponent {
                 rowGetter={({ index }) => this.results.items[index]}
                 width={width}>
                   {
-                    this.results.schema.fields.map(element =>{
+                    this.results.schema.columns.map(element =>{
                       let cellRenderer=this._getCellRenderer(element);
                       return <Column
-                          label={element.label ? element.label : element.key}
-                          dataKey={element.key}
+                          label={element.label ? element.label : element.name}
+                          dataKey={element.name}
                           cellRenderer={cellRenderer}
                           width={element.width}
                         />
@@ -87,8 +87,8 @@ export default class ResultsTable extends React.PureComponent {
   _getCellRenderer(element) {
     switch (element.type) {
       case "severity": return this._severityCellRenderer;
-      case "text": return this._textCellRenderer;
       case "index": return this._indexCellRenderer;
+      case "richText": return this._textCellRenderer;
       default: return undefined;
     }
   }
@@ -113,7 +113,11 @@ export default class ResultsTable extends React.PureComponent {
   }
   _textCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
     return  <span style={{...style, "userSelect": "text",  "whiteSpace": "pre"}}>
-              {cellData}
+              {
+                cellData.map( data=> {
+                  return data.text
+                })
+              }
             </span>
   }
   _noRowsRenderer() {

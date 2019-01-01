@@ -61,7 +61,9 @@ class SearchResult extends React.Component {
     };
 
     // TODO get url from queryparams
-    this._loader.loadUrl("http://lbd.kaltura.com/chunked.php",parameters);
+    //this._loader.loadUrl("http://lbd.kaltura.com/chunked.php",parameters);
+    this._loader.loadUrl("https://kelloggs.kaltura.com/api/");
+
     let resultsData= null;
     this._cancelToken = setInterval ( ()=> {
       let queue= this._loader.popQueue();

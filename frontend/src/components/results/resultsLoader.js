@@ -1,4 +1,4 @@
-const mockHeader =  {
+const defaultScheme =  {
   heatmap: {
     key: "severity"
   },
@@ -22,11 +22,6 @@ const mockHeader =  {
       width: 50
     },
     {
-      key: "time",
-      type: "time",
-      width: 200
-    },
-    {
       key: "category",
       type: "string",
       width: 200
@@ -38,10 +33,11 @@ const mockHeader =  {
   ]
 }
 
+
 export default class ResultsLoader {
 
     constructor() {
-        this.queue=[mockHeader];
+        this.queue=[];
     }
 
     popQueue() {
@@ -63,13 +59,12 @@ export default class ResultsLoader {
         try {
             //console.warn(line);
             let o=JSON.parse(line);
-            if (o.time) {
-                o.time=new Date(o.time);
+            if (o.timestamp) {
+                o.timestamp=new Date(o.timestamp*1000);
             } else {
-                o.time=new Date();
+                o.timestamp=new Date();
                 o.severity="ERR";
             }
-            o.lines=o.text.split("\n").length;
             this.queue.push(o);
         }catch(e) {
             this.failedLines++;
@@ -85,6 +80,7 @@ export default class ResultsLoader {
     }
 
     async loadUrl(url, params) {
+        console.warn(url);
         let response = await fetch(url)
         const body = response.body
         this.reader = body.getReader();
