@@ -43,8 +43,13 @@ function char_count(str, letter)
 function getLineCount(body){
 
     return body.reduce ( (count,item)=>{
-        let lines=char_count(item.text,'\n');
-        return count+lines;
+        try {
+            let lines = char_count(item.text, '\n');
+            return count + lines;
+        }catch(e) {
+            console.warn("exception in item: ",item, " exception: ",e)
+            return count;
+        }
     },1);
 }
 

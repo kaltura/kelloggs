@@ -2,7 +2,8 @@ import * as React from 'react';
 import { AutoSizer, Table,Column} from 'react-virtualized';
 import 'react-virtualized/styles.css';
 import './ResultsTable.css';
-
+import ToolTip from '@material-ui/core/Tooltip'
+import RichTextView from './RichTextView'
 
 export default class ResultsTable extends React.PureComponent {
 
@@ -22,6 +23,7 @@ export default class ResultsTable extends React.PureComponent {
 
     this._noRowsRenderer = this._noRowsRenderer.bind(this);
     this._textCellRenderer = this._textCellRenderer.bind(this);
+    this._richTextCellRenderer = this._richTextCellRenderer.bind(this);
     this._getRowClassName = this._getRowClassName.bind(this);
     this._severityCellRenderer = this._severityCellRenderer.bind(this);
     this._indexCellRenderer = this._indexCellRenderer.bind(this);
@@ -96,7 +98,8 @@ export default class ResultsTable extends React.PureComponent {
       case "timestamp": return this._timestampCellRenderer;
       case "index": return this._indexCellRenderer;
       case "float": return this._floatCellRenderer;
-      case "richText": return this._textCellRenderer;
+      case "richText": return this._richTextCellRenderer;
+      case "text": return this._textCellRenderer;
       default: return undefined;
     }
   }
@@ -132,7 +135,7 @@ export default class ResultsTable extends React.PureComponent {
       if (cellData>levels[1]) {
           color="red"
       }
-      return  <span style={{...style, "userSelect": "text",  "whiteSpace": "pre", "color": color}}>
+      return   <span style={{...style, "userSelect": "text",  "whiteSpace": "pre", "color": color}}>
               {
                   cellData
               }
@@ -143,14 +146,20 @@ export default class ResultsTable extends React.PureComponent {
     return this.results.items[index].lines*13;
   }
   _textCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
-    return  <span style={{...style, "userSelect": "text",  "whiteSpace": "pre"}}>
-              {
-                cellData.map( data=> {
-                  return data.text
-                })
-              }
-            </span>
+    return  <ToolTip title={cellData}>
+              <span style={{...style, "userSelect": "text",  "whiteSpace": "pre"}}>
+                {cellData}
+              </span>
+            </ToolTip>
   }
+
+
+  _richTextCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
+      return <RichTextView style={{...style, "userSelect": "text",  "whiteSpace": "pre"}} data={cellData}>
+                {cellData}
+             </RichTextView>
+    }
+
   _noRowsRenderer() {
     return <div>No rows</div>;
   }
