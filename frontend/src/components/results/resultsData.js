@@ -129,7 +129,7 @@ export default  class ResultsData {
 
         if (this.schema.heatmap) {
             let value=this.schema.heatmap.key ? result[this.schema.heatmap.key] : "count";
-            this._addToHistogram(result.timestamp.startOf('minute'),value,this.items.length) ;;
+            this._addToHistogram(moment(result.timestamp).startOf('minute'),value,this.items.length) ;;
         }
         result.lines=getLineCount(result.body);
         this.items.push(result);

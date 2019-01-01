@@ -38,19 +38,25 @@ class ResultsViewer extends React.Component {
   calculateChart() {
     const { results } = this.props;
 
-    //console.warn(this.results.histogram.values);
+    console.warn(results.histogram.times);
     let option = {
       tooltip: {},
       xAxis: [{
         time: 'time',
         splitNumber:10,
-        data: results.histogram.times,
+        data: results.histogram.times.map(t=>t.toDate()),
         axisLabel: {
           formatter: x=> {
             return moment(x).format("HH:mm:ss");
           }
         }
       }],
+      grid: {
+          left: 50,
+          top: 5,
+          right: 20,
+          bottom: 30
+      },
       yAxis: {},
       series: []
     };
@@ -95,6 +101,7 @@ class ResultsViewer extends React.Component {
         {
           results.schema.heatmap ?
            <ReactEcharts
+            style={{height: '100px'}}
             option={this.state.option}
             onEvents={this.onChartsEvents}
             notMerge={true}
