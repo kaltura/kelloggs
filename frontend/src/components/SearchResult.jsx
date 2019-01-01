@@ -56,18 +56,6 @@ class SearchResult extends React.Component {
   }
 
   componentDidMount() {
-    this._performRequest();
-  }
-
-  componentWillUnmount() {
-      if (this._cancelToken) {
-        clearInterval(this._cancelToken);
-      }
-
-      // TODO notify loader that it should abort request
-  }
-
-  _performRequest() {
     // TODO get url from queryparams
     this._loader.loadUrl("http://lbd.kaltura.com/chunked.php");
 
@@ -81,6 +69,13 @@ class SearchResult extends React.Component {
     },100)
   }
 
+  componentWillUnmount() {
+      if (this._cancelToken) {
+        clearInterval(this._cancelToken);
+      }
+
+      // TODO notify loader that it should abort request
+  }
 
   render() {
     const { classes, onClose} = this.props;

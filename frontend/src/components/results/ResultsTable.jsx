@@ -6,7 +6,6 @@ import './ResultsTable.css';
 
 export default class ResultsTable extends React.PureComponent {
 
-
   constructor(props) {
     super(props);
     this.results=props.results;
