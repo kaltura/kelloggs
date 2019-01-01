@@ -70,7 +70,7 @@ export default class ResultsTable extends React.PureComponent {
                 rowHeight={this._getRowHeight}
                 scrollToIndex={scrollToIndex}
                 rowGetter={({ index }) => this.results.items[index]}
-                width={width}>
+                width={width-15}>
                   {
                       this.results.schema.columns.filter( column=> !column.hidden).map((element,index) =>{
                           let cellRenderer=this._getCellRenderer(element);
