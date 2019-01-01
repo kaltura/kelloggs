@@ -30,7 +30,7 @@ class ResultsViewer extends React.Component {
     this.onChartsEvents= {
       click(params) {
         console.log(params)
-        self.resultsTable.current.scrollTo(self.results.histogram.indexes[params.dataIndex]);
+        self.resultsTable.current.scrollTo(self.props.results.histogram.indexes[params.dataIndex]);
       }
     }
   }
