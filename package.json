@@ -1,6 +1,6 @@
 {
-  "name": "create-react-app",
-  "version": "3.2.2",
+  "name": "kelloggs",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "@material-ui/core": "latest",
