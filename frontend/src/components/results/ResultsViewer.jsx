@@ -4,8 +4,23 @@ import ResultsTable from "./ResultsTable.jsx";
 import ReactEcharts from 'echarts-for-react';
 import 'echarts/lib/chart/bar';
 import moment from 'moment';
+import {withStyles} from "@material-ui/core";
 
-
+const styles = {
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexGrow: 1
+  },
+  table: {
+    flexGrow: 1,
+    width: '100%'
+  },
+  chart: {
+    height: '200px',
+    width: '100%'
+  }
+}
 class ResultsViewer extends React.Component {
 
   constructor(props) {
@@ -84,40 +99,35 @@ class ResultsViewer extends React.Component {
     this.setState({ value: index });
   };
   render() {
-    const { results } = this.props;
+    const { results, classes } = this.props;
 
     if (!results || !results.schema) {
       return null;
     }
 
     return (
-      <div style={{"width":"100%", "height":"100%", "position":"absolute"}}>
+      <div className={classes.root}>
         {
-          results.schema.heatmap ?
-           <ReactEcharts
-            option={this.state.option}
-            onEvents={this.onChartsEvents}
-            notMerge={true}
-            lazyUpdate={true}/>
-          : ""
+          results.schema.heatmap &&
+            <div className={classes.chart}>
+              <ReactEcharts
+                option={this.state.option}
+                style={{height: '200px', width: '100%'}}
+                onEvents={this.onChartsEvents}
+                notMerge={true}
+                lazyUpdate={true}/>
+            </div>
         }
-        <ResultsTable ref={this.resultsTable} results={results}></ResultsTable>
+        <div className={classes.table}>
+          <ResultsTable ref={this.resultsTable} results={results}></ResultsTable>
+        </div>
       </div>
     );
   }
 }
 
 
-export default ResultsViewer;
-
-
-/*
-
-          <div style={{ height: 500, width: 902 }}>
-          </div>
-
-            <LazyLog selectableLines="true" stream="true" follow="true" url="https://gist.githubusercontent.com/helfi92/96d4444aa0ed46c5f9060a789d316100/raw/ba0d30a9877ea5cc23c7afcd44505dbc2bab1538/typical-live_backing.log"/>
-*/
+export default withStyles(styles)(ResultsViewer);
 
 
 

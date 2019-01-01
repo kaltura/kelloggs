@@ -48,16 +48,14 @@ export default class ResultsTable extends React.PureComponent {
     } = this.state;
 
     return (
-
-        <div >
-          <AutoSizer disableHeight>
-            {({width}) => {
+          <AutoSizer>
+            {({width, height}) => {
               return <Table
                 className="results-table"
                 rowClassName={this._getRowClassName}
                 headerClassName="results-header"
                 ref={this.table}
-                height={800}
+                height={height}
                 headerHeight={30}
                 overscanRowCount={overscanRowCount}
                 noRowsRenderer={this._noRowsRenderer}
@@ -80,7 +78,6 @@ export default class ResultsTable extends React.PureComponent {
               </Table>
             }}
           </AutoSizer>
-        </div>
     );
   }
 

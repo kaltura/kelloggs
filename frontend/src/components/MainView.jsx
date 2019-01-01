@@ -6,9 +6,14 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
+import IconButton from '@material-ui/core/IconButton';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import ExpandLess from '@material-ui/icons/ExpandLess';
-import SearchResult from './SearchResult';
+import Tooltip from '@material-ui/core/Tooltip';
+// import Modal from '@material-ui/core/Modal';
+// import CircularProgress from '@material-ui/core/CircularProgress';
+import Parameters from './parameters/Parameters';
+import SearchResult from "./SearchResult";
 
 const drawerHeight = 200;
 const drawerPaddingTop = 24;
@@ -81,6 +86,8 @@ class MainView extends React.Component {
 
   state = {
     expanded: false,
+    canCollapse: true,
+    parameters: {}
   }
 
   componentDidMount() {
@@ -93,20 +100,28 @@ class MainView extends React.Component {
 
   _abortSearch = () => {
     this.setState({
+      parameters: null,
+      canCollapse: false,
       expanded: true
     })
   }
 
-  _handleSearch = () => {
+  _handleSearch = (parameters) => {
     this.setState({
-      expanded: false
+      parameters: null
+    }, () => {
+      this.setState({
+        canCollapse: true,
+        expanded: false,
+        parameters
+      })
     })
 
   }
 
   render() {
     const { classes } = this.props;
-    const { expanded } = this.state;
+    const { expanded, canCollapse, parameters } = this.state;
 
     return (
       <div className={classes.root}>
@@ -115,13 +130,18 @@ class MainView extends React.Component {
             <Typography variant="h6" color="inherit" className={classes.grow}>
               Kelloggs!
             </Typography>
-
+            <Tooltip title="Copy URL" >
+              <IconButton color="inherit">
+                <svg fill={'white'} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+              </IconButton>
+            </Tooltip>
           </Toolbar>
         </AppBar>
         <div className={classnames(classes.parameters, !expanded && classes.parametersShift)}>
+          <Parameters onSearch={this._handleSearch}></Parameters>
         </div>
         <div className={classnames(classes.content, expanded && classes.contentShift)} >
-          <Button onClick={this._toggleOpen} className={classes.toggler}>
+          {canCollapse && <Button onClick={this._toggleOpen} className={classes.toggler}>
             {expanded ? (
                 <React.Fragment>
                   <ExpandLess fontSize="small"/>
@@ -137,11 +157,21 @@ class MainView extends React.Component {
               )
             }
           </Button>
+          }
           <div className={classes.result}>
-            <SearchResult onClose={this._abortSearch}/>
+            { parameters && <SearchResult onClose={this._abortSearch}/> }
           </div>
         </div>
+        {/*<Modal open={isSearching}>*/}
+        {/*<div className={classes.loadingModal}>*/}
+        {/*<Typography variant={'caption'}>Processing...</Typography>*/}
+        {/*<CircularProgress className={'marginTop'}/>*/}
+        {/*<Button onClick={this._abortSearch} variant={'text'} className={'marginTop'}>Abort</Button>*/}
+        {/*</div>*/}
+        {/*</Modal>*/}
+
       </div>
+
     )
   }
 }
