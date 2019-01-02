@@ -16,10 +16,19 @@ const updateURL = (queryParams) => {
 };
 
 const getSearchParams = () => {
-  const searchParams = new URLSearchParams(window.location.search);
-  return {
-    query: searchParams.get('query') || '',
-  };
+  var match,
+    pl = /\+/g,  // Regex for replacing addition symbol with a space
+    search = /([^&=]+)=?([^&]*)/g,
+    decode = function (s) {
+      return decodeURIComponent(s.replace(pl, " "));
+    },
+    query = window.location.search.substring(1);
+
+  const urlParams = {};
+  while (match = search.exec(query))
+    urlParams[decode(match[1])] = decode(match[2]);
+
+  return urlParams;
 }
 
 
@@ -36,17 +45,26 @@ export default class GlobalCommands extends React.Component {
     })
   }
 
+  _setConfig = (config, initialParams = null) => {
+    this.setState({
+      config,
+      initialParams
+    })
+  }
 
   render() {
     const { children } = this.props;
-    const { items } = this.state;
+    const { items, config, initalParameters } = this.state;
 
     const context = {
       items,
       updateItems: this.updateItems,
       clearItems: () => this.updateItems([]),
       updateURL: updateURL,
-      getSearchParams: getSearchParams
+      getSearchParams: getSearchParams,
+      setConfig: this._setConfig,
+      getInitialParameters: () => initalParameters,
+      config
     }
 
     return (

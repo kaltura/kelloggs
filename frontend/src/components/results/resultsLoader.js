@@ -34,13 +34,13 @@ export default class ResultsLoader {
         });
     }
 
-    _buildUrl(serviceUrl, ks, params) {
+    _buildUrl(serviceUrl, jwt, params) {
         return serviceUrl;
     }
 
-    async loadUrl(serviceUrl, ks, params) {
+    async loadUrl(serviceUrl, jwt, params) {
 
-        const url = this._buildUrl(serviceUrl, ks, params);
+        const url = this._buildUrl(serviceUrl, jwt, params);
 
         let response = await fetch(url);
         const body = response.body;

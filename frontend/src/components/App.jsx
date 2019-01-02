@@ -5,7 +5,8 @@ import Typography from '@material-ui/core/Typography';
 import Modal from '@material-ui/core/Modal';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import MainView from './MainView';
-import GlobalCommands from "./GlobalCommands";
+import GlobalCommands, {withGlobalCommands} from "./GlobalCommands";
+import {compose} from "recompose";
 
 const styles = {
   root: {
@@ -42,21 +43,25 @@ const styles = {
 class App extends React.Component {
 
   state = {
-    jwt: null,
-    hostUrl: null,
-    serviceUrl: null,
     isReady: false,
   }
 
   _handleSetup = ({ data: {type, config }}) => {
+    const { globalCommands } = this.props;
 
     if (type !== 'config') {
       return;
     }
 
+    const initialParams = globalCommands.getSearchParams();
+    delete initialParams['jwt']; // just in case someone passed a different jwt
+    globalCommands.setConfig({
+      jwt: config.jwt,
+      hostUrl: config.hostUrl,
+      serviceUrl: config.serviceUrl
+    });
+
     this.setState({
-      ks: config.ks,
-      serviceUrl: config.serviceUrl,
       isReady: true
     })
   }
@@ -65,9 +70,41 @@ class App extends React.Component {
     window.removeEventListener('message', this._handleSetup);
   }
 
+  _getSearchParams() {
+    const { globalCommands } = this.props;
+    const initialParams = globalCommands.getSearchParams();
+    const jwt = initialParams['jwt'];
+    const serviceUrl = initialParams['serviceUrl'];
+    delete initialParams['serviceUrl'];
+    delete initialParams['jwt'];
+
+    return {
+      jwt,
+      serviceUrl,
+      initialParams
+    }
+  }
+
   componentDidMount() {
-    window.addEventListener('message', this._handleSetup);
-    window.parent.postMessage({ type: 'request-config'}, "*");
+    const { globalCommands } = this.props;
+    const searchParams = this._getSearchParams();
+    if (searchParams.jwt) {
+      const location = window.location;
+      const currentUrl = window.location.protocol + '//' + location.host + location.pathname;
+
+      globalCommands.setConfig({
+        jwt: searchParams.jwt,
+        hostUrl: currentUrl,
+        serviceUrl: searchParams.serviceUrl
+      }, searchParams.initialParams);
+
+      this.setState({
+        isReady: true
+      })
+    } else {
+      window.addEventListener('message', this._handleSetup);
+      window.parent.postMessage({type: 'request-config'}, "*");
+    }
   }
 
   render() {
@@ -76,7 +113,7 @@ class App extends React.Component {
 
     return (
       <div className={classes.root}>
-        <MainView/>d
+        { isReady && <MainView/> }
         {!isReady &&
           <Modal open={!isReady}>
             <div className={classes.loadingModal}>
@@ -96,7 +133,10 @@ App.propTypes = {
   classes: PropTypes.object.isRequired,
 };
 
-const AppWithStyles = withStyles(styles)(App);
+const AppWithStyles = compose(
+  withStyles(styles),
+  withGlobalCommands
+)(App);
 
 function AppWrapper(props) {
   return (

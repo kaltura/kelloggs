@@ -36,13 +36,22 @@ class Parameters extends React.Component
   }
 
   _handleChange = (e) => {
-    this.setState({
-      [e.target.name]: e.target.value
+    const { name, value } = e.target;
+    this.setState(state => {
+      return (
+        {
+          parameters: {
+            ...state.parameters,
+            [name]: value
+          }
+        }
+      )
     })
   }
 
+
   render() {
-    const { searchType } = this.state;
+    const { parameters } = this.state;
     const { classes, onSearch } = this.props;
 
     return (
@@ -57,7 +66,7 @@ class Parameters extends React.Component
                 Select search type
               </InputLabel>
               <Select
-                value={searchType}
+                value={parameters.searchType}
                 onChange={this._handleChange}
                 input={<Input name="type" id="type-input" />}
                 displayEmpty
@@ -73,12 +82,12 @@ class Parameters extends React.Component
             </FormControl>
           </Grid>
           <Grid item xs={4}>
-            <Button disabled={!searchType} variant="contained" style={{float: 'right'}} onClick={onSearch}>
+            <Button disabled={!parameters.searchType} variant="contained" style={{float: 'right'}} onClick={() => onSearch(parameters)}>
               Run
             </Button>
           </Grid>
         <Grid item xs={12}>
-          { searchType === 'apiLogs' && <APILogsParameters {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
+          { parameters.searchType === 'apiLogs' && <APILogsParameters {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
         </Grid>
       </Grid>
       <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>

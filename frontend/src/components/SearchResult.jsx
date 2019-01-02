@@ -7,6 +7,8 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import ResultsData from './results/resultsData';
 import ResultsLoader from './results/resultsLoader';
 import ResultsViewer from './results/ResultsViewer';
+import {compose} from "recompose";
+import {withGlobalCommands} from "./GlobalCommands";
 
 const styles = {
   root: {
@@ -51,15 +53,14 @@ class SearchResult extends React.Component {
 
   state = {
     resultsData: null,
-    isReady: false,
     isProcessing: true,
   }
 
   componentDidMount() {
-    const { parameters, ks, serviceUrl } = this.props;
-    // TODO get url from queryparams
-    //this._loader.loadUrl("http://lbd.kaltura.com/chunked.php",parameters);
-    this._loader.loadUrl(serviceUrl, ks, parameters);
+    const { parameters, globalCommands } = this.props;
+    const { serviceUrl, jwt } = globalCommands.config;
+
+    this._loader.loadUrl(serviceUrl, jwt, parameters);
 
     let resultsData= null;
     this._cancelToken = setInterval ( ()=> {
@@ -116,10 +117,11 @@ class SearchResult extends React.Component {
 
 SearchResult.propTypes = {
   classes: PropTypes.object.isRequired,
-  parameters: PropTypes.object.isRequired,
-  serviceUrl: PropTypes.string.isRequired,
-  ks: PropTypes.string.isRequired,
+  globalCommands: PropTypes.object.isRequired
 };
 
 
-export default withStyles(styles)(SearchResult);
+export default compose(
+  withStyles(styles),
+  withGlobalCommands
+)(SearchResult);

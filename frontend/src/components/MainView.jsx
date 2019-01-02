@@ -116,7 +116,7 @@ class MainView extends React.Component {
   }
 
   render() {
-    const {classes} = this.props;
+    const {classes, globalCommands } = this.props;
     const {expanded, canCollapse, parameters} = this.state;
 
     return (
