@@ -60,17 +60,35 @@ class Parameters extends React.Component
     parameters: null
   }
 
+  _fixSearchParams = (parameters) => {
+    const result = {
+      ...defaultParameters,
+      ...(parameters || {})
+    };
+
+    result.fromTime = result.fromTime ? toStringDate(result.fromTime) : "";
+    result.toTime = result.toTime ? toStringDate(result.toTime) : "";
+
+    return result;
+  }
+
+  _updateSearchParams = (parameters) => {
+    this.setState({
+      parameters : this._fixSearchParams(parameters)
+    }, () => {
+      this._handleSearch(true);
+    });
+  }
+
+  componentWillUnmount() {
+    this.props.globalCommands.removeOnSearchParamsChanged();
+  }
   componentDidMount() {
     const {globalCommands} = this.props;
 
-    const initialParameters = {
-      ...defaultParameters,
-      ...(globalCommands.getInitialParameters() || {})
-    };
+    globalCommands.addOnSearchParamsChanged(this._updateSearchParams)
 
-    initialParameters.fromTime = initialParameters.fromTime ? toStringDate(initialParameters.fromTime) : "";
-    initialParameters.toTime = initialParameters.toTime ? toStringDate(initialParameters.toTime) : "";
-
+    const initialParameters = this._fixSearchParams(globalCommands.getInitialParameters());
     this.setState({
         parameters: initialParameters
       }, () => {
@@ -79,6 +97,7 @@ class Parameters extends React.Component
         }
       }
     );
+
   }
 
   _handleTextFilter = (text) => {

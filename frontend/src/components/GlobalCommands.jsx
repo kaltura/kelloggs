@@ -182,12 +182,16 @@ export default class GlobalCommands extends React.Component {
   }
 
   _handleCommand = (command) => {
+    let { onSearchParamsChanged } = this.state;
+
     switch(command.action) {
       case "copyToClipboard":
         this._copyToClipboard(command.data);
         break;
       case "search":
-
+        if (onSearchParamsChanged) {
+          onSearchParamsChanged(command.data);
+        }
         break;
       case "searchNewTab":
         const newUrl = this._buildSearchUrl(command.data);
@@ -207,6 +211,17 @@ export default class GlobalCommands extends React.Component {
     }
   };
 
+  _addOnSearchParamsChanged = (cb) => {
+    this.setState({
+      onSearchParamsChanged: cb
+    })
+  }
+
+  _removeOnSearchParamsChanged = () => {
+    this.setState({
+      onSearchParamsChanged: null
+    })
+  }
 
   render() {
     const { children } = this.props;
@@ -223,7 +238,9 @@ export default class GlobalCommands extends React.Component {
       getInitialParameters: () => initialParameters,
       config,
       handleCommand: this._handleCommand,
-      getCurrentUrl
+      getCurrentUrl,
+      addOnSearchParamsChanged: this._addOnSearchParamsChanged,
+      removeOnSearchParamsChanged: this._removeOnSearchParamsChanged
     }
 
     return (
