@@ -7,50 +7,12 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import MainView from './MainView';
 import GlobalCommands from "./GlobalCommands";
 
-const drawerHeight = 200;
-const drawerPaddingTop = 24;
-
 const styles = {
   root: {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
     boxSizing: 'border-box'
-  },
-  appBar: {
-    background: 'rgb(60, 66, 82)'
-  },
-  grow: {
-    flexGrow: 1
-  },
-  menuButton: {
-    marginLeft: -12,
-    marginRight: 20,
-  },
-  parameters: {
-    height: drawerHeight,
-    background: '#f5f5f5',
-    boxShadow: '0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12)',
-    color: 'rgba(0, 0, 0, 0.87)',
-    padding: `12px ${drawerPaddingTop}px`,
-    // transition: 'all 700ms'
-  },
-  parametersShift: {
-    transform: `translateY(-${drawerHeight + drawerPaddingTop}px)`
-  },
-  content : {
-    display: 'flex',
-    flexDirection: 'column',
-    flexGrow: 1,
-    marginTop: -drawerHeight - drawerPaddingTop,
-    transition: 'margin 700ms'
-  },
-  contentShift: {
-    marginTop: 0
-  },
-  result: {
-    display: 'flex',
-    flexGrow: 1
   },
   loadingModal: {
     display: 'flex',
