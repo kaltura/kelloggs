@@ -41,9 +41,10 @@ export default class ResultsTable extends React.PureComponent {
     this.visibleColumns=[];
 
     this.state = {
-      overscanRowCount: 20,
-      rowCount: props.results.items.length,
-      scrollToIndex: undefined
+        overscanRowCount: 20,
+        defaultColumnWidth: 40,
+        rowCount: props.results.items.length,
+        scrollToIndex: undefined
     };
 
 
@@ -67,15 +68,16 @@ export default class ResultsTable extends React.PureComponent {
 
   render() {
     const {
-      overscanRowCount,
-      rowCount,
-      scrollToIndex
+        overscanRowCount,
+        rowCount,
+        scrollToIndex,
+        defaultColumnWidth
     } = this.state;
 
     this.visibleColumns = this.results.schema.columns.filter( column=> !column.hidden);
 
     let totalWidth=this.visibleColumns.reduce( (acc,column)=> {
-      return acc+column.width;
+      return acc+(column.width ? column.width : defaultColumnWidth);
     },0);
 
 
@@ -136,7 +138,7 @@ export default class ResultsTable extends React.PureComponent {
                 position: "absolute",
                 height: height
             }
-            left += column.width ? column.width : 40;
+            left += column.width ? column.width : this.state.defaultColumnWidth;
             left += 13;
             if (rowIndex === 0) {
                 return this._headerRenderer({column, cellStyle})
