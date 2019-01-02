@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { AutoSizer, Table,Column} from 'react-virtualized';
+import { AutoSizer, Column} from 'react-virtualized';
+import  Table  from './TableEx.jsx'
 import 'react-virtualized/styles.css';
 import './ResultsTable.css';
 import ToolTip from '@material-ui/core/Tooltip'
@@ -61,7 +62,7 @@ export default class ResultsTable extends React.PureComponent {
     },0);
 
     return (
-        <div style={{flexGrow: 1, width: "100%", overflow: "scroll"}}>
+        <div style={{flexGrow: 1, width: "calc(100%-20px)", overflow: "hidden", marginLeft: "10px", marginRight: "10px"}}>
           <AutoSizer>
             {({width,height}) => {
               return <Table
@@ -69,7 +70,7 @@ export default class ResultsTable extends React.PureComponent {
                 rowClassName={this._getRowClassName}
                 headerClassName="results-header"
                 ref={this.table}
-                height={height}
+                height={height-30}
                 headerHeight={20}
                 overscanRowCount={overscanRowCount}
                 noRowsRenderer={this._noRowsRenderer}
@@ -77,6 +78,7 @@ export default class ResultsTable extends React.PureComponent {
                 rowHeight={this._getRowHeight}
                 scrollToIndex={scrollToIndex}
                 rowGetter={({ index }) => this.results.items[index]}
+                maxWidth={3000}
                 width={width}>
                   {
                       columns.map((element,index) =>{
