@@ -44,22 +44,28 @@ export default class ResultsLoader {
         const url = this._buildUrl(serviceUrl, jwt, params);
 
         console.warn("calling ",url," " ,params);
-        let response = await fetch(url, {
-          method: "post",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filter: params,
-            responseFormat: 'json'
-          })
+        let response=null;
+        try {
+            response = await fetch(url, {
+                method: "post",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    filter: params,
+                    responseFormat: 'json'
+                })
 
-        });
+            });
+        }catch(e) {
+            this.queue.push({ "type": "error", "message": e.message});
+            return;
+        }
         console.warn("got response from ",url," " ,params, " response: ",response);
         if (response.status!==200) {
 
+            this.queue.push({ "type": "error", "message": response.statusText});
             this.completed=true;
-            this.error="API error " +response.status;
             return;
         }
         const body = response.body;

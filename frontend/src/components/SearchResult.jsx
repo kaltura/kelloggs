@@ -54,6 +54,7 @@ class SearchResult extends React.Component {
     state = {
         resultsData: null,
         isProcessing: true,
+        error: null
     }
 
 
@@ -75,6 +76,13 @@ class SearchResult extends React.Component {
                 if (queue.length > 0) {
                     queue.forEach(element => {
                         if (!resultsData) {
+                            if (element.type==="error") {
+                                this.setState({
+                                    isProcessing: false,
+                                    error: element
+                                });
+                                return;
+                            }
                             resultsData = new ResultsData(element);
                             this.setState({
                                 isProcessing: false,
@@ -104,12 +112,13 @@ class SearchResult extends React.Component {
 
     render() {
         const {classes, onClose} = this.props;
-        const {isProcessing, resultsData} = this.state;
+        const {isProcessing, resultsData, error} = this.state;
 
 
         return (
             <div className={classes.root}>
                 {resultsData && <ResultsViewer results={resultsData}></ResultsViewer>}
+                {error && <div>{error.message}</div>}
                 {isProcessing &&
                 <React.Fragment>
                     <div className={classes.backdrop}></div>
