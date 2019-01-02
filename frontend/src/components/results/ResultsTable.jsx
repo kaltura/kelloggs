@@ -39,6 +39,7 @@ export default class ResultsTable extends React.PureComponent {
         super(props);
         this.results = props.results;
         this.table = React.createRef();
+        this.firstUpdate=true;
 
         this.visibleColumns = [];
 
@@ -61,15 +62,15 @@ export default class ResultsTable extends React.PureComponent {
     }
 
     update(completed) {
-
         this.setState((oldState) => {
             return {
                 completed: completed,
                 rowCount: this.results.items.length
             }
         });
-        if (completed && this.results.items.length===0) {
+        if ( this.firstUpdate) {
             this.table.current.recomputeGridSize(0,0);
+            this.firstUpdate=false;
         }
         //this.table.current.scrollToRow(props.context.items.length);
     }
