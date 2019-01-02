@@ -5,6 +5,7 @@ import ToolTip from '@material-ui/core/Tooltip'
 import RichTextView from './RichTextView'
 import IconButton from "@material-ui/core/IconButton/IconButton";
 import MoreVertIcon from "@material-ui/core/SvgIcon/SvgIcon";
+import CommandsMenu from '../CommandsMenu';
 
 const styles = {
   table: {
@@ -200,10 +201,10 @@ export default class ResultsTable extends React.PureComponent {
   _commandsCellRenderer({ column, value, cellStyle }) {
       if (value && value.length>0) {
           return  <div style={{...cellStyle, width: "5"}}>
-              ...
+            <CommandsMenu showBadge={false}></CommandsMenu>
           </div>
       }
-      return <div style={{...cellStyle, width: "20px"}}></div>
+      return null
   }
 
 
