@@ -43,9 +43,9 @@ class ResultsViewer extends React.Component {
     this.resultsTable = React.createRef()
     this.calculateChart();
 
-    results.cb=()=> {
+    results.cb=(completed)=> {
       if (this.resultsTable.current) {
-        this.resultsTable.current.update();
+        this.resultsTable.current.update(completed);
       }
       this.calculateChart();
       //this.table.current.scrollToRow(props.context.items.length);

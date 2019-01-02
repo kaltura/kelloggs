@@ -83,9 +83,10 @@ export default  class ResultsData {
         setInterval( ()=> {
             if (lastItemCount!==this.items.length || lastCompleted!==this.completed) {
                 lastItemCount=this.items.length;
-                console.warn("added items ",lastItemCount)
+                lastCompleted=this.completed;
+                console.warn("added items ",lastItemCount, " ",this.completed)
                 if (this.cb) {
-                    this.cb();
+                    this.cb(this.completed);
                 }
             }
 
