@@ -12,7 +12,7 @@ import MainMenu from './MainMenu';
 import Parameters from './parameters/Parameters';
 import SearchResult from "./SearchResult";
 
-const drawerHeight = 200;
+const drawerHeight = 220;
 const drawerPaddingTop = 24;
 
 const styles = {

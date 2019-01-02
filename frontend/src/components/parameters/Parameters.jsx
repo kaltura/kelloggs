@@ -21,6 +21,8 @@ const styles = {
 
 class Parameters extends React.Component
 {
+  apiLogsRef = React.createRef();
+
   static defaultProps = {
 
   }
@@ -72,16 +74,16 @@ class Parameters extends React.Component
     const {parameters: rawParameters} = this.state;
     const {onSearch} = this.props;
 
-    if (!this.validateDate(rawParameters.fromTime)) {
-      // TODO
-      return;
+    let isValid = false;
+    if (rawParameters.type === 'apiLogFilter') {
+      if (this.apiLogsRef.current) {
+        isValid = this.apiLogsRef.current.validate();
+      }
     }
 
-    if (!this.validateDate(rawParameters.toTime)) {
-      // TODO
+    if (!isValid) {
       return;
     }
-    
     const searchParameters =
       {
         ...rawParameters,
@@ -130,7 +132,7 @@ class Parameters extends React.Component
             </Button>
           </Grid>
         <Grid item xs={12}>
-          { parameters.type === 'apiLogFilter' && <APILogsParameters {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
+          { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.apiLogsRef} {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
         </Grid>
       </Grid>
       <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>
