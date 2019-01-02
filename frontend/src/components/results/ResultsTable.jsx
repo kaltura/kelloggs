@@ -1,10 +1,35 @@
 import * as React from 'react';
-import { AutoSizer, Column} from 'react-virtualized';
-import  Table  from './TableEx.jsx'
+import { AutoSizer,  MultiGrid} from 'react-virtualized';
 import 'react-virtualized/styles.css';
 import './ResultsTable.css';
 import ToolTip from '@material-ui/core/Tooltip'
 import RichTextView from './RichTextView'
+
+const styles = {
+  table: {
+    flexGrow: 1,
+    width: "calc(100%-20px)",
+    overflow: "hidden",
+    marginLeft: "10px",
+    marginRight: "10px"
+  },
+  grid: {
+    fontFamily: "lucida console",
+    fontSize: "12px",
+    textAlign: "left",
+    backgroundColor: "#fff",
+    color: "black"
+  },
+  row: {
+    display:"flex",
+    borderTop: "1px solid #D9D9D9",
+    alignItems: "normal",
+    paddingTop: "2px"
+  },
+  headerRow: {
+    backgroundColor: "#eee"
+  }
+};
 
 export default class ResultsTable extends React.PureComponent {
 
@@ -13,7 +38,7 @@ export default class ResultsTable extends React.PureComponent {
     this.results=props.results;
     this.table = React.createRef();
 
-    this.columnCache={};
+    this.visibleColumns=[];
 
     this.state = {
       overscanRowCount: 20,
@@ -23,15 +48,7 @@ export default class ResultsTable extends React.PureComponent {
 
 
     this._noRowsRenderer = this._noRowsRenderer.bind(this);
-    this._textCellRenderer = this._textCellRenderer.bind(this);
-    this._richTextCellRenderer = this._richTextCellRenderer.bind(this);
-    this._getRowClassName = this._getRowClassName.bind(this);
-    this._severityCellRenderer = this._severityCellRenderer.bind(this);
-    this._indexCellRenderer = this._indexCellRenderer.bind(this);
-    this._timestampCellRenderer = this._timestampCellRenderer.bind(this);
-    this._floatCellRenderer = this._floatCellRenderer.bind(this);
-
-
+    this._cellRenderer = this._cellRenderer.bind(this);
     this._getRowHeight = this._getRowHeight.bind(this);
   }
 
@@ -55,117 +72,171 @@ export default class ResultsTable extends React.PureComponent {
       scrollToIndex
     } = this.state;
 
-    let columns = this.results.schema.columns.filter( column=> !column.hidden);
+    this.visibleColumns = this.results.schema.columns.filter( column=> !column.hidden);
 
-    let totalWidth=columns.reduce( (acc,column)=> {
+    let totalWidth=this.visibleColumns.reduce( (acc,column)=> {
       return acc+column.width;
     },0);
 
+
     return (
-        <div style={{flexGrow: 1, width: "calc(100%-20px)", overflow: "hidden", marginLeft: "10px", marginRight: "10px"}}>
+        <div style={styles.table}>
           <AutoSizer>
             {({width,height}) => {
-              return <Table
-                className="results-table"
-                rowClassName={this._getRowClassName}
-                headerClassName="results-header"
-                ref={this.table}
-                height={height-30}
-                headerHeight={20}
-                overscanRowCount={overscanRowCount}
-                noRowsRenderer={this._noRowsRenderer}
-                rowCount={rowCount}
-                rowHeight={this._getRowHeight}
-                scrollToIndex={scrollToIndex}
-                rowGetter={({ index }) => this.results.items[index]}
-                maxWidth={3000}
-                width={width}>
-                  {
-                      columns.map((element,index) =>{
-                          let cellRenderer=this._getCellRenderer(element);
-                          this.columnCache[index]=this.results.getColumn(element.name);
-                          return <Column
-                              label={element.label ? element.label : element.name}
-                              dataKey={element.name}
-                              cellRenderer={cellRenderer}
-                              width={element.width}
-                          />
-                      })
-                  }
-              </Table>
+              return <MultiGrid
+                  style={styles.grid}
+                  className="results-table"
+                  headerClassName="results-header"
+                  ref={this.table}
+                  fixedRowCount={1}
+                  columnWidth={totalWidth}
+                  columnCount={1}
+                  height={height}
+                  cellRenderer={this._cellRenderer}
+                  overscanRowCount={overscanRowCount}
+                  noRowsRenderer={this._noRowsRenderer}
+                  rowCount={rowCount+1}
+                  rowHeight={this._getRowHeight}
+                  scrollToIndex={scrollToIndex}
+                  maxWidth={3000}
+                  width={width}>
+              </MultiGrid>
             }}
           </AutoSizer>
         </div>
     );
   }
 
-  _getCellRenderer(element) {
-    switch (element.type) {
-      case "severity": return this._severityCellRenderer;
-      case "timestamp": return this._timestampCellRenderer;
-      case "index": return this._indexCellRenderer;
-      case "float": return this._floatCellRenderer;
-      case "richText": return this._richTextCellRenderer;
-      case "text": return this._textCellRenderer;
-      default: return undefined;
-    }
-  }
-
-
-
-  //cellRenderer={this._textCellRenderer}
-  //flexGrow={1}
-
-  _severityCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
-
-    let color =  this.columnCache[columnIndex].options[cellData];
-
-    return <div style={{...style, "backgroundColor": color, position: "absolute", width: "5px", bottom:"3px",top: "3px"}}>
-            </div>
-  }
-
-  _timestampCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
-        return <span style={{...style}}>{cellData.format('YYYY/MM/DD HH:mm:ss')}</span>
-    }
-
-  _indexCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
-    return <span style={{...style}}>{rowIndex}</span>
-  }
-
-  _floatCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
-
-      let color= "black";
-      let levels= this.columnCache[columnIndex].levels;
-      if (cellData>levels[0]) {
-        color="orange"
-      }
-      if (cellData>levels[1]) {
-          color="red"
-      }
-      return   <span style={{...style, "userSelect": "text",  "whiteSpace": "pre", "color": color}}>
-              {
-                  cellData
-              }
-            </span>  }
 
 
   _getRowHeight({index} ){
-    return this.results.items[index].lines*13;
+      if (index===0) {
+          return 20;
+      }
+      return this.results.items[index-1].lines*13+4;
   }
-  _textCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
-    return  <ToolTip key={key} title={cellData}>
-              <span style={{...style, "userSelect": "text",  "whiteSpace": "pre"}}>
-                {cellData}
+
+  _cellRenderer({columnIndex, key, rowIndex, style}) {
+
+      let left=0;
+      let height = style.height-7;
+      let rowStyle = {...style, ...styles.row }
+      if (rowIndex===0) {
+        rowStyle={...rowStyle, ...styles.headerRow}
+      }
+      return <div style={rowStyle}>
+      {
+          this.visibleColumns.map((column) => {
+
+            let cellStyle= {
+                left: left+"px",
+                width: column.width+"px",
+                overflow: "hidden",
+                padding: "2px",
+                position: "absolute",
+                height: height
+            }
+            left += column.width ? column.width : 40;
+            left += 13;
+            if (rowIndex === 0) {
+                return this._headerRenderer({column, key, cellStyle})
+            }
+
+
+            let row = this.results.items[rowIndex - 1];
+            let value = row[column.name];
+
+            let fn = null;
+
+            switch (column.type) {
+                case "severity":
+                    fn = this._severityCellRenderer;
+                    break;
+                case "timestamp":
+                    fn = this._timestampCellRenderer;
+                    break;
+                case "float":
+                    fn = this._floatCellRenderer;
+                    break;
+                case "richText":
+                    fn = this._richTextCellRenderer;
+                    break;
+                /*
+                case "index": return this._indexCellRenderer;
+                case "text": return this._textCellRenderer;
+                default: return undefined;*/
+            }
+            if (fn) {
+                return fn({key, column, value, cellStyle});
+            }
+            return <div key={key} style={{...cellStyle}}>
+                  {value}
+              </div>
+            /*
+            return <ToolTip title={value}>
+                <div key={key} style={{...cellStyle}}>
+                    {value}
+                </div>
+            </ToolTip>*/
+          })
+      }
+      </div>
+  }
+
+  _headerRenderer({column, key, cellStyle}) {
+
+      return <ToolTip title={column.label ? column.label : column.name}>
+          <div key={key} style={{...cellStyle, "whiteSpace": "pre"}} >
+              {column.label ? column.label : column.name}
+          </div>
+      </ToolTip>
+  }
+
+  _severityCellRenderer({ column, value, cellStyle }) {
+
+    let color =  column.options[value];
+
+    return <div style={{...cellStyle, "backgroundColor": color, width: "2px"}}>
+            </div>
+  }
+
+  _timestampCellRenderer({ column,value, cellStyle }) {
+        return <span style={{...cellStyle}}>{value.format('YYYY/MM/DD HH:mm:ss')}</span>
+    }
+
+  _indexCellRenderer({ column,value, cellStyle }) {
+    return <span style={{...cellStyle}}>{value}</span>
+  }
+
+  _floatCellRenderer({ column,value, cellStyle }) {
+
+      let color= "black";
+      let levels= column.levels;
+      if (value>levels[0]) {
+        color="orange"
+      }
+      if (value>levels[1]) {
+          color="red"
+      }
+      return  <span style={{...cellStyle, userSelect: "text", whiteSpace: "pre", color: color}}>
+          {value}
+          </span>
+  }
+
+
+  _textCellRenderer({ column, value, cellStyle }) {
+    return  <ToolTip  title={value}>
+              <span style={{...cellStyle, "userSelect": "text",  "whiteSpace": "pre"}}>
+                {value}
               </span>
             </ToolTip>
   }
 
 
-  _richTextCellRenderer({ cellData,columnIndex, key, parent, rowIndex, style }) {
+  _richTextCellRenderer({ column, value, cellStyle }) {
 
-      let key1=columnIndex+"-"+rowIndex;
-      return <RichTextView key={key1} indent={0} style={{...style, "userSelect": "text",  "whiteSpace": "pre"}} data={cellData}>
-                {cellData}
+      return <RichTextView indent={0} style={{...cellStyle, "userSelect": "text",  "whiteSpace": "pre"}} data={value}>
+                {value}
              </RichTextView>
     }
 
@@ -173,17 +244,5 @@ export default class ResultsTable extends React.PureComponent {
     return <div>No rows</div>;
   }
 
-  _getRowClassName({ index }) {
-    if (index<0) {
-      return "results-header";
-    }
-    let item = this.results.items[index];
-    let ret=  "results-row";
-    if (item.severity=== "debug") {
-      ret+=" results-row-error";
-    }
-    return ret;
-
-  }
 
 }
