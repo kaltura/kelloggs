@@ -48,7 +48,7 @@ const styles = {
     flexDirection: 'column',
     flexGrow: 1,
     marginTop: -drawerHeight - drawerPaddingTop,
-    transition: 'margin 700ms'
+    //transition: 'margin 700ms'
   },
   contentShift: {
     marginTop: 0
