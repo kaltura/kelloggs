@@ -1,79 +1,70 @@
 import React from "react";
 import hoistNonReactStatics from 'hoist-non-react-statics';
+import SnackbarContent from '@material-ui/core/SnackbarContent';
+import Snackbar from '@material-ui/core/Snackbar';
+import {withStyles} from "@material-ui/core";
+import classNames from "classnames";
+import CheckCircleIcon from "@material-ui/core/SvgIcon/SvgIcon";
+import IconButton from "@material-ui/core/IconButton/IconButton";
+import CloseIcon from '@material-ui/icons/Close';
+import { getCurrentUrl, getQueryString, copyToClipboardEnabled, copyToClipboard, replaceUrlQueryParameters } from '../utils';
+
+const SnackbarContentStyles = {
+  root: { padding: '0 4px'},
+  success: {
+    backgroundColor: '#43a047',
+  },
+  message: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  icon: {
+    fontSize: 20,
+  },
+  iconVariant: {
+    opacity: 0.9,
+    marginRight: '10px',
+  },
+}
+
+const CustomSnackbarContent = withStyles(SnackbarContentStyles)(function(props) {
+  const { classes, className, message, onClose, ...other } = props;
+
+  return (
+    <SnackbarContent
+      className={classNames(classes.success, className)}
+      aria-describedby="client-snackbar"
+      message={
+        <span id="client-snackbar" className={classes.message}>
+          <CheckCircleIcon className={classNames(classes.icon, classes.iconVariant)} />
+          {message}
+        </span>
+      }
+      action={[
+        <IconButton
+          key="close"
+          aria-label="Close"
+          color="inherit"
+          className={classes.close}
+          onClick={onClose}
+        >
+          <CloseIcon className={classes.icon} />
+        </IconButton>,
+      ]}
+      {...other}
+    />
+  );
+});
+
 
 const GlobalCommandsContext = React.createContext({});
-
-function buildQuerystring(data, prefix = "") {
-  let str = [], p;
-  for (p in data) {
-    if (data.hasOwnProperty(p)) {
-      const hasContent = typeof data[p] !== 'undefined' && data[p] !== '' && data[p] !== null;
-      if (hasContent) {
-        let k = prefix ? prefix + "[" + p + "]" : p, v = data[p];
-        str.push((v !== null && typeof v === "object") ?
-          buildQuerystring(v, k) :
-          encodeURIComponent(k) + "=" + encodeURIComponent(v));
-      }
-    }
-  }
-  return str.join("&");
-}
-
-
-const getQueryString = () => {
-  var match,
-    pl = /\+/g,  // Regex for replacing addition symbol with a space
-    search = /([^&=]+)=?([^&]*)/g,
-    decode = function (s) {
-      return decodeURIComponent(s.replace(pl, " "));
-    },
-    query = window.location.search.substring(1);
-
-  const urlParams = {};
-  while (match = search.exec(query)) {
-    const key = decode(match[1]);
-    const value = decode(match[2])
-    const keyMatch = /^(.+?)\[(.+?)\]$/.exec(key);
-    if (keyMatch) {
-      urlParams[keyMatch[1]] = {
-        ...(urlParams[keyMatch[1]] || {}),
-        [keyMatch[2]]: value
-      }
-    } else {
-      urlParams[key] = value;
-    }
-  }
-
-  return urlParams;
-}
-
-function getCurrentUrlWithoutQuerystring() {
-    return window.location.protocol + "//" + window.location.host + window.location.pathname;
-}
-
-
-function getCurrentUrl() {
-    return window.location.href;
-}
-
-function replaceUrlQueryParameters(queryParams) {
-  if (window.history.pushState) {
-    const queryParamsToken = buildQuerystring(queryParams);
-    var newurl =  `${getCurrentUrlWithoutQuerystring()}?${queryParamsToken}`;
-    window.history.pushState({path:newurl},'',newurl);
-  }
-}
-function reloadUrlWithQueryParameters(queryParams) {
-  const queryParamsToken = buildQuerystring(queryParams);
-  window.location.search = `?${queryParamsToken}`;
-}
 
 export default class GlobalCommands extends React.Component {
 
   state = {
     items: [],
+    showCopiedToClipboard: false
   }
-
 
   updateItems = (items) => {
     this.setState({
@@ -103,9 +94,20 @@ export default class GlobalCommands extends React.Component {
     })
   }
 
+  _copyToClipboard = (text) => {
+    if (!copyToClipboardEnabled()) {
+      return;
+    }
+
+    const result = copyToClipboard(text);
+
+    this.setState({
+      showCopiedToClipboard: result
+    });
+  }
   render() {
     const { children } = this.props;
-    const { items, config, initialParameters } = this.state;
+    const { items, config, initialParameters, showCopiedToClipboard } = this.state;
 
     const context = {
       items,
@@ -114,6 +116,7 @@ export default class GlobalCommands extends React.Component {
       updateURL: this._updateURL,
       getQueryString: getQueryString,
       setConfig: this._setConfig,
+      copyToClipboard: this._copyToClipboard,
       getInitialParameters: () => initialParameters,
       config,
       getCurrentUrl
@@ -122,6 +125,20 @@ export default class GlobalCommands extends React.Component {
     return (
       <GlobalCommandsContext.Provider value={context}>
         {children}
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          open={showCopiedToClipboard}
+          autoHideDuration={4000}
+          onClose={() => this.setState({ showCopiedToClipboard: false})}
+        >
+          <CustomSnackbarContent
+            onClose={() => this.setState({ showCopiedToClipboard: false})}
+            message="Copied to clipbard"
+          />
+        </Snackbar>
       </GlobalCommandsContext.Provider>
     )
   }

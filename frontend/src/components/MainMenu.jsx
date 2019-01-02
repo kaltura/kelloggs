@@ -4,120 +4,24 @@ import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Badge from '@material-ui/core/Badge';
-import SnackbarContent from '@material-ui/core/SnackbarContent';
-import Snackbar from '@material-ui/core/Snackbar';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import CheckCircleIcon from '@material-ui/icons/CheckCircle';
-import CloseIcon from '@material-ui/icons/Close';
 import {withGlobalCommands} from "./GlobalCommands";
 import { compose } from 'recompose'
-import classNames from 'classnames';
 
-// TODO use the function from KMC
-function setClipboardText(text) {
-  var id = "mycustom-clipboard-textarea-hidden-id";
-  var existsTextarea = document.getElementById(id);
-
-  if (!existsTextarea) {
-    var textarea = document.createElement("textarea");
-    textarea.id = id;
-    // Place in top-left corner of screen regardless of scroll position.
-    textarea.style.position = 'fixed';
-    textarea.style.top = 0;
-    textarea.style.left = 0;
-
-    // Ensure it has a small width and height. Setting to 1px / 1em
-    // doesn't work as this gives a negative w/h on some browsers.
-    textarea.style.width = '1px';
-    textarea.style.height = '1px';
-
-    // We don't need padding, reducing the size if it does flash render.
-    textarea.style.padding = 0;
-
-    // Clean up any borders.
-    textarea.style.border = 'none';
-    textarea.style.outline = 'none';
-    textarea.style.boxShadow = 'none';
-
-    // Avoid flash of white box if rendered for any reason.
-    textarea.style.background = 'transparent';
-    document.querySelector("body").appendChild(textarea);
-    existsTextarea = document.getElementById(id);
-  }
-
-  existsTextarea.value = text;
-  existsTextarea.select();
-
-  try {
-    var status = document.execCommand('copy');
-
-    if (!status) {
-      throw new Error(`cannot copy with status ${status}`);
-    }
-  } catch (err) {
-    throw err;
-  }
-}
 
 const styles = {
   root: { padding: '0 4px'},
 }
 
-const SnackbarContentStyles = {
-  root: { padding: '0 4px'},
-  success: {
-    backgroundColor: '#43a047',
-  },
-  message: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  icon: {
-    fontSize: 20,
-  },
-  iconVariant: {
-    opacity: 0.9,
-    marginRight: '10px',
-  },
-}
+
 
 const ITEM_HEIGHT = 48;
 
-const CustomSnackbarContent = withStyles(SnackbarContentStyles)(function(props) {
-  const { classes, className, message, onClose, ...other } = props;
-
-  return (
-    <SnackbarContent
-      className={classNames(classes.success, className)}
-      aria-describedby="client-snackbar"
-      message={
-        <span id="client-snackbar" className={classes.message}>
-          <CheckCircleIcon className={classNames(classes.icon, classes.iconVariant)} />
-          {message}
-        </span>
-      }
-      action={[
-        <IconButton
-          key="close"
-          aria-label="Close"
-          color="inherit"
-          className={classes.close}
-          onClick={onClose}
-        >
-          <CloseIcon className={classes.icon} />
-        </IconButton>,
-      ]}
-      {...other}
-    />
-  );
-});
 
 class MainMenu extends React.Component {
 
-
   state = {
-    anchorEl: null,
-    showCopiedToClipboard: false
+    anchorEl: null
   };
 
   handleClick = event => {
@@ -137,14 +41,8 @@ class MainMenu extends React.Component {
     // TODO implement various types
     switch(command.action) {
       case "copyToClipboard":
-        try {
-          setTimeout(() => {
-            setClipboardText(command.data);
-            this.setState({ showCopiedToClipboard: true});
-          });
-        } catch (e) {
-          // TODO show message
-        }
+        this.props.globalCommands.copyToClipboard(command.data);
+
         break;
       default:
         break;
@@ -154,7 +52,7 @@ class MainMenu extends React.Component {
 
 
   render() {
-    const { anchorEl, showCopiedToClipboard } = this.state;
+    const { anchorEl } = this.state;
     const { classes, globalCommands } = this.props;
     const open = Boolean(anchorEl);
     const commands = globalCommands.items;
@@ -193,20 +91,6 @@ class MainMenu extends React.Component {
             </MenuItem>
           ))}
         </Menu>
-        <Snackbar
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-          open={showCopiedToClipboard}
-          autoHideDuration={4000}
-          onClose={() => this.setState({ showCopiedToClipboard: false})}
-        >
-          <CustomSnackbarContent
-            onClose={() => this.setState({ showCopiedToClipboard: false})}
-            message="Copied to clipbard"
-          />
-        </Snackbar>
       </div>
     );
   }
