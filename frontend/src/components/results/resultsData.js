@@ -97,11 +97,19 @@ export default  class ResultsData {
 
         this.schema=schema;
         //this.schema.heatmap= { key: "severity"};
-        /*
-        this.schema.columns.shift( {
-            name: "index",
-            type: "index"
-        });*/
+
+        let index = this.schema.columns.findIndex( column=>  {
+            return column.name==="body";
+        });
+
+        if (index>=0) {
+            this.schema.columns.splice(index, 0,{
+                name: "commands",
+                label: "",
+                type: "commands",
+                width: 20
+            });
+        }
 
         this.schema.columns.forEach( column=>{
             Object.assign(column,{},defaultColumnsProperties[column.name])
@@ -128,8 +136,8 @@ export default  class ResultsData {
     }
 
     getColumn(key) {
-        return this.schema.columns.find( field=>  {
-            return field.name===key;
+        return this.schema.columns.find( column=>  {
+            return column.name===key;
         });
     }
 

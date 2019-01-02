@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { AutoSizer,  MultiGrid} from 'react-virtualized';
 import 'react-virtualized/styles.css';
-import './ResultsTable.css';
 import ToolTip from '@material-ui/core/Tooltip'
 import RichTextView from './RichTextView'
+import IconButton from "@material-ui/core/IconButton/IconButton";
+import MoreVertIcon from "@material-ui/core/SvgIcon/SvgIcon";
 
 const styles = {
   table: {
@@ -168,6 +169,9 @@ export default class ResultsTable extends React.PureComponent {
                 case "richText":
                     fn = this._richTextCellRenderer;
                     break;
+                case "commands":
+                    fn = this._commandsCellRenderer;
+                    break;
                 /*
                 case "index": return this._indexCellRenderer;
                 case "text": return this._textCellRenderer;
@@ -180,6 +184,7 @@ export default class ResultsTable extends React.PureComponent {
 
   }
 
+
   _headerRenderer({column, cellStyle}) {
 
       return <ToolTip title={column.label ? column.label : column.name}>
@@ -188,6 +193,19 @@ export default class ResultsTable extends React.PureComponent {
           </div>
       </ToolTip>
   }
+  _handleCommandsClick() {
+
+  }
+
+  _commandsCellRenderer({ column, value, cellStyle }) {
+      if (value && value.length>0) {
+          return  <div style={{...cellStyle, width: "5"}}>
+              ...
+          </div>
+      }
+      return <div style={{...cellStyle, width: "20px"}}></div>
+  }
+
 
   _severityCellRenderer({ column, value, cellStyle }) {
 

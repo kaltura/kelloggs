@@ -5,6 +5,7 @@ export default class ResultsLoader {
 
     constructor() {
         this.queue=[];
+        this.error=null;
         this.completed=false;
     }
 
@@ -54,7 +55,13 @@ export default class ResultsLoader {
           })
 
         });
-        console.warn("got response from ",url," " ,params);
+        console.warn("got response from ",url," " ,params, " response: ",response);
+        if (response.status!==200) {
+
+            this.completed=true;
+            this.error="API error " +response.status;
+            return;
+        }
         const body = response.body;
         this.reader = body.getReader();
         let decoder= new TextDecoder("utf-8");
@@ -63,13 +70,7 @@ export default class ResultsLoader {
             try {
                 const result = await this.reader.read();
                 if (result.done) {
-                    console.warn("ResultsLoader: finished loading")
-                    if (currentLine.length>0) {
-                        this.parseLine(currentLine);
-                    }
-                    this.reader=null;
-                    this.completed=true;
-                    return;
+                    break;
                 }
                 let buffer=result.value;
                 let newText=decoder.decode(buffer);
@@ -97,9 +98,17 @@ export default class ResultsLoader {
                 }
                 await this.sleep(10);
             }catch(e) {
+                this.error=e;
                 console.warn("ResultsLoader: error in fetch",e);
+                break;
             }
         } while(true);
+        console.warn("ResultsLoader: finished loading")
+        if (currentLine.length>0) {
+            this.parseLine(currentLine);
+        }
+        this.reader=null;
+        this.completed=true;
     }
 }
 
