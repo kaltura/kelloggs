@@ -130,15 +130,18 @@ export function getCurrentUrl() {
   return window.location.href;
 }
 
-export function replaceUrlQueryParameters(queryParams) {
+export function updateUrlQueryParams(queryParams) {
   if (window.history.pushState) {
     const queryParamsToken = buildQuerystring(queryParams);
-    var newurl =  `${getCurrentUrlWithoutQuerystring()}?${queryParamsToken}`;
-    window.history.pushState({path:newurl},'',newurl);
+    var url =  `${getCurrentUrlWithoutQuerystring()}?${queryParamsToken}`;
+    window.history.pushState({path:url},'',url);
   }
 }
 
-export function reloadUrlWithQueryParameters(queryParams) {
+export function openUrlInNewTab(url) {
+  window.open(url, '_blank');
+}
+export function reloadUrl(queryParams) {
   const queryParamsToken = buildQuerystring(queryParams);
   window.location.search = `?${queryParamsToken}`;
 }

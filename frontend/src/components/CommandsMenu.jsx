@@ -17,15 +17,21 @@ const ITEM_HEIGHT = 48;
 class CommandsMenu extends React.Component {
 
   state = {
-    anchorEl: null
+    anchorEl: null,
+    visibleCommands: null
   };
 
-  handleClick = event => {
-    this.setState({ anchorEl: event.currentTarget });
+  openMenu = event => {
+    const { commands } = this.props;
+
+    this.setState({
+      anchorEl: event.currentTarget,
+      visibleCommands:commands
+    });
   };
 
   _handleCloseMenu = () => {
-    this.setState({ anchorEl: null });
+    this.setState({ anchorEl: null, visibleCommands: null });
   }
 
   _handleMenuCommand = (command) => {
@@ -34,7 +40,7 @@ class CommandsMenu extends React.Component {
   };
 
   render() {
-    const { anchorEl } = this.state;
+    const { anchorEl, visibleCommands } = this.state;
     const { classes, commands, className : classNameProp, buttonRender } = this.props;
     const open = Boolean(anchorEl);
     const hasCommands = commands && commands.length;
@@ -48,7 +54,7 @@ class CommandsMenu extends React.Component {
               aria-label="More"
               aria-owns={open ? 'long-menu' : undefined}
               aria-haspopup="true"
-              onClick={this.handleClick}
+              onClick={this.openMenu}
             >
               <MoreVertIcon/>
             </IconButton>
@@ -65,7 +71,7 @@ class CommandsMenu extends React.Component {
             },
           }}
         >
-          {commands.map((command, index) => (
+          {visibleCommands && visibleCommands.map((command, index) => (
             <MenuItem key={index} onClick={() => this._handleMenuCommand(command)}>
               {command.label}
             </MenuItem>

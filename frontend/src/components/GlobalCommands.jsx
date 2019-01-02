@@ -7,7 +7,15 @@ import classNames from "classnames";
 import CheckCircleIcon from "@material-ui/core/SvgIcon/SvgIcon";
 import IconButton from "@material-ui/core/IconButton/IconButton";
 import CloseIcon from '@material-ui/icons/Close';
-import { getCurrentUrl, getQueryString, copyToClipboardEnabled, copyToClipboard, replaceUrlQueryParameters } from '../utils';
+import {
+  getCurrentUrl,
+  getQueryString,
+  copyToClipboardEnabled,
+  openUrlInNewTab,
+  copyToClipboard,
+  updateUrlQueryParams,
+  buildQuerystring, getCurrentUrlWithoutQuerystring
+} from '../utils';
 import Dialog from '@material-ui/core/Dialog';
 import MuiDialogTitle from '@material-ui/core/DialogTitle';
 import MuiDialogContent from '@material-ui/core/DialogContent';
@@ -128,7 +136,13 @@ export default class GlobalCommands extends React.Component {
     })
   }
 
-  _updateURL = (queryParams) => {
+  _buildSearchUrl = (queryParams) => {
+    queryParams = this._addAppParamsToQueryString(queryParams);
+    const queryParamsToken = buildQuerystring(queryParams);
+    return `${getCurrentUrlWithoutQuerystring()}?${queryParamsToken}`;
+  }
+
+  _addAppParamsToQueryString = (queryParams) => {
     const { config } = this.state;
 
     if (!config.isHosted) {
@@ -139,7 +153,12 @@ export default class GlobalCommands extends React.Component {
       }
     }
 
-    replaceUrlQueryParameters(queryParams);
+    return queryParams;
+  }
+
+  _updateURL = (queryParams) => {
+    queryParams = this._addAppParamsToQueryString(queryParams);
+    updateUrlQueryParams(queryParams);
   };
 
 
@@ -168,10 +187,15 @@ export default class GlobalCommands extends React.Component {
         this._copyToClipboard(command.data);
         break;
       case "search":
+
+        break;
+      case "searchNewTab":
+        const newUrl = this._buildSearchUrl(command.data);
+        openUrlInNewTab(newUrl);
         break;
       case "download":
       case "link":
-        window.open(command.data, '_blank');
+        openUrlInNewTab(command.data);
         break;
       case "tooltip":
           this.setState({
