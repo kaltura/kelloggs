@@ -133,13 +133,17 @@ class ResultsViewer extends React.Component {
             lazyUpdate={true}/>
           : ""
         }
+        {
+          results.metadata.length===0 ? "" :
           <Paper classes={{root: classes.metadata}}>
               {
-                results.metadata.map( (meta, index) => {
-                  return <Chip key={index} label={meta.label+" = "+meta.value} className={classes.metadataChip}></Chip>
-                })
+                  results.metadata.map((meta, index) => {
+                      return <Chip key={index} label={meta.label + " = " + meta.value}
+                                   className={classes.metadataChip}></Chip>
+                  })
               }
           </Paper>
+        }
         <ResultsTable ref={this.resultsTable} results={results}></ResultsTable>
       </div>
     );

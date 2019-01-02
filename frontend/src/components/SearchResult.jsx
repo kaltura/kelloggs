@@ -78,6 +78,9 @@ class SearchResult extends React.Component {
             resultsData.append(element);
           }
         });
+        if (this._loader.completed) {
+            resultsData.setCompleted();
+        }
       }
     },100)
   }

@@ -25,6 +25,12 @@ const defaultColumnsProperties  ={
     },
     body: {
         width: 2000
+    },
+    server: {
+        width: 90
+    },
+    session: {
+        width: 80
     }
 }
 
@@ -67,11 +73,15 @@ export default  class ResultsData {
             values: {},
             indexes: []
         }
+        this.completed=false;
+
         this.setSchema(schema);
 
         let lastItemCount=0;
+        let lastCompleted=false;
+
         setInterval( ()=> {
-            if (lastItemCount!==this.items.length) {
+            if (lastItemCount!==this.items.length || lastCompleted!==this.completed) {
                 lastItemCount=this.items.length;
                 console.warn("added items ",lastItemCount)
                 if (this.cb) {
@@ -81,6 +91,8 @@ export default  class ResultsData {
 
         },100)
     }
+
+
     setSchema(schema) {
 
         this.schema=schema;
@@ -102,6 +114,9 @@ export default  class ResultsData {
 
         console.warn("setSchema: ",this.schema);
 
+    }
+    setCompleted() {
+        this.completed=true;
     }
 
     get commands() {
