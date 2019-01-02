@@ -106,7 +106,7 @@ export default  class ResultsData {
         if (index>=0) {
             this.schema.columns.splice(index, 0,{
                 name: "commands",
-                label: "",
+                label: "Cmd",
                 type: "commands",
                 width: 20
             });
