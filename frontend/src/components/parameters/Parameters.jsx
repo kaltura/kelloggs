@@ -27,7 +27,7 @@ class Parameters extends React.Component
   state = {
     parameters: {
       type: "",
-      textCriteria: "",
+      textFilter: "",
       fromTime: "",
       toTime: "",
       server: "",

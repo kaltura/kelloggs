@@ -34,19 +34,24 @@ export default class ResultsLoader {
         });
     }
 
-    _buildUrl(serviceUrl, jwt, params) {
-        const prefix = 'filter:';
-      var queryString = Object.keys(params).map((key) => {
-        return `filter:${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
-      }).join('&');
-      return `${serviceUrl}?responseFormat=json&jwt=${jwt}${ queryString && `&${queryString}`}`;
+    _buildUrl(serviceUrl, jwt) {
+      return `${serviceUrl}?jwt=${jwt}`;
     }
 
     async loadUrl(serviceUrl, jwt, params) {
         const url = this._buildUrl(serviceUrl, jwt, params);
-      debugger;
 
-        let response = await fetch(url);
+        let response = await fetch(url, {
+          method: "post",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filter: params,
+            responseFormat: 'json'
+          }),
+
+        });
         const body = response.body;
         this.reader = body.getReader();
         let decoder= new TextDecoder("utf-8");
