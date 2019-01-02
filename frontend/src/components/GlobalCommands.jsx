@@ -3,17 +3,19 @@ import hoistNonReactStatics from 'hoist-non-react-statics';
 
 const GlobalCommandsContext = React.createContext({});
 
-function setParams({ query = ""}) {
-  const searchParams = new URLSearchParams();
-  searchParams.set("query", query);
-  return searchParams.toString();
+function buildQuerystring(data: {}, prefix = "") {
+  let str = [], p;
+  for (p in data) {
+    if (data.hasOwnProperty(p)) {
+      let k = prefix ? prefix + "[" + p + "]" : p, v = data[p];
+      str.push((v !== null && typeof v === "object") ?
+        buildQuerystring(v, k) :
+        encodeURIComponent(k) + "=" + encodeURIComponent(v));
+    }
+  }
+  return str.join("&");
 }
 
-const updateURL = (queryParams) => {
-  debugger;
-  const url = setParams(queryParams);
-  window.history.push(`?${url}`);
-};
 
 const getSearchParams = () => {
   var match,
@@ -31,6 +33,21 @@ const getSearchParams = () => {
   return urlParams;
 }
 
+function getCurrentRawUrl() {
+  return window.location.protocol + "//" + window.location.host + window.location.pathname;
+}
+
+function replaceUrlQueryParameters(queryParams) {
+  if (window.history.pushState) {
+    const queryParamsToken = buildQuerystring(queryParams);
+    var newurl =  `${getCurrentRawUrl()}?${queryParamsToken}`;
+    window.history.pushState({path:newurl},'',newurl);
+  }
+}
+function reloadUrlWithQueryParameters(queryParams) {
+  const queryParamsToken = buildQuerystring(queryParams);
+  window.location.search = `?${queryParamsToken}`;
+}
 
 export default class GlobalCommands extends React.Component {
 
@@ -44,6 +61,21 @@ export default class GlobalCommands extends React.Component {
       items
     })
   }
+
+  _updateURL = (queryParams) => {
+    const { config } = this.state;
+
+    if (!config.isHosted) {
+      queryParams = {
+        ...queryParams,
+        jwt: config.jwt,
+        serviceUrl: config.serviceUrl
+      }
+    }
+
+    replaceUrlQueryParameters(queryParams);
+  };
+
 
   _setConfig = (config, initialParameters = null) => {
     this.setState({
@@ -60,7 +92,7 @@ export default class GlobalCommands extends React.Component {
       items,
       updateItems: this.updateItems,
       clearItems: () => this.updateItems([]),
-      updateURL: updateURL,
+      updateURL: this._updateURL,
       getSearchParams: getSearchParams,
       setConfig: this._setConfig,
       getInitialParameters: () => initialParameters,

@@ -75,7 +75,7 @@ class Parameters extends React.Component
         parameters: initialParameters
       }, () => {
         if (this.state.parameters.type) {
-          this._handleSearch();
+          this._handleSearch(false);
         }
       }
     );
@@ -104,10 +104,10 @@ class Parameters extends React.Component
     return moment(date).isValid();
   }
 
-  _handleSearch = () => {
+  _handleSearch = (updateUrl = true) => {
 
     const {parameters: rawParameters} = this.state;
-    const {onSearch} = this.props;
+    const {onSearch, globalCommands } = this.props;
 
     let isValid = false;
     if (rawParameters.type === 'apiLogFilter') {
@@ -119,6 +119,7 @@ class Parameters extends React.Component
     if (!isValid) {
       return;
     }
+
     const searchParameters =
       {
         ...rawParameters,
@@ -126,6 +127,10 @@ class Parameters extends React.Component
         toTime: toUnixDate(rawParameters.toTime),
         textFilter: rawParameters.textFilter ? {type: 'match', text: rawParameters.textFilter} : undefined
       };
+
+    if (updateUrl) {
+      globalCommands.updateURL(searchParameters);
+    }
 
     onSearch(searchParameters)
   }

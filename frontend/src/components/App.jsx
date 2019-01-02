@@ -55,10 +55,13 @@ class App extends React.Component {
 
     const initialParams = globalCommands.getSearchParams();
     delete initialParams['jwt']; // just in case someone passed a different jwt
+    delete initialParams['serviceUrl']; // just in case someone passed a different jwt
+    delete initialParams['hostUrl']; // just in case someone passed a different jwt
     globalCommands.setConfig({
       jwt: config.jwt,
       hostUrl: config.hostUrl,
-      serviceUrl: config.serviceUrl
+      serviceUrl: config.serviceUrl,
+      isHosted: true
     });
 
     this.setState({
@@ -81,7 +84,7 @@ class App extends React.Component {
     return {
       jwt,
       serviceUrl,
-      initialParams
+      initialParams,
     }
   }
 
@@ -93,6 +96,7 @@ class App extends React.Component {
       const currentUrl = window.location.protocol + '//' + location.host + location.pathname;
 
       globalCommands.setConfig({
+        isHosted: false,
         jwt: searchParams.jwt,
         hostUrl: currentUrl,
         serviceUrl: searchParams.serviceUrl
