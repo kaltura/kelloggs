@@ -3,14 +3,17 @@ import hoistNonReactStatics from 'hoist-non-react-statics';
 
 const GlobalCommandsContext = React.createContext({});
 
-function buildQuerystring(data: {}, prefix = "") {
+function buildQuerystring(data, prefix = "") {
   let str = [], p;
   for (p in data) {
     if (data.hasOwnProperty(p)) {
-      let k = prefix ? prefix + "[" + p + "]" : p, v = data[p];
-      str.push((v !== null && typeof v === "object") ?
-        buildQuerystring(v, k) :
-        encodeURIComponent(k) + "=" + encodeURIComponent(v));
+      const hasContent = typeof data[p] !== 'undefined' && data[p] !== '' && data[p] !== null;
+      if (hasContent) {
+        let k = prefix ? prefix + "[" + p + "]" : p, v = data[p];
+        str.push((v !== null && typeof v === "object") ?
+          buildQuerystring(v, k) :
+          encodeURIComponent(k) + "=" + encodeURIComponent(v));
+      }
     }
   }
   return str.join("&");
