@@ -5,6 +5,7 @@ export default class ResultsLoader {
 
     constructor() {
         this.queue=[];
+        this.completed=false;
     }
 
     popQueue() {
@@ -41,6 +42,7 @@ export default class ResultsLoader {
     async loadUrl(serviceUrl, jwt, params) {
         const url = this._buildUrl(serviceUrl, jwt, params);
 
+        console.warn("calling ",url," " ,params);
         let response = await fetch(url, {
           method: "post",
           headers: {
@@ -66,6 +68,7 @@ export default class ResultsLoader {
                         this.parseLine(currentLine);
                     }
                     this.reader=null;
+                    this.completed=true;
                     return;
                 }
                 let buffer=result.value;

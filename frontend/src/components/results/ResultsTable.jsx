@@ -48,7 +48,6 @@ export default class ResultsTable extends React.PureComponent {
     };
 
 
-    this._noRowsRenderer = this._noRowsRenderer.bind(this);
     this._cellRenderer = this._cellRenderer.bind(this);
     this._getRowHeight = this._getRowHeight.bind(this);
   }
@@ -61,7 +60,9 @@ export default class ResultsTable extends React.PureComponent {
   update() {
 
     this.setState((oldState) => {
-      return { rowCount: this.results.items.length}
+      return {
+          rowCount: this.results.items.length
+      }
     });
       //this.table.current.scrollToRow(props.context.items.length);
   }
@@ -96,8 +97,7 @@ export default class ResultsTable extends React.PureComponent {
                   height={height}
                   cellRenderer={this._cellRenderer}
                   overscanRowCount={overscanRowCount}
-                  noRowsRenderer={this._noRowsRenderer}
-                  rowCount={rowCount+1}
+                  rowCount={rowCount===0 ? 2 : rowCount+1}
                   rowHeight={this._getRowHeight}
                   scrollToIndex={scrollToIndex}
                   maxWidth={3000}
@@ -115,6 +115,9 @@ export default class ResultsTable extends React.PureComponent {
       if (index===0) {
           return 20;
       }
+      if (this.state.rowCount===0 && index===1) {
+          return 30;
+      }
       return this.results.items[index-1].lines*13+4;
   }
 
@@ -128,6 +131,9 @@ export default class ResultsTable extends React.PureComponent {
       }
       return <div key={key} style={rowStyle}>
       {
+          (this.state.rowCount===0 && rowIndex===1) ?
+              <div>Searching...</div>
+              :
           this.visibleColumns.map((column) => {
 
             let cellStyle= {
@@ -171,6 +177,7 @@ export default class ResultsTable extends React.PureComponent {
           })
       }
       </div>
+
   }
 
   _headerRenderer({column, cellStyle}) {
@@ -228,11 +235,6 @@ export default class ResultsTable extends React.PureComponent {
       return <RichTextView indent={0} style={{...cellStyle, "userSelect": "text",  "whiteSpace": "pre"}} data={value}>
                 {value}
              </RichTextView>
-    }
-
-  _noRowsRenderer() {
-    return <div>No rows</div>;
   }
-
 
 }
