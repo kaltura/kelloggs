@@ -15,7 +15,8 @@ const styles = theme => ({
         whiteSpace: "pre",
         width: "auto",
         maxWidth: "800px",
-        height: "auto"
+        height: "auto",
+        fontFamily: 'lucida console'
     }
 });
 
