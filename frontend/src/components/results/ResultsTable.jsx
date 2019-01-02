@@ -124,7 +124,7 @@ export default class ResultsTable extends React.PureComponent {
       if (rowIndex===0) {
         rowStyle={...rowStyle, ...styles.headerRow}
       }
-      return <div style={rowStyle}>
+      return <div key={key} style={rowStyle}>
       {
           this.visibleColumns.map((column) => {
 
@@ -139,14 +139,13 @@ export default class ResultsTable extends React.PureComponent {
             left += column.width ? column.width : 40;
             left += 13;
             if (rowIndex === 0) {
-                return this._headerRenderer({column, key, cellStyle})
+                return this._headerRenderer({column, cellStyle})
             }
-
 
             let row = this.results.items[rowIndex - 1];
             let value = row[column.name];
 
-            let fn = null;
+            let fn = this._textCellRenderer;
 
             switch (column.type) {
                 case "severity":
@@ -166,27 +165,16 @@ export default class ResultsTable extends React.PureComponent {
                 case "text": return this._textCellRenderer;
                 default: return undefined;*/
             }
-            if (fn) {
-                return fn({key, column, value, cellStyle});
-            }
-            return <div key={key} style={{...cellStyle}}>
-                  {value}
-              </div>
-            /*
-            return <ToolTip title={value}>
-                <div key={key} style={{...cellStyle}}>
-                    {value}
-                </div>
-            </ToolTip>*/
+            return fn({key, column, value, cellStyle});
           })
       }
       </div>
   }
 
-  _headerRenderer({column, key, cellStyle}) {
+  _headerRenderer({column, cellStyle}) {
 
       return <ToolTip title={column.label ? column.label : column.name}>
-          <div key={key} style={{...cellStyle, "whiteSpace": "pre"}} >
+          <div  style={{...cellStyle, "whiteSpace": "pre"}} >
               {column.label ? column.label : column.name}
           </div>
       </ToolTip>
@@ -226,7 +214,7 @@ export default class ResultsTable extends React.PureComponent {
 
   _textCellRenderer({ column, value, cellStyle }) {
     return  <ToolTip  title={value}>
-              <span style={{...cellStyle, "userSelect": "text",  "whiteSpace": "pre"}}>
+              <span style={{...cellStyle, userSelect: "text",whiteSpace: "pre"}}>
                 {value}
               </span>
             </ToolTip>
