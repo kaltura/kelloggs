@@ -60,7 +60,17 @@ export function copyElementToClipboard(el) {
   }
 }
 
-export function copyToClipboard(text) {
+export async function  copyToClipboard(text) {
+  console.warn("copyToClipboard1",text);
+    try {
+        let result = await navigator.clipboard.writeText(text);
+        console.warn("copyToClipboard3 ",result);
+    }catch(e) {
+
+        console.warn("copyToClipboard4",e);
+    }
+
+    return;
   let copied = false;
   let textArea = document.createElement("textarea");
   textArea.style.position = 'fixed';
