@@ -163,9 +163,6 @@ export default class GlobalCommands extends React.Component {
   }
 
   _handleCommand = (command) => {
-
-
-    // TODO implement various types
     switch(command.action) {
       case "copyToClipboard":
         this._copyToClipboard(command.data);
@@ -231,7 +228,7 @@ export default class GlobalCommands extends React.Component {
             { this.state.viewerCommand && this.state.viewerCommand.label}
           </DialogTitle>
           <DialogContent>
-            <textarea style={{width: '400px', height: '400px'}} readonly>
+            <textarea style={{ overflow: 'auto', whiteSpace: 'nowrap', fontFamily: 'lucida console', width: '500px', height: '200px'}} readonly>
               {this.state.viewerCommand && this.state.viewerCommand.data}
             </textarea>
           </DialogContent>

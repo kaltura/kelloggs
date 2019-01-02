@@ -54,7 +54,7 @@ class RichTextView extends React.PureComponent {
                         //let otherActions=data.commands.filter(cmd=>cmd.action!=="tooltip")
                         return  <React.Fragment>
                                     {
-                                        <ToolTip  title={toolTipAction.data}
+                                      toolTipAction ? <ToolTip  title={toolTipAction.data}
                                                   classes={{ tooltip: classes.lightTooltip }}
                                         >
                                             <a href="#"
@@ -62,7 +62,10 @@ class RichTextView extends React.PureComponent {
                                             >
                                                 {data.text}
                                             </a>
-                                        </ToolTip>
+                                        </ToolTip> :
+                                        <a href="#"
+                                           onClick={this.handleClick}
+                                        >{data.text}</a>
                                     }
 
 
