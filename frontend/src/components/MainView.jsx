@@ -8,7 +8,7 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import ExpandLess from '@material-ui/icons/ExpandLess';
-import CommandsMenu from './CommandsMenu';
+import MainMenu from './MainMenu';
 import Parameters from './parameters/Parameters';
 import SearchResult from "./SearchResult";
 
@@ -126,7 +126,7 @@ class MainView extends React.Component {
             <Typography variant="h6" color="inherit" className={classes.grow}>
               Kelloggs!
             </Typography>
-            <CommandsMenu showBadge={true}/>
+            <MainMenu/>
           </Toolbar>
         </AppBar>
         <div className={classnames(classes.parameters, !expanded && classes.parametersShift)}>

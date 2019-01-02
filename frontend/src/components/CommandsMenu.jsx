@@ -3,20 +3,16 @@ import { withStyles } from '@material-ui/core/styles';
 import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
-import Badge from '@material-ui/core/Badge';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import {withGlobalCommands} from "./GlobalCommands";
 import { compose } from 'recompose'
+import {withGlobalCommands} from "./GlobalCommands";
 
 
 const styles = {
   root: { padding: '0 4px'},
 }
 
-
-
 const ITEM_HEIGHT = 48;
-
 
 class CommandsMenu extends React.Component {
 
@@ -27,13 +23,6 @@ class CommandsMenu extends React.Component {
   handleClick = event => {
     this.setState({ anchorEl: event.currentTarget });
   };
-
-  _copySearchLink = () => {
-    this._handleMenuCommand({
-      action: 'copyToClipboard',
-      data: this.props.globalCommands.getCurrentUrl()
-    })
-  }
 
   _handleCloseMenu = () => {
     this.setState({ anchorEl: null });
@@ -46,13 +35,11 @@ class CommandsMenu extends React.Component {
 
   render() {
     const { anchorEl } = this.state;
-    const { classes, globalCommands, showBadge } = this.props;
+    const { classes, commands, className : classNameProp } = this.props;
     const open = Boolean(anchorEl);
-    const commands = globalCommands.items;
     const hasCommands = commands && commands.length;
-    return (
-      <div>
-        <Badge color="secondary" badgeContent={commands.length} invisible={!showBadge || !hasCommands}>
+    return hasCommands ?
+      (<div className={classNameProp}>
         <IconButton
           classes={{root: classes.root}}
           aria-label="More"
@@ -60,9 +47,8 @@ class CommandsMenu extends React.Component {
           aria-haspopup="true"
           onClick={this.handleClick}
         >
-          <MoreVertIcon />
+          <MoreVertIcon/>
         </IconButton>
-        </Badge>
         <Menu
           id="long-menu"
           anchorEl={anchorEl}
@@ -76,7 +62,7 @@ class CommandsMenu extends React.Component {
           }}
         >
           <MenuItem onClick={this._copySearchLink}>
-              Copy Search Link
+            Copy Search Link
           </MenuItem>
           {commands.map((command, index) => (
             <MenuItem key={index} onClick={() => this._handleMenuCommand(command)}>
@@ -84,10 +70,12 @@ class CommandsMenu extends React.Component {
             </MenuItem>
           ))}
         </Menu>
-      </div>
-    );
+      </div>)
+      : null
+    ;
   }
 }
+
 export default compose(
   withStyles(styles),
   withGlobalCommands
