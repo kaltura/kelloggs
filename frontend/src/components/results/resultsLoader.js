@@ -7,6 +7,9 @@ export default class ResultsLoader {
         this.queue=[];
         this.error=null;
         this.completed=false;
+        this.cancel=false;
+        this.abortController = new AbortController()
+
     }
 
     popQueue() {
@@ -15,9 +18,9 @@ export default class ResultsLoader {
         return oldQueue;
     }
     cancelLoading() {
-        if (this.reader) {
-            this.reader.cancel('ABORTED')
-        }
+        this.cancel=true;
+        console.warn("aborting fetch...")
+        this.abortController.abort();
     }
 
     parseLine(line) {
@@ -54,8 +57,8 @@ export default class ResultsLoader {
                 body: JSON.stringify({
                     filter: params,
                     responseFormat: 'json'
-                })
-
+                }),
+                signal: this.abortController.signal
             });
         }catch(e) {
             this.queue.push({ "type": "error", "message": e.message});
@@ -75,9 +78,6 @@ export default class ResultsLoader {
         do {
             try {
                 const result = await this.reader.read();
-                if (result.done) {
-                    break;
-                }
                 let buffer=result.value;
                 let newText=decoder.decode(buffer);
                 //console.warn("ResultsLoader: adding #",buffer.length, " bytes")
@@ -102,13 +102,16 @@ export default class ResultsLoader {
                         break;
                     }
                 }
+                if (result.done) {
+                    break;
+                }
                 await this.sleep(10);
             }catch(e) {
                 this.error=e;
                 console.warn("ResultsLoader: error in fetch",e);
                 break;
             }
-        } while(true);
+        } while(!this.cancel);
         console.warn("ResultsLoader: finished loading")
         if (currentLine.length>0) {
             this.parseLine(currentLine);

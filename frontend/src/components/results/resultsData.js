@@ -27,10 +27,10 @@ const defaultColumnsProperties  ={
         width: 2000
     },
     server: {
-        width: 90
+        width: 110
     },
     session: {
-        width: 80
+        width: 75
     }
 }
 
