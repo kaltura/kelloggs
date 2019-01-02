@@ -39,7 +39,7 @@ const toUnixDate = (date) => {
 
 const defaultParameters = {
   type: "",
-  textFilter: "",
+  textFilter: { type: 'match', text: ''},
   fromTime:moment().add(-1, 'days').startOf('day'),
   toTime: moment().add(-1, 'days').endOf('day'),
   server: "",
@@ -79,6 +79,18 @@ class Parameters extends React.Component
         }
       }
     );
+  }
+
+  _handleTextFilter = (text) => {
+    this.setState(state => ({
+      parameters: {
+        ...state.parameters,
+        textFilter: {
+          type: 'match',
+          text: text
+        }
+      }
+    }))
   }
 
   _handleChange = (e) => {
@@ -125,8 +137,12 @@ class Parameters extends React.Component
         ...rawParameters,
         fromTime: toUnixDate(rawParameters.fromTime),
         toTime: toUnixDate(rawParameters.toTime),
-        textFilter: rawParameters.textFilter ? {type: 'match', text: rawParameters.textFilter} : undefined
       };
+
+    const removeTextFilter = !rawParameters.textFilter || !rawParameters.textFilter.text;
+    if (removeTextFilter) {
+      delete searchParameters.textFilter;
+    }
 
     if (updateUrl) {
       globalCommands.updateURL(searchParameters);
@@ -175,7 +191,7 @@ class Parameters extends React.Component
             </Button>
           </Grid>
         <Grid item xs={12}>
-          { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.apiLogsRef} {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
+          { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.apiLogsRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
         </Grid>
       </Grid>
       <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>

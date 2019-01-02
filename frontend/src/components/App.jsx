@@ -53,7 +53,7 @@ class App extends React.Component {
       return;
     }
 
-    const initialParams = globalCommands.getSearchParams();
+    const initialParams = globalCommands.getQueryString();
     delete initialParams['jwt']; // just in case someone passed a different jwt
     delete initialParams['serviceUrl']; // just in case someone passed a different jwt
     delete initialParams['hostUrl']; // just in case someone passed a different jwt
@@ -73,9 +73,9 @@ class App extends React.Component {
     window.removeEventListener('message', this._handleSetup);
   }
 
-  _getSearchParams() {
+  _getQueryString() {
     const { globalCommands } = this.props;
-    const initialParams = globalCommands.getSearchParams();
+    const initialParams = globalCommands.getQueryString();
     const jwt = initialParams['jwt'];
     const serviceUrl = initialParams['serviceUrl'];
     delete initialParams['serviceUrl'];
@@ -90,7 +90,7 @@ class App extends React.Component {
 
   componentDidMount() {
     const { globalCommands } = this.props;
-    const searchParams = this._getSearchParams();
+    const searchParams = this._getQueryString();
     if (searchParams.jwt) {
       const location = window.location;
       const currentUrl = window.location.protocol + '//' + location.host + location.pathname;

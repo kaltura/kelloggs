@@ -27,7 +27,7 @@ export default class APILogsParameters extends React.Component {
   }
 
   render() {
-    const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp } = this.props;
+    const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
 
     return (
@@ -66,8 +66,8 @@ export default class APILogsParameters extends React.Component {
               fullWidth
               label="Serach Criteria"
               name={'textFilter'}
-              value={textFilter}
-              onChange={onChange}
+              value={textFilter.text}
+              onChange={(e) => onTextFilterChange(e.target.value)}
             />
           </Grid>
           <Grid item xs={4}>

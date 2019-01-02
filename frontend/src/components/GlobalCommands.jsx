@@ -20,7 +20,7 @@ function buildQuerystring(data, prefix = "") {
 }
 
 
-const getSearchParams = () => {
+const getQueryString = () => {
   var match,
     pl = /\+/g,  // Regex for replacing addition symbol with a space
     search = /([^&=]+)=?([^&]*)/g,
@@ -30,8 +30,19 @@ const getSearchParams = () => {
     query = window.location.search.substring(1);
 
   const urlParams = {};
-  while (match = search.exec(query))
-    urlParams[decode(match[1])] = decode(match[2]);
+  while (match = search.exec(query)) {
+    const key = decode(match[1]);
+    const value = decode(match[2])
+    const keyMatch = /^(.+?)\[(.+?)\]$/.exec(key);
+    if (keyMatch) {
+      urlParams[keyMatch[1]] = {
+        ...(urlParams[keyMatch[1]] || {}),
+        [keyMatch[2]]: value
+      }
+    } else {
+      urlParams[key] = value;
+    }
+  }
 
   return urlParams;
 }
@@ -101,7 +112,7 @@ export default class GlobalCommands extends React.Component {
       updateItems: this.updateItems,
       clearItems: () => this.updateItems([]),
       updateURL: this._updateURL,
-      getSearchParams: getSearchParams,
+      getQueryString: getQueryString,
       setConfig: this._setConfig,
       getInitialParameters: () => initialParameters,
       config,
