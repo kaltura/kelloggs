@@ -125,10 +125,10 @@ class MainMenu extends React.Component {
   };
 
   _copySearchLink = () => {
-    // TODO implement
-    this.setState({ anchorEl: null });
-    this.setState({ showCopiedToClipboard: true});
-
+    this._handleCommand({
+      action: 'copyToClipboard',
+      data: this.props.globalCommands.getCurrentUrl()
+    })
   }
 
   _handleCommand = (command) => {

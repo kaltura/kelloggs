@@ -36,14 +36,19 @@ const getSearchParams = () => {
   return urlParams;
 }
 
-function getCurrentRawUrl() {
-  return window.location.protocol + "//" + window.location.host + window.location.pathname;
+function getCurrentUrlWithoutQuerystring() {
+    return window.location.protocol + "//" + window.location.host + window.location.pathname;
+}
+
+
+function getCurrentUrl() {
+    return window.location.href;
 }
 
 function replaceUrlQueryParameters(queryParams) {
   if (window.history.pushState) {
     const queryParamsToken = buildQuerystring(queryParams);
-    var newurl =  `${getCurrentRawUrl()}?${queryParamsToken}`;
+    var newurl =  `${getCurrentUrlWithoutQuerystring()}?${queryParamsToken}`;
     window.history.pushState({path:newurl},'',newurl);
   }
 }
@@ -99,7 +104,8 @@ export default class GlobalCommands extends React.Component {
       getSearchParams: getSearchParams,
       setConfig: this._setConfig,
       getInitialParameters: () => initialParameters,
-      config
+      config,
+      getCurrentUrl
     }
 
     return (
