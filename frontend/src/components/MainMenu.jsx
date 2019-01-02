@@ -49,7 +49,7 @@ class MainMenu extends React.Component {
     const hasCommands = commands && commands.length;
     return (
       <div>
-        <Badge color="secondary" badgeContent={commands.length-1} invisible={!hasCommands || commands.length < 2}>
+        <Badge color="secondary" badgeContent={commands.length} invisible={!hasCommands || commands.length < 2}>
           <CommandsMenu commands={commands} className={classes.menuIcon}/>
         </Badge>
       </div>

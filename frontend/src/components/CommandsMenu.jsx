@@ -46,10 +46,11 @@ class CommandsMenu extends React.Component {
     const hasCommands = commands && commands.length;
 
     return hasCommands ?
-      (<div className={classNameProp}>
+      (<div >
         { buttonRender ?
           buttonRender() : (
             <IconButton
+              className={classNameProp}
               classes={{root: classes.root}}
               aria-label="More"
               aria-owns={open ? 'long-menu' : undefined}

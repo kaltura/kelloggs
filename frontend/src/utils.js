@@ -29,61 +29,26 @@ export function copyToClipboardEnabled() {
   return enabled;
 }
 
-export function copyElementToClipboard(el) {
-  if (document.body['createTextRange']) {
-    // IE
-    let textRange = document.body['createTextRange']();
-    textRange.moveToElementText(el);
-    textRange.select();
-    textRange.execCommand("Copy");
-  }
-  else if (window.getSelection && document.createRange) {
-    // non-IE
-    let editable = el.contentEditable; // Record contentEditable status of element
-    let readOnly = el.readOnly; // Record readOnly status of element
-    el.contentEditable = true; // iOS will only select text on non-form elements if contentEditable = true;
-    el.readOnly = false; // iOS will not select in a read only form element
-    let range = document.createRange();
-    range.selectNodeContents(el);
-    let sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range); // Does not work for Firefox if a textarea or input
-    if (el.nodeName == "TEXTAREA" || el.nodeName == "INPUT")
-      el.select(); // Firefox will only select a form element with select()
-    if (el.setSelectionRange && navigator.userAgent.match(/ipad|ipod|iphone/i))
-      el.setSelectionRange(0, 999999); // iOS only selects "form" elements with SelectionRange
-    el.contentEditable = editable; // Restore previous contentEditable status
-    el.readOnly = readOnly; // Restore previous readOnly status
-    if (document.queryCommandSupported("copy")) {
-      document.execCommand('copy');
-    }
-  }
-}
-
-export async function  copyToClipboard(text) {
-  console.warn("copyToClipboard1",text);
-    try {
-        let result = await navigator.clipboard.writeText(text);
-        console.warn("copyToClipboard3 ",result);
-    }catch(e) {
-
-        console.warn("copyToClipboard4",e);
-    }
-
-    return;
+export async function copyToClipboard(text) {
   let copied = false;
-  let textArea = document.createElement("textarea");
-  textArea.style.position = 'fixed';
-  textArea.style.top = -1000 + 'px';
-  textArea.value = text;
-  document.body.appendChild(textArea);
-  textArea.select();
+
   try {
-    copied = document.execCommand('copy');
-  } catch (err) {
-    console.log('Copy to clipboard operation failed');
-  }
-  document.body.removeChild(textArea);
+        let result = await navigator.clipboard.writeText(text);
+      copied = true;
+    }catch(e) {
+      let textArea = document.createElement("textarea");
+      textArea.style.position = 'fixed';
+      textArea.style.top = -1000 + 'px';
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        copied = document.execCommand('copy');
+      } catch (err) {
+        console.log('Copy to clipboard operation failed');
+      }
+      document.body.removeChild(textArea);
+    }
   return copied;
 }
 
