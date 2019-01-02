@@ -63,7 +63,6 @@ class ResultsViewer extends React.Component {
   calculateChart() {
     const { results } = this.props;
 
-    console.warn(results.histogram.times);
     let option = {
       tooltip: {},
       xAxis: [{

@@ -48,7 +48,6 @@ class RichTextView extends React.PureComponent {
         const { anchorEl } = this.state;
         const { classes } = this.props;
 
-
         return <div  style={{...this.props.style, paddingLeft: this.props.indent*35+"px"}}>
             {
                 this.props.data.map(data => {
