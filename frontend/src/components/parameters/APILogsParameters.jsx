@@ -2,11 +2,10 @@ import React from 'react';
 import Grid from "@material-ui/core/Grid/Grid";
 import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
-
+import moment from 'moment';
 
 export default function APILogsParameters(props) {
   const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp } = props;
-
 
   return (
     <Paper elevation={1} className={classNameProp}>
@@ -14,8 +13,7 @@ export default function APILogsParameters(props) {
         <Grid item xs={4}>
           <TextField fullWidth
                      name="fromTime"
-                     label="From Date"
-                     type="date"
+                     label="From Time"
                      value={fromTime}
                      onChange={onChange}
                      InputLabelProps={{
@@ -27,8 +25,7 @@ export default function APILogsParameters(props) {
           <TextField
             fullWidth
             name="toTime"
-            label="To Date"
-            type="date"
+            label="To Time"
             value={toTime}
             onChange={onChange}
             InputLabelProps={{

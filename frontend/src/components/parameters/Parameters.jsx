@@ -9,6 +9,7 @@ import Select from '@material-ui/core/Select';
 import Button from '@material-ui/core/Button';
 import {withStyles} from "@material-ui/core";
 import APILogsParameters from './APILogsParameters';
+import moment from 'moment';
 
 const styles = {
   parametersForm: {
@@ -49,21 +50,45 @@ class Parameters extends React.Component
     })
   }
 
+  toStringDate = (dateAsNumber) => {
+  return moment(dateAsNumber * 1000).format('YYYY-MM-DD HH:mm');
+}
+
+  toUnixDate = (date) => {
+    const parsedDate = moment(date);
+    return parsedDate.isValid() ? parsedDate.format('X') : ""
+  }
+
+  validateDate = (date) => {
+    if (!date) {
+      return false;
+    }
+
+    return moment(date).isValid();
+  }
 
   _handleSearch = () => {
+
     const {parameters: rawParameters} = this.state;
     const {onSearch} = this.props;
 
+    if (!this.validateDate(rawParameters.fromTime)) {
+      // TODO
+      return;
+    }
+
+    if (!this.validateDate(rawParameters.toTime)) {
+      // TODO
+      return;
+    }
+    
     const searchParameters =
       {
         ...rawParameters,
+        fromTime: this.toUnixDate(rawParameters.fromTime),
+        toTime: this.toUnixDate(rawParameters.toTime),
+        textFilter: rawParameters.textFilter ? {type: 'match', text: rawParameters.textFilter} : undefined
       };
-
-    const textFilter = searchParameters['textFilter'];
-    if (!!textFilter) {
-      searchParameters['textFilter'] = {type: 'match', text: textFilter}
-    }
-
 
     onSearch(searchParameters)
   }
@@ -93,7 +118,7 @@ class Parameters extends React.Component
                 <MenuItem value="">
                   <em>Select...</em>
                 </MenuItem>
-                <MenuItem value={'apiLogs'}>API Logs</MenuItem>
+                <MenuItem value={'apiLogFilter'}>API Logs</MenuItem>
                 <MenuItem value={'databaseChanges'}>Database changes</MenuItem>
                 <MenuItem value={'batchJobs'}>Batch jobs</MenuItem>
               </Select>
@@ -105,7 +130,7 @@ class Parameters extends React.Component
             </Button>
           </Grid>
         <Grid item xs={12}>
-          { parameters.type === 'apiLogs' && <APILogsParameters {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
+          { parameters.type === 'apiLogFilter' && <APILogsParameters {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
         </Grid>
       </Grid>
       <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>
