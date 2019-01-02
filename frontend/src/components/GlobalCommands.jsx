@@ -45,16 +45,16 @@ export default class GlobalCommands extends React.Component {
     })
   }
 
-  _setConfig = (config, initialParams = null) => {
+  _setConfig = (config, initialParameters = null) => {
     this.setState({
       config,
-      initialParams
+      initialParameters
     })
   }
 
   render() {
     const { children } = this.props;
-    const { items, config, initalParameters } = this.state;
+    const { items, config, initialParameters } = this.state;
 
     const context = {
       items,
@@ -63,7 +63,7 @@ export default class GlobalCommands extends React.Component {
       updateURL: updateURL,
       getSearchParams: getSearchParams,
       setConfig: this._setConfig,
-      getInitialParameters: () => initalParameters,
+      getInitialParameters: () => initialParameters,
       config
     }
 

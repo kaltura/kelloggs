@@ -12,7 +12,6 @@
     "moment": "^2.23.0",
     "prop-types": "latest",
     "react": "latest",
-    "react-datepicker": "^2.0.0",
     "react-dom": "latest",
     "react-scripts": "latest",
     "react-virtualized": "^9.21.0",

@@ -10,6 +10,8 @@ import Button from '@material-ui/core/Button';
 import {withStyles} from "@material-ui/core";
 import APILogsParameters from './APILogsParameters';
 import moment from 'moment';
+import {compose} from "recompose";
+import {withGlobalCommands} from "../GlobalCommands";
 
 const styles = {
   parametersForm: {
@@ -18,6 +20,33 @@ const styles = {
   fields: {
   }
 }
+
+
+const toStringDate = (value) => {
+  var dateRegex = /^\d+$/;
+  if (dateRegex.test(value)) {
+    return moment(value * 1000).format(displayDateFromat);
+  } else if (moment.isMoment(value)) {
+    return value.format(displayDateFromat);
+  }
+  return moment(value).format(displayDateFromat);
+}
+
+const toUnixDate = (date) => {
+  const parsedDate = moment(date);
+  return parsedDate.isValid() ? parsedDate.format('X') : ""
+}
+
+const defaultParameters = {
+  type: "",
+  textFilter: "",
+  fromTime:moment().add(-1, 'days').startOf('day'),
+  toTime: moment().add(-1, 'days').endOf('day'),
+  server: "",
+  session: ""
+}
+
+const displayDateFromat = 'YYYY-MM-DD HH:mm';
 
 class Parameters extends React.Component
 {
@@ -28,14 +57,28 @@ class Parameters extends React.Component
   }
 
   state = {
-    parameters: {
-      type: "",
-      textFilter: "",
-      fromTime: moment().add(-1, 'days').startOf('day').format('YYYY-MM-DD HH:mm'),
-      toTime: moment().add(-1, 'days').endOf('day').format('YYYY-MM-DD HH:mm'),
-      server: "",
-      session: ""
-    }
+    parameters: null
+  }
+
+  componentDidMount() {
+    const {globalCommands} = this.props;
+
+    const initialParameters = {
+      ...defaultParameters,
+      ...(globalCommands.getInitialParameters() || {})
+    };
+
+    initialParameters.fromTime = initialParameters.fromTime ? toStringDate(initialParameters.fromTime) : "";
+    initialParameters.toTime = initialParameters.toTime ? toStringDate(initialParameters.toTime) : "";
+
+    this.setState({
+        parameters: initialParameters
+      }, () => {
+        if (this.state.parameters.type) {
+          this._handleSearch();
+        }
+      }
+    );
   }
 
   _handleChange = (e) => {
@@ -52,14 +95,6 @@ class Parameters extends React.Component
     })
   }
 
-  toStringDate = (dateAsNumber) => {
-  return moment(dateAsNumber * 1000).format('YYYY-MM-DD HH:mm');
-}
-
-  toUnixDate = (date) => {
-    const parsedDate = moment(date);
-    return parsedDate.isValid() ? parsedDate.format('X') : ""
-  }
 
   validateDate = (date) => {
     if (!date) {
@@ -87,8 +122,8 @@ class Parameters extends React.Component
     const searchParameters =
       {
         ...rawParameters,
-        fromTime: this.toUnixDate(rawParameters.fromTime),
-        toTime: this.toUnixDate(rawParameters.toTime),
+        fromTime: toUnixDate(rawParameters.fromTime),
+        toTime: toUnixDate(rawParameters.toTime),
         textFilter: rawParameters.textFilter ? {type: 'match', text: rawParameters.textFilter} : undefined
       };
 
@@ -99,6 +134,9 @@ class Parameters extends React.Component
     const { parameters } = this.state;
     const { classes, onSearch } = this.props;
 
+    if (!parameters) {
+      return null;
+    }
     return (
       <div style={{width: '100%', height: '100%'}}>
       <Grid  container spacing={16} alignItems={'flex-end'}>
@@ -141,4 +179,7 @@ class Parameters extends React.Component
   }
 }
 
-export default withStyles(styles)(Parameters);
+export default compose(
+  withStyles(styles),
+  withGlobalCommands
+)(Parameters);

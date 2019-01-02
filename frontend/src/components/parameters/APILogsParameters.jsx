@@ -54,7 +54,7 @@ export default class APILogsParameters extends React.Component {
                        label="To Time"
                        value={toTime}
                        onChange={onChange}
-                       helperText={!isFromTimeValid && "Date is missing or invalid"}
+                       helperText={!isToTimeValid && "Date is missing or invalid"}
                        onBlur={() => this._validateDate('toTime', 'isToTimeValid')}
                        InputLabelProps={{
                          shrink: true,
