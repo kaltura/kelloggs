@@ -8,6 +8,55 @@ import CheckCircleIcon from "@material-ui/core/SvgIcon/SvgIcon";
 import IconButton from "@material-ui/core/IconButton/IconButton";
 import CloseIcon from '@material-ui/icons/Close';
 import { getCurrentUrl, getQueryString, copyToClipboardEnabled, copyToClipboard, replaceUrlQueryParameters } from '../utils';
+import Dialog from '@material-ui/core/Dialog';
+import MuiDialogTitle from '@material-ui/core/DialogTitle';
+import MuiDialogContent from '@material-ui/core/DialogContent';
+import MuiDialogActions from '@material-ui/core/DialogActions';
+import Typography from '@material-ui/core/Typography';
+import Button from '@material-ui/core/Button';
+
+
+const DialogTitle = withStyles(theme => ({
+  root: {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    margin: 0,
+    padding: theme.spacing.unit * 2,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: theme.spacing.unit,
+    top: theme.spacing.unit,
+    color: theme.palette.grey[500],
+  },
+}))(props => {
+  const { children, classes, onClose } = props;
+  return (
+    <MuiDialogTitle disableTypography className={classes.root}>
+      <Typography variant="h6">{children}</Typography>
+      {onClose ? (
+        <IconButton aria-label="Close" className={classes.closeButton} onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
+      ) : null}
+    </MuiDialogTitle>
+  );
+});
+
+const DialogContent = withStyles(theme => ({
+  root: {
+    margin: 0,
+    padding: theme.spacing.unit * 2,
+  },
+}))(MuiDialogContent);
+
+const DialogActions = withStyles(theme => ({
+  root: {
+    borderTop: `1px solid ${theme.palette.divider}`,
+    margin: 0,
+    padding: theme.spacing.unit,
+  },
+}))(MuiDialogActions);
+
 
 const SnackbarContentStyles = {
   root: { padding: '0 4px'},
@@ -63,12 +112,19 @@ export default class GlobalCommands extends React.Component {
 
   state = {
     items: [],
-    showCopiedToClipboard: false
+    showCopiedToClipboard: false,
+    viewerCommand: null,
   }
 
   updateItems = (items) => {
     this.setState({
       items
+    })
+  }
+
+  _handleViewerClose = () => {
+    this.setState({
+      viewerCommand: null
     })
   }
 
@@ -105,6 +161,32 @@ export default class GlobalCommands extends React.Component {
       showCopiedToClipboard: result
     });
   }
+
+  _handleCommand = (command) => {
+
+
+    // TODO implement various types
+    switch(command.action) {
+      case "copyToClipboard":
+        this._copyToClipboard(command.data);
+        break;
+      case "search":
+        break;
+      case "download":
+      case "link":
+        window.open(command.data, '_blank');
+        break;
+      case "tooltip":
+          this.setState({
+            viewerCommand: command
+          });
+        break;
+      default:
+        break;
+    }
+  };
+
+
   render() {
     const { children } = this.props;
     const { items, config, initialParameters, showCopiedToClipboard } = this.state;
@@ -119,6 +201,7 @@ export default class GlobalCommands extends React.Component {
       copyToClipboard: this._copyToClipboard,
       getInitialParameters: () => initialParameters,
       config,
+      handleCommand: this._handleCommand,
       getCurrentUrl
     }
 
@@ -139,6 +222,25 @@ export default class GlobalCommands extends React.Component {
             message="Copied to clipbard"
           />
         </Snackbar>
+        <Dialog
+
+          onClose={this._handleViewerClose}
+          open={this.state.viewerCommand}
+        >
+          <DialogTitle id="customized-dialog-title" onClose={this._handleViewerClose}>
+            { this.state.viewerCommand && this.state.viewerCommand.label}
+          </DialogTitle>
+          <DialogContent>
+            <textarea style={{width: '400px', height: '400px'}} readonly>
+              {this.state.viewerCommand && this.state.viewerCommand.data}
+            </textarea>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this._copyToClipboard(this.state.viewerCommand.data)} color="primary">
+              Copy to clipboard
+            </Button>
+          </DialogActions>
+        </Dialog>
       </GlobalCommandsContext.Provider>
     )
   }

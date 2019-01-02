@@ -4,6 +4,8 @@ import MenuItem from '@material-ui/core/MenuItem';
 import ToolTip from '@material-ui/core/Tooltip'
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
+import {compose} from "recompose";
+import {withGlobalCommands} from "../GlobalCommands";
 
 const styles = theme => ({
 
@@ -36,14 +38,9 @@ class RichTextView extends React.PureComponent {
 
     clickCommand(cmd) {
         this.handleClose()
-        switch(cmd.action) {
-            case "link": {
-                window.open(cmd.data);
-                return;
-            }
-        }
-        alert (cmd.data);
+        this.props.globalCommands.handleCommand(cmd);
     }
+
     render() {
         const { anchorEl } = this.state;
         const { classes } = this.props;
@@ -96,4 +93,9 @@ RichTextView.propTypes = {
     classes: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(RichTextView);
+export default compose(
+  withStyles(styles),
+  withGlobalCommands
+)(RichTextView);
+
+

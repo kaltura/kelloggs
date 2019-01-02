@@ -29,27 +29,20 @@ class MainMenu extends React.Component {
   };
 
   _copySearchLink = () => {
-    this._handleCommand({
+    this._handleMenuCommand({
       action: 'copyToClipboard',
       data: this.props.globalCommands.getCurrentUrl()
     })
   }
 
-  _handleCommand = (command) => {
+  _handleCloseMenu = () => {
     this.setState({ anchorEl: null });
+  }
 
-    // TODO implement various types
-    switch(command.action) {
-      case "copyToClipboard":
-        this.props.globalCommands.copyToClipboard(command.data);
-
-        break;
-      default:
-        break;
-    }
+  _handleMenuCommand = (command) => {
+    this.setState({ anchorEl: null });
+    this.props.globalCommands.handleCommand(command);
   };
-
-
 
   render() {
     const { anchorEl } = this.state;
@@ -74,7 +67,7 @@ class MainMenu extends React.Component {
           id="long-menu"
           anchorEl={anchorEl}
           open={open}
-          onClose={this.handleClose}
+          onClose={this._handleCloseMenu}
           PaperProps={{
             style: {
               maxHeight: ITEM_HEIGHT * 4.5,
@@ -86,7 +79,7 @@ class MainMenu extends React.Component {
               Copy Search Link
           </MenuItem>
           {commands.map((command, index) => (
-            <MenuItem key={index} onClick={() => this._handleCommand(command)}>
+            <MenuItem key={index} onClick={() => this._handleMenuCommand(command)}>
               {command.label}
             </MenuItem>
           ))}
