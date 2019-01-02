@@ -109,7 +109,7 @@ export function updateUrlQueryParams(queryParams) {
   if (window.history.pushState) {
     const queryParamsToken = buildQuerystring(queryParams);
     var url =  `${getCurrentUrlWithoutQuerystring()}?${queryParamsToken}`;
-    window.history.pushState({path:url},'',url);
+    window.history.pushState({},'',url);
   }
 }
 

@@ -12,6 +12,8 @@ import APILogsParameters from './APILogsParameters';
 import moment from 'moment';
 import {compose} from "recompose";
 import {withGlobalCommands} from "../GlobalCommands";
+import isEqual from 'lodash.isequal';
+
 
 const styles = {
   parametersForm: {
@@ -57,7 +59,8 @@ class Parameters extends React.Component
   }
 
   state = {
-    parameters: null
+    parameters: null,
+    prevSearchParams: null
   }
 
   _fixSearchParams = (parameters) => {
@@ -72,21 +75,35 @@ class Parameters extends React.Component
     return result;
   }
 
-  _updateSearchParams = (parameters) => {
+  // TODO unify with handleSearch
+  _updateSearchParams = (parameters, updateUrl) => {
     this.setState({
       parameters : this._fixSearchParams(parameters)
     }, () => {
-      this._handleSearch(true);
+      this._handleSearch(updateUrl);
     });
   }
 
   componentWillUnmount() {
     this.props.globalCommands.removeOnSearchParamsChanged();
+    window.onpopstate = null;
+  }
+
+  onPopState = (e) => {
+    const { searchParams: urlQueryParams } = this.props.globalCommands.extractQueryString();
+    const compareTo = this._fixSearchParams(urlQueryParams);
+    const { parameters }  = this.state;
+    if (!isEqual(parameters, compareTo))
+    {
+      this._updateSearchParams(urlQueryParams, false);
+    }
   }
   componentDidMount() {
     const {globalCommands} = this.props;
 
-    globalCommands.addOnSearchParamsChanged(this._updateSearchParams)
+    window.onpopstate = this.onPopState;
+
+    globalCommands.addOnSearchParamsChanged((parameters) => this._updateSearchParams(parameters, true));
 
     const initialParameters = this._fixSearchParams(globalCommands.getInitialParameters());
     this.setState({

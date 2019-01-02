@@ -53,10 +53,8 @@ class App extends React.Component {
       return;
     }
 
-    const initialParams = globalCommands.getQueryString();
-    delete initialParams['jwt']; // just in case someone passed a different jwt
-    delete initialParams['serviceUrl']; // just in case someone passed a different jwt
-    delete initialParams['hostUrl']; // just in case someone passed a different jwt
+    const { searchParams } = globalCommands.extractQueryString;
+
     globalCommands.setConfig({
       jwt: config.jwt,
       hostUrl: config.hostUrl,
@@ -73,24 +71,10 @@ class App extends React.Component {
     window.removeEventListener('message', this._handleSetup);
   }
 
-  _getQueryString() {
-    const { globalCommands } = this.props;
-    const initialParams = globalCommands.getQueryString();
-    const jwt = initialParams['jwt'];
-    const serviceUrl = initialParams['serviceUrl'];
-    delete initialParams['serviceUrl'];
-    delete initialParams['jwt'];
-
-    return {
-      jwt,
-      serviceUrl,
-      initialParams,
-    }
-  }
 
   componentDidMount() {
     const { globalCommands } = this.props;
-    const searchParams = this._getQueryString();
+    const searchParams = globalCommands.extractQueryString();
     if (searchParams.jwt) {
       const location = window.location;
       const currentUrl = window.location.protocol + '//' + location.host + location.pathname;
@@ -99,8 +83,8 @@ class App extends React.Component {
         isHosted: false,
         jwt: searchParams.jwt,
         hostUrl: currentUrl,
-        serviceUrl: searchParams.serviceUrl
-      }, searchParams.initialParams);
+        serviceUrl: searchParams.serviceUrl || '/api'
+      }, searchParams.searchParams);
 
       this.setState({
         isReady: true

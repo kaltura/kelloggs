@@ -223,6 +223,23 @@ export default class GlobalCommands extends React.Component {
     })
   }
 
+  _extractQueryString = () => {
+    const searchParams = getQueryString();
+    const jwt = searchParams['jwt'];
+    const hostUrl = searchParams['hostUrl'];
+    const serviceUrl = searchParams['serviceUrl'];
+    delete searchParams['serviceUrl'];
+    delete searchParams['jwt'];
+    delete searchParams['hostUrl'];
+
+    return {
+      jwt,
+      hostUrl,
+      serviceUrl,
+      searchParams,
+    }
+  }
+
   render() {
     const { children } = this.props;
     const { items, config, initialParameters, showCopiedToClipboard } = this.state;
@@ -232,7 +249,7 @@ export default class GlobalCommands extends React.Component {
       updateItems: this.updateItems,
       clearItems: () => this.updateItems([]),
       updateURL: this._updateURL,
-      getQueryString: getQueryString,
+      extractQueryString: this._extractQueryString,
       setConfig: this._setConfig,
       copyToClipboard: this._copyToClipboard,
       getInitialParameters: () => initialParameters,
