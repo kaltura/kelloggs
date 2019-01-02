@@ -14,7 +14,7 @@ const defaultColumnsProperties  ={
     timestamp: {
         width: 150
     },
-    executionTime: {
+    took: {
         width: 60
     },
     function: {
@@ -99,6 +99,8 @@ export default  class ResultsData {
         for(let option in options) {
             this.histogram.values[option]=[];
         }
+
+        console.warn("setSchema: ",this.schema);
 
     }
 

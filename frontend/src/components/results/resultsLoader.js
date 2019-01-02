@@ -49,9 +49,10 @@ export default class ResultsLoader {
           body: JSON.stringify({
             filter: params,
             responseFormat: 'json'
-          }),
+          })
 
         });
+        console.warn("got response from ",url," " ,params);
         const body = response.body;
         this.reader = body.getReader();
         let decoder= new TextDecoder("utf-8");
