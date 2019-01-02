@@ -3,11 +3,32 @@ import hoistNonReactStatics from 'hoist-non-react-statics';
 
 const GlobalCommandsContext = React.createContext({});
 
+function setParams({ query = ""}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("query", query);
+  return searchParams.toString();
+}
+
+const updateURL = (queryParams) => {
+  debugger;
+  const url = setParams(queryParams);
+  window.history.push(`?${url}`);
+};
+
+const getSearchParams = () => {
+  const searchParams = new URLSearchParams(window.location.search);
+  return {
+    query: searchParams.get('query') || '',
+  };
+}
+
+
 export default class GlobalCommands extends React.Component {
 
   state = {
     items: [],
   }
+
 
   updateItems = (items) => {
     this.setState({
@@ -23,7 +44,9 @@ export default class GlobalCommands extends React.Component {
     const context = {
       items,
       updateItems: this.updateItems,
-      clearItems: () => this.updateItems([])
+      clearItems: () => this.updateItems([]),
+      updateURL: updateURL,
+      getSearchParams: getSearchParams
     }
 
     return (

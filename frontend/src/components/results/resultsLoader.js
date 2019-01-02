@@ -34,10 +34,16 @@ export default class ResultsLoader {
         });
     }
 
-    async loadUrl(url, params) {
-        console.warn(url);
-        let response = await fetch(url)
-        const body = response.body
+    _buildUrl(serviceUrl, ks, params) {
+        return serviceUrl;
+    }
+
+    async loadUrl(serviceUrl, ks, params) {
+
+        const url = this._buildUrl(serviceUrl, ks, params);
+
+        let response = await fetch(url);
+        const body = response.body;
         this.reader = body.getReader();
         let decoder= new TextDecoder("utf-8");
         let currentLine="";

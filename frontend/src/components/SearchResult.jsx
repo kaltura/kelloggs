@@ -56,13 +56,10 @@ class SearchResult extends React.Component {
   }
 
   componentDidMount() {
-    const parameters = {
-
-    };
-
+    const { parameters, ks, serviceUrl } = this.props;
     // TODO get url from queryparams
     //this._loader.loadUrl("http://lbd.kaltura.com/chunked.php",parameters);
-    this._loader.loadUrl("https://kelloggs.kaltura.com/api/", parameters);
+    this._loader.loadUrl(serviceUrl, ks, parameters);
 
     let resultsData= null;
     this._cancelToken = setInterval ( ()=> {
@@ -119,6 +116,9 @@ class SearchResult extends React.Component {
 
 SearchResult.propTypes = {
   classes: PropTypes.object.isRequired,
+  parameters: PropTypes.object.isRequired,
+  serviceUrl: PropTypes.string.isRequired,
+  ks: PropTypes.string.isRequired,
 };
 
 

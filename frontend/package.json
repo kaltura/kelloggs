@@ -18,8 +18,12 @@
     "recompose": "^0.30.0",
     "shortid": "^2.2.14"
   },
+  "devDependencies": {
+    "webserver": "^3.1.16"
+  },
   "scripts": {
     "start": "HTTPS=true react-scripts start",
+    "serve": "ws --spa index.html --https",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"

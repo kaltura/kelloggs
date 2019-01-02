@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kelloggs test page!</title>
+    <style type="text/css">
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            overflow:hidden;
+        }
+    </style>
+</head>
+<body>
+
+<iframe id="iframe" src="#"></iframe>
+
+<script>
+  var initialized = false;
+  (function(window) {
+
+    if (initialized) {
+      return;
+    }
+
+    initialized = true;
+
+    var appConfig = {
+      'type': 'config',
+      'config': {
+        'serviceUrl': 'https://kelloggs.kaltura.com/api/',
+        'ks': 'dkjs;lk',
+      }
+    };
+
+    if (!appConfig.config.ks || !appConfig.config.serviceUrl) {
+      alert("Cannot initialize test page, missing configuration. Please modify file index.html to include ks and service url");
+      return;
+    }
+
+    window.document.getElementById('iframe').src = 'https://localhost:3000/';
+
+    window.addEventListener('message', function(e) {
+      var postMessageData;
+      try {
+        postMessageData = e.data;
+      }
+      catch(ex) {
+        return;
+      }
+
+      if(postMessageData.type === 'request-config') {
+        e.source.postMessage(appConfig, e.origin);
+      }
+    });
+  })(window);
+</script>
+</body>
+</html>
+
+<!--
+{ "url":"","isNewTab":false,"layout":{ "height":32,"x":267,"y":38,"width":128 }, styles: {  "border-radius": 3,
+"background-color": "rgba(0, 0, 0, 0.6)" } }
+
+-->

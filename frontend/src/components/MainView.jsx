@@ -9,11 +9,8 @@ import Button from '@material-ui/core/Button';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import MainMenu from './MainMenu';
-// import Modal from '@material-ui/core/Modal';
-// import CircularProgress from '@material-ui/core/CircularProgress';
 import Parameters from './parameters/Parameters';
 import SearchResult from "./SearchResult";
-import GlobalCommands from "./GlobalCommands";
 
 const drawerHeight = 200;
 const drawerPaddingTop = 24;
@@ -41,7 +38,7 @@ const styles = {
     boxShadow: '0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12)',
     color: 'rgba(0, 0, 0, 0.87)',
     padding: `12px ${drawerPaddingTop}px`,
-    transition: 'all 700ms'
+    // transition: 'all 700ms'
   },
   parametersShift: {
     transform: `translateY(-${drawerHeight + drawerPaddingTop}px)`
@@ -78,6 +75,9 @@ const styles = {
     '& > .marginTop' : {
       marginTop: '10px'
     }
+  },
+  alignCenter: {
+    textAlign: 'center'
   }
 };
 
@@ -87,11 +87,7 @@ class MainView extends React.Component {
   state = {
     expanded: true,
     canCollapse: false,
-    parameters: null
-  }
-
-  componentDidMount() {
-
+    parameters: null,
   }
 
   _toggleOpen = () => {
@@ -120,12 +116,11 @@ class MainView extends React.Component {
   }
 
   render() {
-    const { classes } = this.props;
-    const { expanded, canCollapse, parameters } = this.state;
+    const {classes} = this.props;
+    const {expanded, canCollapse, parameters} = this.state;
 
     return (
       <div className={classes.root}>
-        <GlobalCommands>
         <AppBar position="relative" classes={{root: classes.appBar}}>
           <Toolbar>
             <Typography variant="h6" color="inherit" className={classes.grow}>
@@ -137,7 +132,7 @@ class MainView extends React.Component {
         <div className={classnames(classes.parameters, !expanded && classes.parametersShift)}>
           <Parameters onSearch={this._handleSearch}></Parameters>
         </div>
-        <div className={classnames(classes.content, expanded && classes.contentShift)} >
+        <div className={classnames(classes.content, expanded && classes.contentShift)}>
           {canCollapse && <Button onClick={this._toggleOpen} className={classes.toggler}>
             {expanded ? (
                 <React.Fragment>
@@ -156,19 +151,11 @@ class MainView extends React.Component {
           </Button>
           }
           <div className={classes.result}>
-            { parameters && <SearchResult onClose={this._abortSearch}/> }
+            {parameters &&
+            <SearchResult  parameters={parameters} onClose={this._abortSearch}/>}
           </div>
         </div>
-        {/*<Modal open={isSearching}>*/}
-        {/*<div className={classes.loadingModal}>*/}
-        {/*<Typography variant={'caption'}>Processing...</Typography>*/}
-        {/*<CircularProgress className={'marginTop'}/>*/}
-        {/*<Button onClick={this._abortSearch} variant={'text'} className={'marginTop'}>Abort</Button>*/}
-        {/*</div>*/}
-        {/*</Modal>*/}
-        </GlobalCommands>
       </div>
-
     )
   }
 }
