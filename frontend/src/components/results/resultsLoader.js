@@ -35,12 +35,16 @@ export default class ResultsLoader {
     }
 
     _buildUrl(serviceUrl, jwt, params) {
-        return serviceUrl;
+        const prefix = 'filter:';
+      var queryString = Object.keys(params).map((key) => {
+        return `filter:${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
+      }).join('&');
+      return `${serviceUrl}?responseFormat=json&jwt=${jwt}${ queryString && `&${queryString}`}`;
     }
 
     async loadUrl(serviceUrl, jwt, params) {
-
         const url = this._buildUrl(serviceUrl, jwt, params);
+      debugger;
 
         let response = await fetch(url);
         const body = response.body;

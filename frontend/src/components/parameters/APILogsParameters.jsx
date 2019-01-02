@@ -5,7 +5,7 @@ import Paper from "@material-ui/core/Paper/Paper";
 
 
 export default function APILogsParameters(props) {
-  const { textCriteria, session, server, fromDate, toDate, onChange, className: classNameProp } = props;
+  const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp } = props;
 
 
   return (
@@ -13,10 +13,10 @@ export default function APILogsParameters(props) {
       <Grid container spacing={16} >
         <Grid item xs={4}>
           <TextField fullWidth
-                     name="fromDate"
+                     name="fromTime"
                      label="From Date"
                      type="date"
-                     value={fromDate}
+                     value={fromTime}
                      onChange={onChange}
                      InputLabelProps={{
                        shrink: true,
@@ -26,10 +26,10 @@ export default function APILogsParameters(props) {
         <Grid item xs={4}>
           <TextField
             fullWidth
-            name="toDate"
+            name="toTime"
             label="To Date"
             type="date"
-            value={toDate}
+            value={toTime}
             onChange={onChange}
             InputLabelProps={{
               shrink: true,
@@ -40,9 +40,8 @@ export default function APILogsParameters(props) {
           <TextField
             fullWidth
             label="Serach Criteria"
-            id="text-search"
-            name={'textCriteria'}
-            value={textCriteria}
+            name={'textFilter'}
+            value={textFilter}
             onChange={onChange}
           />
         </Grid>

@@ -26,10 +26,10 @@ class Parameters extends React.Component
 
   state = {
     parameters: {
-      searchType: "",
+      type: "",
       textCriteria: "",
-      fromDate: "",
-      toDate: "",
+      fromTime: "",
+      toTime: "",
       server: "",
       session: ""
     }
@@ -50,6 +50,24 @@ class Parameters extends React.Component
   }
 
 
+  _handleSearch = () => {
+    const {parameters: rawParameters} = this.state;
+    const {onSearch} = this.props;
+
+    const searchParameters =
+      {
+        ...rawParameters,
+      };
+
+    const textFilter = searchParameters['textFilter'];
+    if (!!textFilter) {
+      searchParameters['textFilter'] = {type: 'match', text: textFilter}
+    }
+
+
+    onSearch(searchParameters)
+  }
+
   render() {
     const { parameters } = this.state;
     const { classes, onSearch } = this.props;
@@ -66,11 +84,11 @@ class Parameters extends React.Component
                 Select search type
               </InputLabel>
               <Select
-                value={parameters.searchType}
+                value={parameters.type}
                 onChange={this._handleChange}
                 input={<Input name="type" id="type-input" />}
                 displayEmpty
-                name="searchType"
+                name="type"
               >
                 <MenuItem value="">
                   <em>Select...</em>
@@ -82,12 +100,12 @@ class Parameters extends React.Component
             </FormControl>
           </Grid>
           <Grid item xs={4}>
-            <Button disabled={!parameters.searchType} variant="contained" style={{float: 'right'}} onClick={() => onSearch(parameters)}>
-              Run
+            <Button disabled={!parameters.type} variant="contained" style={{float: 'right'}} onClick={this._handleSearch}>
+              Search
             </Button>
           </Grid>
         <Grid item xs={12}>
-          { parameters.searchType === 'apiLogs' && <APILogsParameters {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
+          { parameters.type === 'apiLogs' && <APILogsParameters {...this.state.parameters} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
         </Grid>
       </Grid>
       <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>
