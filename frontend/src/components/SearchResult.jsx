@@ -87,7 +87,7 @@ class SearchResult extends React.Component {
         clearInterval(this._cancelToken);
       }
 
-      // TODO notify loader that it should abort request
+    this._loader.cancelLoading();
   }
 
   render() {

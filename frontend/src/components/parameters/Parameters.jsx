@@ -31,8 +31,8 @@ class Parameters extends React.Component
     parameters: {
       type: "",
       textFilter: "",
-      fromTime: "",
-      toTime: "",
+      fromTime: moment().add(-1, 'days').startOf('day').format('YYYY-MM-DD HH:mm'),
+      toTime: moment().add(-1, 'days').endOf('day').format('YYYY-MM-DD HH:mm'),
       server: "",
       session: ""
     }
