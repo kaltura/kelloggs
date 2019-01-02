@@ -42,7 +42,7 @@ class MainMenu extends React.Component {
   render() {
     const { classes, globalCommands } = this.props;
     const commands = [
-      { action: 'copyToClipboard', label: 'ss', data: this.props.globalCommands.getCurrentUrl()},
+      { action: 'copyToClipboard', label: 'Copy search link', data: this.props.globalCommands.getCurrentUrl()},
       ...globalCommands.items
     ]
 

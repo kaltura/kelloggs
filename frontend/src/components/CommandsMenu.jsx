@@ -35,20 +35,24 @@ class CommandsMenu extends React.Component {
 
   render() {
     const { anchorEl } = this.state;
-    const { classes, commands, className : classNameProp } = this.props;
+    const { classes, commands, className : classNameProp, buttonRender } = this.props;
     const open = Boolean(anchorEl);
     const hasCommands = commands && commands.length;
+
     return hasCommands ?
       (<div className={classNameProp}>
-        <IconButton
-          classes={{root: classes.root}}
-          aria-label="More"
-          aria-owns={open ? 'long-menu' : undefined}
-          aria-haspopup="true"
-          onClick={this.handleClick}
-        >
-          <MoreVertIcon/>
-        </IconButton>
+        { buttonRender ?
+          buttonRender() : (
+            <IconButton
+              classes={{root: classes.root}}
+              aria-label="More"
+              aria-owns={open ? 'long-menu' : undefined}
+              aria-haspopup="true"
+              onClick={this.handleClick}
+            >
+              <MoreVertIcon/>
+            </IconButton>
+          ) }
         <Menu
           id="long-menu"
           anchorEl={anchorEl}
@@ -61,9 +65,6 @@ class CommandsMenu extends React.Component {
             },
           }}
         >
-          <MenuItem onClick={this._copySearchLink}>
-            Copy Search Link
-          </MenuItem>
           {commands.map((command, index) => (
             <MenuItem key={index} onClick={() => this._handleMenuCommand(command)}>
               {command.label}
@@ -72,7 +73,7 @@ class CommandsMenu extends React.Component {
         </Menu>
       </div>)
       : null
-    ;
+      ;
   }
 }
 
