@@ -123,7 +123,7 @@ export default class ResultsTable extends React.PureComponent {
         if (this.state.rowCount === 0 && index === 1) {
             return 30;
         }
-        return this.results.items[index - 1].lines * 13 + 4;
+        return this.results.items[index - 1].lines * 12 + 4;
     }
 
     _cellRenderer({columnIndex, key, rowIndex, style}) {
