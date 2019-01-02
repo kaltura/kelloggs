@@ -64,7 +64,7 @@ export default class APILogsParameters extends React.Component {
           <Grid item xs={4}>
             <TextField
               fullWidth
-              label="Serach Criteria"
+              label="Search Criteria"
               name={'textFilter'}
               value={textFilter.text}
               onChange={(e) => onTextFilterChange(e.target.value)}
