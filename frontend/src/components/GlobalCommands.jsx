@@ -274,7 +274,7 @@ export default class GlobalCommands extends React.Component {
         >
           <CustomSnackbarContent
             onClose={() => this.setState({ showCopiedToClipboard: false})}
-            message="Copied to clipbard"
+            message="Copied to clipboard"
           />
         </Snackbar>
         <Dialog
