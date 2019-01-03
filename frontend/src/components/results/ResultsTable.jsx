@@ -95,6 +95,7 @@ export default class ResultsTable extends React.PureComponent {
                     {({width, height}) => {
                         return <MultiGrid
                             style={styles.grid}
+                            styleBottomRightGrid={{ outline: 'none' }}
                             className="results-table"
                             headerClassName="results-header"
                             ref={this.table}
