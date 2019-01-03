@@ -5,7 +5,7 @@ const defaultColumnsProperties  ={
     severity: {
         width: 10,
         options: {
-            "error": "red",
+            "err": "red",
             "debug": "blue",
             "info": "green",
             "notice": "cyan"
