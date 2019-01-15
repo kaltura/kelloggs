@@ -1,87 +1,194 @@
 <?php
 
+require_once(dirname(__file__) . '/../lib/Utils.php');
+require_once(dirname(__file__) . '/../lib/PdoWrapper.php');
+require_once(dirname(__file__) . '/../lib/AccessLogParser.php');
+require_once(dirname(__file__) . '/../lib/Jwt.php');
+
+define('RESPONSE_FORMAT_RAW', 'raw');
+define('RESPONSE_FORMAT_DOWNLOAD', 'download');
+define('RESPONSE_FORMAT_JSON', 'json');
+define('BLOCK_DELIMITER', '--');
+
+define('ERROR_UNAUTHORIZED', 'UNAUTHORIZED');
+define('ERROR_BAD_REQUEST', 'BAD_REQUEST');
+define('ERROR_NO_RESULTS', 'NO_RESULTS');
+define('ERROR_INTERNAL_ERROR', 'INTERNAL_ERROR');
+
+define('COMMAND_COPY', 'copyToClipboard');
+define('COMMAND_LINK', 'link');
+define('COMMAND_TOOLTIP', 'tooltip');
+define('COMMAND_DOWNLOAD', 'download');
+define('COMMAND_SEARCH', 'search');
+define('COMMAND_SEARCH_NEW_TAB', 'searchNewTab');
+
 function enableStreamingOutput()
 {
 	header('Content-Encoding: UTF-8');
 	header('Charset: UTF-8');
 	header('X-Accel-Buffering: no');
+
 	ob_implicit_flush();
 	ob_end_flush();
 }
 
-header("Content-Type: text/plain");
-header('Access-Control-Allow-Origin: *');
-
-enableStreamingOutput();
-
-$pattern = '^\d{4}\-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [^ ]+ [^ ]+ \[(\d+)\]';
-$cmd = "/opt/server-native-utils/log_compressor/zblockgrep/zblockgrep -p '$pattern' -c '$1=50621942' -d-- /web/logs/investigate/2018/01/01/ny-front-api1-kaltura_api_v3.log-2018-01-01-00-20.gz:54659119-62568741";
-
-$descriptorspec = array(
-   1 => array("pipe", "w"),
-   2 => array("pipe", "w")
-);
-
-$process = proc_open($cmd, $descriptorspec, $pipes, realpath('./'), array());
-if (!is_resource($process))
-	die('failed to run process');
-
-$header = array(
-	'type' => 'searchResponse',
-	'columns' => array(
-		array('name' => 'timestamp', 'type' => 'timestamp', 'label' => 'timestamp'),
-		array('name' => 'executionTime', 'type' => 'float', 'levels' => array(5, 10)),
-		array('name' => 'function', 'type' => 'text', 'label' => 'function'),
-		array('name' => 'severity', 'type' => 'severity', 'label' => 'severity'),
-		array('name' => 'indent', 'type' => 'indent', 'label' => 'indent by event consumer level', 'column' => 'body'),
-		array('name' => 'body', 'type' => 'richText', 'label' => 'message'),
-	),
-	'commands' => array(
-		array('label' => 'copy grep command', 'action' => 'copyToClipboard', 'data' => 'zbingrepapi 1232 /web/logs/investigate/'),
-	),
-	'metadata' => array(
-		array('label' => 'server', 'value' => 'ny-front-api21'),
-		array('label' => 'session', 'value' => '1234'),
-		array('label' => 'client', 'children' => array(
-			array('label' => 'ip', 'value' => '1.2.3.4')
-		)),
-	),
-);
-echo json_encode($header) . "\n";
-
-$block = '';
-while ($s = fgets($pipes[1]))
+function dieError($code, $message)
 {
-	if ($s == "--\n")
+	$result = array(
+		'type' => 'error',
+		'code' => $code,
+		'message' => $message,
+	);
+	echo json_encode($result) . "\n";
+	die;
+}
+
+function getRequestParams()
+{
+	$scriptParts = explode('/', $_SERVER['SCRIPT_NAME']);
+	$pathParts = array();
+	if (isset($_SERVER['PHP_SELF']))
 	{
-		$line = array(
-			'timestamp' => strtotime("$date $time"),
-			'executionTime' => floatval($took),
-			'function' => $func,
-			'severity' => $severity,
-			'indent' => 0,
-			'body' => array(array('text' => rtrim($block))),
-		);
-		echo json_encode($line) . "\n";
-		$block = '';
+		$pathParts = explode('/', $_SERVER['PHP_SELF']);
 	}
-	else
+	$pathParts = array_diff($pathParts, $scriptParts);
+
+	$params = array();
+	reset($pathParts);
+	while (current($pathParts))
 	{
-		if (!$block)
+		$key = each($pathParts);
+		$value = each($pathParts);
+		if (!array_key_exists($key['value'], $params))
 		{
-			$splittedLine = explode(' ', $s, 9);
-			list($date, $time, $took, $ip, $session, $context, $func, $severity, $block) = $splittedLine;
-			$took = substr($took, 1, -1);
-			$ip = substr($ip, 1, -1);
-			$session = substr($session, 1, -1);
-			$context = substr($context, 1, -1);
-			$func = substr($func, 1, -1);
-			$severity = strtolower(substr($severity, 0, -1));
+			$params[$key['value']] = $value['value'];
+		}
+	}
+
+	$post = null;
+	if (isset($_SERVER['CONTENT_TYPE']))
+	{
+		if (strtolower($_SERVER['CONTENT_TYPE']) == 'application/json')
+		{
+			$requestBody = file_get_contents('php://input');
+			if (startsWith($requestBody, '{') && endsWith($requestBody, '}'))
+			{
+				$post = json_decode($requestBody, true);
+			}
+		}
+		else if (strpos(strtolower($_SERVER['CONTENT_TYPE']), 'multipart/form-data') === 0 && isset($_POST['json']))
+		{
+			$post = json_decode($_POST['json'], true);
+		}
+	}
+
+	if (!$post)
+	{
+		$post = $_POST;
+	}
+
+	$params = array_replace_recursive($post, $_FILES, $_GET, $params);
+	return $params;
+}
+
+function setElementByPath(&$array, $path, $value)
+{
+	$tmpArray = &$array;
+	while(($key = array_shift($path)) !== null)
+	{
+		if ($key == '-' && count($path) == 0)
+		{
+			break;
+		}
+		
+		if (!isset($tmpArray[$key]) || !is_array($tmpArray[$key]))
+		{
+			$tmpArray[$key] = array();
+		}
+			
+		if (count($path) == 0)
+		{
+			$tmpArray[$key] = $value;
 		}
 		else
 		{
-			$block .= $s;
+			$tmpArray = &$tmpArray[$key];
 		}
 	}
+	
+	$array = &$tmpArray;
 }
 
+function groupParams($params)
+{
+	$result = array();
+
+	foreach($params as $key => $value)
+	{
+		$path = explode(':', $key);
+		setElementByPath($result, $path, $value);
+	}
+	
+	return $result;
+}
+
+// response headers
+header('Content-Type: text/plain');
+header('Access-Control-Allow-Origin: *');
+
+if($_SERVER['REQUEST_METHOD'] == 'OPTIONS')
+{
+	header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Range, Cache-Control');
+	header('Access-Control-Allow-Methods: POST, GET, HEAD, OPTIONS');
+	header('Access-Control-Expose-Headers: Server, Content-Length, Content-Range, Date, X-Kaltura, X-Kaltura-Session, X-Me');
+	header('Access-Control-Max-Age: 86400');
+	exit;
+}
+
+// get request params and authenticate
+$params = getRequestParams();
+$params = groupParams($params);
+
+$conf = loadIniFiles(dirname(__file__) . '/../conf/kelloggs.ini');
+if (!isset($params['jwt']))
+{
+	dieError(ERROR_UNAUTHORIZED, 'Unauthorized');
+}
+
+$jwtPayload = jwtDecode($params['jwt'], $conf['JWT_KEY']);
+if (!$jwtPayload)
+{
+	dieError(ERROR_UNAUTHORIZED, 'Unauthorized');
+}
+
+// initialize
+enableStreamingOutput();
+
+ob_start();
+$kelloggsPdo = PdoWrapper::create($conf['kelloggsdb_read']);
+ob_end_clean();
+
+// validate input params
+$responseFormat = isset($params['responseFormat']) ? $params['responseFormat'] : RESPONSE_FORMAT_JSON;
+if (!in_array($responseFormat, array(RESPONSE_FORMAT_RAW, RESPONSE_FORMAT_DOWNLOAD, RESPONSE_FORMAT_JSON)))
+{
+	dieError(ERROR_BAD_REQUEST, 'Invalid responseFormat');
+}
+
+if (!isset($params['filter']))
+{
+	dieError(ERROR_BAD_REQUEST, 'Missing filter param');
+}
+
+$filter = $params['filter'];
+if (!isset($filter['type']) || $filter['type'] != 'apiLogFilter')
+{
+	dieError(ERROR_BAD_REQUEST, 'Invalid filter type');
+}
+
+// run query handler
+ini_set('max_execution_time', $conf['GREP_TIMEOUT']);
+$zblockgrep = "timeout {$conf['GREP_TIMEOUT']} {$conf['ZBLOCKGREP']}";
+
+require_once(dirname(__file__) . '/ApiLogFilter.php');
+ApiLogFilter::main($filter);
