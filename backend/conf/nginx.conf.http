@@ -41,7 +41,8 @@ server {
 	location /api/ {
 		gzip off;
 		fastcgi_buffering off;
-		fastcgi_param SCRIPT_FILENAME /opt/kelloggs/backend/api/index-v0.php;
+		fastcgi_param SCRIPT_FILENAME /opt/kelloggs/backend/api/index.php;
+		fastcgi_param SCRIPT_NAME     $fastcgi_script_name;
 		fastcgi_param REQUEST_URI     $request_uri;
 		fastcgi_param QUERY_STRING    $query_string;
 		fastcgi_param REQUEST_METHOD  $request_method;
@@ -55,6 +56,7 @@ server {
 		gzip off;
 		fastcgi_buffering off;
 		fastcgi_param SCRIPT_FILENAME /opt/kelloggs/backend/api/index.php;
+		fastcgi_param SCRIPT_NAME     $fastcgi_script_name;
 		fastcgi_param REQUEST_URI     $request_uri;
 		fastcgi_param QUERY_STRING    $query_string;
 		fastcgi_param REQUEST_METHOD  $request_method;
@@ -63,10 +65,4 @@ server {
 
 		fastcgi_pass unix:/run/php/php7.0-fpm.sock;
 	}
-
-
-#	location /fonts/ {
-#		root /opt/swiv/assets/;
-#		expires 10d;
-#	}
 }
