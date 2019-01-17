@@ -51,27 +51,15 @@ function char_count(str, letter)
 
 function getLineCount(body){
 
-    try{
-        if (Array.isArray(body)) {
-            return body.reduce((count, item) => {
-                try {
-                    let lines = char_count(item.text, '\n');
-                    return count + lines;
-                }catch
-                    (e)
-                    {
-                        console.warn("exception in item: ", item, " exception: ", e)
-                        return count;
-                    }
-                },1 );
-        } else {
-            let lines = char_count(body, '\n');
-            return  lines+1;
+    return body.reduce ( (count,item)=>{
+        try {
+            let lines = char_count(item.text, '\n');
+            return count + lines;
+        }catch(e) {
+            console.warn("exception in item: ",item, " exception: ",e)
+            return count;
         }
-    } catch(e) {
-        console.warn(e);
-        return 1;
-    }
+    },1);
 }
 
 export default  class ResultsData {
