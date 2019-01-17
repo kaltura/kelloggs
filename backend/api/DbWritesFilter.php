@@ -237,7 +237,7 @@ class DbWritesFilter extends BaseFilter
 		$this->grepCommand = "$zblockgrep -h -p '$pattern' -c '$captureConditions' $textFilter $fileRanges";
 	}
 
-	protected function getResponseHeader($multiSession)
+	protected function getResponseHeader()
 	{
 		global $conf, $params;
 

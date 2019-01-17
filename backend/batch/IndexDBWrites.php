@@ -2,6 +2,7 @@
 
 require_once(dirname(__file__) . '/../lib/PdoWrapper.php');
 require_once(dirname(__file__) . '/../lib/Stream.php');
+require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
 
 define('TIME_GRANULARITY', 60);
 
@@ -33,7 +34,7 @@ function buildIndex($inputPath, $primaryKeys)
 			continue;
 		}
 
-		array($tableName, $id, $timestamp, $comment, $statement) = $parseResult;
+		list($tableName, $id, $timestamp, $comment, $statement) = $parseResult;
 		$timestamp = intdiv($timestamp, TIME_GRANULARITY) * TIME_GRANULARITY;
 
 		$key = $tableName . '_' . $id;
