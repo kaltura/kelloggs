@@ -13,6 +13,7 @@ import moment from 'moment';
 import {compose} from "recompose";
 import {withGlobalCommands} from "../GlobalCommands";
 import isEqual from 'lodash.isequal';
+import DBLogsParameters from "./DBLogsParameters";
 
 
 const styles = {
@@ -45,14 +46,16 @@ const defaultParameters = {
   fromTime:moment().add(-1, 'days').startOf('day'),
   toTime: moment().add(-1, 'days').endOf('day'),
   server: "",
-  session: ""
+  session: "",
+  table: "",
+  objectId: ""
 }
 
 const displayDateFromat = 'YYYY-MM-DD HH:mm';
 
 class Parameters extends React.Component
 {
-  apiLogsRef = React.createRef();
+  parametersFormRef = React.createRef();
 
   static defaultProps = {
 
@@ -158,22 +161,22 @@ class Parameters extends React.Component
     const {onSearch, globalCommands } = this.props;
 
     let isValid = false;
-    if (rawParameters.type === 'apiLogFilter') {
-      if (this.apiLogsRef.current) {
-        isValid = this.apiLogsRef.current.validate();
-      }
+    if (this.parametersFormRef.current) {
+      isValid = this.parametersFormRef.current.validate();
     }
 
     if (!isValid) {
       return;
     }
 
-    const searchParameters =
+    let searchParameters =
       {
         ...rawParameters,
         fromTime: toUnixDate(rawParameters.fromTime),
         toTime: toUnixDate(rawParameters.toTime),
       };
+
+    searchParameters = this.parametersFormRef.current.filterParameters(searchParameters);
 
     const removeTextFilter = !rawParameters.textFilter || !rawParameters.textFilter.text;
     if (removeTextFilter) {
@@ -216,8 +219,8 @@ class Parameters extends React.Component
                   <em>Select...</em>
                 </MenuItem>
                 <MenuItem value={'apiLogFilter'}>API Logs</MenuItem>
-                <MenuItem value={'databaseChanges'}>Database changes</MenuItem>
-                <MenuItem value={'batchJobs'}>Batch jobs</MenuItem>
+                <MenuItem value={'dbWritesFilter'}>Database changes</MenuItem>
+                {/*<MenuItem value={'batchJobs'}>Batch jobs</MenuItem>*/}
               </Select>
             </FormControl>
           </Grid>
@@ -227,7 +230,8 @@ class Parameters extends React.Component
             </Button>
           </Grid>
         <Grid item xs={12}>
-          { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.apiLogsRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
+          { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
+          { parameters.type === 'dbWritesFilter' && <DBLogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></DBLogsParameters> }
         </Grid>
       </Grid>
       <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>
