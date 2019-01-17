@@ -61,7 +61,7 @@ function parseIniFileNested($file)
 		case 1:
 			$result[$sectionKey] = $section;
 			break;
-			
+
 		case 2:
 			$sectionKey = trim($explodedSectionKey[0]);
 			$baseSectionKey = trim($explodedSectionKey[1]);
@@ -71,12 +71,12 @@ function parseIniFileNested($file)
 			}
 			$result[$sectionKey] = array_merge($result[$baseSectionKey], $section);
 			break;
-			
+
 		default:
 			return false;
 		}
 	}
-	
+
 	return $result;
 }
 
@@ -89,7 +89,7 @@ function loadIniFiles($iniPaths, $basePath = null)
 		{
 			$iniPath = $basePath . $iniPath;
 		}
-		
+
 		if (!file_exists($iniPath))
 		{
 			writeLog("Error: ini file {$iniPath} not found");
@@ -101,7 +101,7 @@ function loadIniFiles($iniPaths, $basePath = null)
 			writeLog("Error: failed to parse ini file {$iniPath}");
 			exit(1);
 		}
-		
+
 		$conf = array_merge_recursive($conf, $curConf);
 	}
 	if (isset($conf[CONF_GENERAL]))
@@ -109,7 +109,7 @@ function loadIniFiles($iniPaths, $basePath = null)
 		$conf = array_merge($conf, $conf[CONF_GENERAL]);
 		unset($conf[CONF_GENERAL]);
 	}
-	
+
 	return $conf;
 }
 
@@ -119,7 +119,7 @@ function getIpAddress($ipAddress, $xForwardedFor)
 	{
 		$ipAddress = $xForwardedFor . ',' . $ipAddress;
 	}
-	
+
 	return IpAddressUtils::getIpFromHttpHeader($ipAddress);
 }
 
@@ -129,13 +129,13 @@ function dateGlob($pattern, $from = '7 days ago', $to = 'now', $interval = 'P1D'
 	{
 		return glob($pattern);
 	}
-	
+
 	$find = reset($matches);
-	
+
 	$curDate = new DateTime($to);
 	$limit = new DateTime($from);
 	$interval = new DateInterval($interval);
-	
+
 	$patterns = array();
 	while ($curDate->getTimestamp() > $limit->getTimestamp())
 	{
@@ -144,18 +144,18 @@ function dateGlob($pattern, $from = '7 days ago', $to = 'now', $interval = 'P1D'
 		{
 			$replace[] = $curDate->format($curFind[1]);
 		}
-		
+
 		$curPattern = str_replace($find, $replace, $pattern);
 		$patterns[$curPattern] = true;
 		$curDate->sub($interval);
 	}
-	
+
 	$result = array();
 	foreach ($patterns as $curPattern => $ignore)
 	{
 		$result = array_merge($result, glob($curPattern));
 	}
-	
+
 	return $result;
 }
 

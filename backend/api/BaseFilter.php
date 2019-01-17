@@ -13,7 +13,7 @@ class BaseFilter
 	protected $grepCommand;
 	protected $fileToServerMap;
 	protected $multiRanges;
-	
+
 	protected function __construct($filter)
 	{
 		if (!isset($filter['fromTime']) || !isset($filter['toTime']))
@@ -23,6 +23,16 @@ class BaseFilter
 
 		$this->fromTime = $filter['fromTime'];
 		$this->toTime = $filter['toTime'];
+		if (!ctype_digit($this->fromTime) || !ctype_digit($this->toTime))
+		{
+			dieError(ERROR_BAD_REQUEST, 'Invalid fromTime/toTime');
+		}
+
+		if ($this->fromTime > $this->toTime)
+		{
+			dieError(ERROR_BAD_REQUEST, 'fromTime is greater than toTime');
+		}
+
 		$this->serverPattern = isset($filter['server']) ? $filter['server'] : null;
 		$this->session = isset($filter['session']) ? $filter['session'] : null;
 		if ($this->session && !ctype_digit($this->session))
@@ -32,7 +42,7 @@ class BaseFilter
 
 		$this->textFilter = isset($filter['textFilter']) ? $filter['textFilter'] : null;
 	}
-	
+
 	protected function getDownloadFileName()
 	{
 		$result = 'log';
@@ -50,14 +60,29 @@ class BaseFilter
 			$result .= date('-Y-m-d-H:i', $this->toTime);
 		}
 		$result .= '.log';
-		
+
 		return $result;
+	}
+
+	protected function getTopLevelCommands()
+	{
+		global $conf, $params;
+
+		$baseApiUrl = $conf['BASE_KELLOGGS_API_URL'];
+		$rawUrl = $baseApiUrl . '?' . http_build_query(array_merge($params, array('responseFormat' => RESPONSE_FORMAT_RAW)));
+		$downloadUrl = $baseApiUrl . '?' . http_build_query(array_merge($params, array('responseFormat' => RESPONSE_FORMAT_DOWNLOAD)));
+
+		return array(
+			array('label' => 'Copy grep command', 'action' => COMMAND_COPY, 'data' => $this->grepCommand),
+			array('label' => 'Copy raw log URL', 'action' => COMMAND_COPY, 'data' => $rawUrl),
+			array('label' => 'Download raw log', 'action' => COMMAND_DOWNLOAD, 'data' => $downloadUrl),
+		);
 	}
 
 	protected function handleRawFormats()
 	{
 		global $responseFormat;
-		
+
 		switch ($responseFormat)
 		{
 		case RESPONSE_FORMAT_DOWNLOAD:
@@ -65,19 +90,35 @@ class BaseFilter
 			header("Content-Disposition: attachment; filename=\"$downloadFileName\"");
 			header("Content-Type: application/force-download");
 			header("Content-Description: File Transfer");
-			
+
 			// fallthrough
-			
+
 		case RESPONSE_FORMAT_RAW:
 			passthru($this->grepCommand);
 			die;
 		}
 	}
 
+	protected static function getProdPdo()
+	{
+		global $kelloggsPdo, $conf;
+
+		if ($conf['kelloggsdb_read'] == $conf['database'])
+		{
+			return $kelloggsPdo;
+		}
+
+		ob_start();
+		$pdo = PdoWrapper::create($conf['database']);
+		ob_end_clean();
+
+		return $pdo;
+	}
+
 	protected static function getFileRanges($logTypes, $fromTime, $toTime, $serverPattern = null)
 	{
 		global $kelloggsPdo;
-		
+
 		$sql = 'SELECT server, file_path, ranges FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2';
 		$values = array(
 			$toTime,
@@ -135,7 +176,7 @@ class BaseFilter
 			{
 				continue;
 			}
-			
+
 			$rangeSize = $maxOffset - $minOffset;
 			$totalSize += $rangeSize;
 			$fileToServerMap[$curFilePath] = $curServer;
@@ -145,9 +186,9 @@ class BaseFilter
 			}
 			$fileRanges[$rangeSize] = "'" . $curFilePath . ':' . $minOffset . '-' . $maxOffset . "'";
 		}
-		
+
 		ksort($fileRanges);		// sort by ascending size - if a log is not segmented it will be scanned last
-		
+
 		return array($fileRanges, $totalSize, $fileToServerMap);
 	}
 
@@ -157,7 +198,7 @@ class BaseFilter
 		{
 			return '';
 		}
-		
+
 		$result = str_replace("'", '', json_encode($filter));
 		$result = "-f '$result'";
 		return $result;
@@ -234,7 +275,7 @@ class BaseFilter
 		foreach ($sourceRefs as $match => $cur)
 		{
 			list($fileName, $fileLine) = $cur;
-			
+
 			// get the relative path
 			if (!startsWith($fileName, $workingSourceBase))
 			{
@@ -285,6 +326,22 @@ class BaseFilter
 		}
 	}
 
+	protected static function gotoSessionCommands($server, $session, $timestamp, $margin = 300)
+	{
+		$sessionFilter = array(
+			'type' => 'apiLogFilter',
+			'server' => $server,
+			'session' => $session,
+			'fromTime' => $timestamp - $margin,
+			'toTime' => $timestamp + $margin,
+		);
+
+		return array(
+			array('label' => 'Go to session', 'action' => COMMAND_SEARCH, 'data' => $sessionFilter),
+			array('label' => 'Open session in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $sessionFilter),
+		);
+	}
+
 	protected static function formatApacheConnectionStatus($str)
 	{
 		$map = array(
@@ -306,7 +363,7 @@ class BaseFilter
 	{
 		$metadata = array_filter($metadata, function ($value) { 
 			return $value && $value != '-'; });
-		
+
 		$result = array();
 		foreach ($metadata as $key => $value)
 		{

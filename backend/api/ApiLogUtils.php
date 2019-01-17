@@ -84,18 +84,18 @@ function parseMultirequest($parsedParams)
 			$requestIndex = 'common';
 		}
 		else
-		{		
+		{
 			$requestIndex = (int)$explodedName[0];
 			$paramName = implode(':', array_slice($explodedName, 1));
 		}
-		
+
 		if (!array_key_exists($requestIndex, $paramsByRequest))
 		{
 			$paramsByRequest[$requestIndex] = array();
 		}
 		$paramsByRequest[$requestIndex][$paramName] = $paramValue;
 	}
-	
+
 	if (isset($paramsByRequest['common']))
 	{
 		foreach ($paramsByRequest as $requestIndex => &$curParams)
@@ -122,7 +122,7 @@ function genKalcliCommand($parsedParams)
 	$res = "kalcli -x {$service} {$action}";
 	unset($parsedParams['service']);
 	unset($parsedParams['action']);
-	
+
 	ksort($parsedParams);
 	foreach ($parsedParams as $param => $value)
 	{
@@ -149,7 +149,7 @@ function genKalcliCommand($parsedParams)
 function genCurlCommand($parsedParams)
 {
 	global $conf;
-	
+
 	if (!isset($parsedParams['service']) || !isset($parsedParams['action']))
 	{
 		return false;

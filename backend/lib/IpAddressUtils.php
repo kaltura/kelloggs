@@ -3,7 +3,7 @@
 class IpAddressUtils
 {
 	protected static $privateRanges = array();
-	
+
 	protected static function parseRange($range)
 	{
 		if (strpos($range, '-') !== false)
@@ -11,7 +11,7 @@ class IpAddressUtils
 			list($start, $end) = explode('-', $range);
 			return array(ip2long($start), ip2long($end));
 		}
-		
+
 		if (strpos($range, '/') !== false)
 		{
 			list($start, $bits) = explode('/', $range);
@@ -19,11 +19,11 @@ class IpAddressUtils
 			$end = $start | ((1 << (32 - $bits)) - 1);
 			return array($start, $end);
 		}
-		
+
 		$start = ip2long($range);
 		return array($start, $start);
 	}
-	
+
 	public static function initPrivateRanges($internalRanges)
 	{
 		self::$privateRanges = array();
@@ -32,7 +32,7 @@ class IpAddressUtils
 			self::$privateRanges[] = self::parseRange($range);
 		}
 	}
-	
+
 	protected static function isIpPrivate($ip)
 	{
 		$longIp = ip2long($ip);
@@ -47,7 +47,7 @@ class IpAddressUtils
 				}
 			}
 		}
-		
+
 		return false;
 	}
 

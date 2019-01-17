@@ -6,7 +6,7 @@ class PdoWrapper
 {
 	const RETRY_SLEEP = 10;
 	const RETRY_COUNT = 18;
-	
+
 	protected $pdo;
 	protected $connParams;
 	protected $heartBeatTable;
@@ -95,7 +95,7 @@ class PdoWrapper
 		}
 		return false;
 	}
-	
+
 	protected static function logStatement($sql, $values)
 	{
 		$preparedSql = '';

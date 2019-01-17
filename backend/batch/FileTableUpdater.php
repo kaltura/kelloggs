@@ -51,7 +51,7 @@ function removeFilesExistingInDb($pdo, &$files)
 		$fileList = array_flip($fileList);		// enable fast lookup by path
 		foreach($chunks as $chunk) 
 		{
-			$sql = 'SELECT file_path FROM kelloggs_files where type = ? AND file_path IN (@ids@)';
+			$sql = 'SELECT file_path FROM kelloggs_files WHERE type = ? AND file_path IN (@ids@)';
 			$values = array($type);
 			$stmt = $pdo->executeInStatement($sql, $chunk, $values);
 			$rows = $stmt->fetchall(PDO::FETCH_NUM);
@@ -76,18 +76,20 @@ function addFilesToDB($pdo, $type, $filenamePattern, $files)
 		{
 			continue;
 		}
-		
+
 		if ($filenamePattern)
 		{
-			if (!preg_match($filenamePattern, basename($filePath), $matches) ||
-				!isset($matches['server']))
+			if (!preg_match($filenamePattern, basename($filePath), $matches))
 			{
 				continue;
 			}
-			
-			$server = $matches['server'];
+
+			if (isset($matches['server']))
+			{
+				$server = $matches['server'];
+			}
 		}
-		
+
 		$values = array(
 			1 => $filePath,
 			2 => filesize($filePath),
@@ -96,7 +98,7 @@ function addFilesToDB($pdo, $type, $filenamePattern, $files)
 			5 => $type,
 			6 => FILE_STATUS_FOUND,
 		);
-		
+
 		writeLog('Info: adding to DB with ' . print_r($values, true));
 		$sql = 'INSERT INTO kelloggs_files (file_path, file_size, file_mtime, server, type, status) VALUES (?, ?, FROM_UNIXTIME(?), ?, ?, ?)';
 		$pdo->executeStatement($sql, $values);

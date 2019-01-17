@@ -18,7 +18,7 @@ class ApiLogFilter extends BaseFilter
 	protected function getGrepCommand()
 	{
 		global $responseFormat, $zblockgrep;
-		
+
 		list($fileRanges, $totalSize, $fileToServerMap) = self::getFileRanges(array(LOG_TYPE_API), $this->fromTime, $this->toTime, $this->serverPattern);
 		if (!$fileRanges)
 		{
@@ -57,13 +57,13 @@ class ApiLogFilter extends BaseFilter
 	protected function getAccessLogMetadataFields()
 	{
 		global $zblockgrep;
-		
+
 		list($accessRanges, $ignore, $ignore) = self::getFileRanges(array(LOG_TYPE_API_ACCESS), $this->fromTime, $this->toTime, $this->server);
 		if (!$accessRanges)
 		{
 			return array();
 		}
-		
+
 		$accessRanges = implode(' ', $accessRanges);
 		$captureConditions = array(
 			'$1>=' . strftime(TIME_FORMAT_API_ACCESS, $this->fromTime),
@@ -72,17 +72,17 @@ class ApiLogFilter extends BaseFilter
 		$captureConditions = implode(',', $captureConditions);
 
 		$textFilter = self::getTextFilterParam(array('type' => 'match', 'text' => $this->session));
-		
+
 		$pattern = PATTERN_API_ACCESS;
 		$accessGrepCommand = "$zblockgrep -h -p '$pattern' -c '$captureConditions' $textFilter $accessRanges";
-		
+
 		exec($accessGrepCommand, $output);
-		
+
 		if (!is_array($output))
 		{
 			return array();
 		}
-		
+
 		$accessLine = null;
 		foreach ($output as $curLine)
 		{
@@ -93,20 +93,20 @@ class ApiLogFilter extends BaseFilter
 				break;
 			}
 		}
-		
+
 		if (!$accessLine)
 		{
 			return array();
 		}
-		
+
 		$ipAddress = $parsedLine[12];
 		if (!filter_var($ipAddress, FILTER_VALIDATE_IP))
 		{
 			$ipAddress = $parsedLine[0];
 		}
-		
+
 		$xForwardedFor = $parsedLine[20];
-		
+
 		$remoteAddr = getIpAddress($ipAddress, $xForwardedFor);
 
 		return array(
@@ -119,7 +119,7 @@ class ApiLogFilter extends BaseFilter
 			'Protocol' => $parsedLine[11] == 'ON' ? 'HTTPS' : 'HTTP',
 			'Partner id' => $parsedLine[24],
 			'Bytes received' => $parsedLine[18],
-			
+
 			// server -> client
 			'Status' => $parsedLine[6],
 			'Bytes sent' => $parsedLine[7],
@@ -131,8 +131,6 @@ class ApiLogFilter extends BaseFilter
 
 	protected function getResponseHeader($multiSession)
 	{
-		global $conf, $params;
-		
 		$columns = array();
 		$metadata = array();
 
@@ -170,37 +168,11 @@ class ApiLogFilter extends BaseFilter
 			$columns[] = array('label' => 'Indent by event consumer level', 'name' => 'indent', 'type' => 'indent', 'column' => 'body');
 		}
 
-		$baseApiUrl = $conf['BASE_KELLOGGS_API_URL'];
-		$rawUrl = $baseApiUrl . '?' . http_build_query(array_merge($params, array('responseFormat' => RESPONSE_FORMAT_RAW)));
-		$downloadUrl = $baseApiUrl . '?' . http_build_query(array_merge($params, array('responseFormat' => RESPONSE_FORMAT_DOWNLOAD)));
-
-		$commands = array(
-			array('label' => 'Copy grep command', 'action' => COMMAND_COPY, 'data' => $this->grepCommand),
-			array('label' => 'Copy raw log URL', 'action' => COMMAND_COPY, 'data' => $rawUrl),
-			array('label' => 'Download raw log', 'action' => COMMAND_DOWNLOAD, 'data' => $downloadUrl),
-		);
-
 		return array(
 			'type' => 'searchResponse',
 			'columns' => $columns,
-			'commands' => $commands,
+			'commands' => $this->getTopLevelCommands(),
 			'metadata' => self::formatMetadata($metadata),
-		);
-	}
-
-	protected static function gotoSessionCommands($server, $session, $timestamp, $margin = 300)
-	{
-		$sessionFilter = array(
-			'type' => 'apiLogFilter',
-			'server' => $server,
-			'session' => $session,
-			'fromTime' => $timestamp - $margin,
-			'toTime' => $timestamp + $margin,
-		);
-		
-		return array(
-			array('label' => 'Go to session', 'action' => COMMAND_SEARCH, 'data' => $sessionFilter),
-			array('label' => 'Open session in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $sessionFilter),
 		);
 	}
 
@@ -228,7 +200,7 @@ class ApiLogFilter extends BaseFilter
 		{
 			return;
 		}
-		
+
 		if ($parsedParams['service'] == 'multirequest')
 		{
 			/* XXXX TODO - add sub request kalcli commands
@@ -275,7 +247,7 @@ class ApiLogFilter extends BaseFilter
 		{
 			return;
 		}
-		
+
 		if (!preg_match_all('/queryTime=(\d+) debugInfo=([^\]]+)\[(\d+)\]/', $block, $matches))
 		{
 			return;
@@ -341,7 +313,7 @@ class ApiLogFilter extends BaseFilter
 	protected static function formatApiBlock($func, $block)
 	{
 		global $conf;
-		
+
 		$block = rtrim($block);
 
 		if ($func == 'KalturaStatement->execute' && startsWith($block, '/* '))
@@ -411,7 +383,7 @@ class ApiLogFilter extends BaseFilter
 					$curServer = $this->fileToServerMap[$fileName];
 					$line = substr($line, $fileEndPos + 2);
 				}
-				
+
 				// parse the line fields
 				$splittedLine = explode(' ', $line, 9);
 				if (count($splittedLine) < 9)
@@ -431,7 +403,7 @@ class ApiLogFilter extends BaseFilter
 
 			// block finished
 			$commands = array();
-			
+
 			if ($multiSession)
 			{
 				$commands = array_merge($commands,
@@ -449,23 +421,23 @@ class ApiLogFilter extends BaseFilter
 				'took' => $took,
 				'function' => $func,
 				'body' => self::formatApiBlock($func, $block),
-				
+
 			);
 			if (!$multiSession)
 			{
 				$line['indent'] = 0;
 			}
-			
+
 			if (!$this->session)
 			{
 				$line['session'] = $curSession;
 			}
-			
+
 			if (!$this->server)
 			{
 				$line['server'] = $curServer;
 			}
-			
+
 			if ($commands)
 			{
 				$line['commands'] = $commands;
@@ -483,7 +455,7 @@ class ApiLogFilter extends BaseFilter
 
 		$this->handleJsonFormat();
 	}
-	
+
 	public static function main($filter)
 	{
 		$obj = new ApiLogFilter($filter);

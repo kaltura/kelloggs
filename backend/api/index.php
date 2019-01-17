@@ -100,12 +100,12 @@ function setElementByPath(&$array, $path, $value)
 		{
 			break;
 		}
-		
+
 		if (!isset($tmpArray[$key]) || !is_array($tmpArray[$key]))
 		{
 			$tmpArray[$key] = array();
 		}
-			
+
 		if (count($path) == 0)
 		{
 			$tmpArray[$key] = $value;
@@ -115,7 +115,7 @@ function setElementByPath(&$array, $path, $value)
 			$tmpArray = &$tmpArray[$key];
 		}
 	}
-	
+
 	$array = &$tmpArray;
 }
 
@@ -128,7 +128,7 @@ function groupParams($params)
 		$path = explode(':', $key);
 		setElementByPath($result, $path, $value);
 	}
-	
+
 	return $result;
 }
 
@@ -180,8 +180,13 @@ if (!isset($params['filter']))
 	dieError(ERROR_BAD_REQUEST, 'Missing filter param');
 }
 
+$filterTypeMap = array(
+	'apiLogFilter' => 'ApiLogFilter',
+	'dbWritesFilter' => 'DbWritesFilter',
+);
+
 $filter = $params['filter'];
-if (!isset($filter['type']) || $filter['type'] != 'apiLogFilter')
+if (!isset($filter['type']) || !isset($filterTypeMap[$filter['type']]))
 {
 	dieError(ERROR_BAD_REQUEST, 'Invalid filter type');
 }
@@ -190,5 +195,6 @@ if (!isset($filter['type']) || $filter['type'] != 'apiLogFilter')
 ini_set('max_execution_time', $conf['GREP_TIMEOUT']);
 $zblockgrep = "timeout {$conf['GREP_TIMEOUT']} {$conf['ZBLOCKGREP']}";
 
-require_once(dirname(__file__) . '/ApiLogFilter.php');
-ApiLogFilter::main($filter);
+$handler = $filterTypeMap[$filter['type']];
+require_once(dirname(__file__) . "/$handler.php");
+$handler::main($filter);

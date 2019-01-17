@@ -21,7 +21,7 @@ function lockTask($pdo)
 			break;
 		}
 		list($id, $filePath, $type) = $row;
-		
+
 		$sql = 'UPDATE kelloggs_files SET status = ? WHERE status = ? AND id = ?';
 		$values = array(
 			1 => FILE_STATUS_LOCKED,
@@ -52,7 +52,7 @@ function getRunningTaskIndexes($processGroupName)
 		{
 			continue;
 		}
-		
+
 		$splittedLine = explode(' ', $splittedLine[1]);
 		if (count($splittedLine) < 2)
 		{
@@ -62,7 +62,7 @@ function getRunningTaskIndexes($processGroupName)
 		$processIndex = intval($splittedLine[0]);
 		$result[$processIndex] = true;
 	}
-	
+
 	return $result;
 }
 
@@ -95,7 +95,7 @@ for ($processIndex = 0; $processIndex < $workerProcesses; $processIndex++)
 	{
 		continue;
 	}
-	
+
 	// lock a task
 	$taskInfo = lockTask($pdo);
 	if (!$taskInfo)
@@ -103,13 +103,13 @@ for ($processIndex = 0; $processIndex < $workerProcesses; $processIndex++)
 		writeLog('Info: no task to run');
 		break;
 	}
-	
+
 	list($id, $filePath, $type) = $taskInfo;
 
 	$scriptPath = dirname(__file__) . '/FileRanger.php';
 	$logFolder = '/var/log/kelloggs/';
 	$logPath = $logFolder . 'ranger-' . gethostname() . date('-Y-m-d-') . $processIndex . '.log';
-	
+
 	// start the task
 	$commandLine = "php $scriptPath $processGroupName-$processIndex $dbConfFile $workersFile $type:$id:$filePath >> $logPath 2>&1 &";
 	writeLog("Info: running: $commandLine");
