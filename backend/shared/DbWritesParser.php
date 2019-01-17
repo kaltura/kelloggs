@@ -16,7 +16,7 @@ class DbWritesParser
 		return mktime($hour, $minute, $second, $month, $day, $year);
 	}
 
-	public static function getPrimaryKeysMap($pdo, $tables)
+	public static function getPrimaryKeysMap($pdo, $tables = null)
 	{
 		if (!$tables)
 		{
