@@ -4,7 +4,7 @@ import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
 import moment from 'moment';
 
-export default class APILogsParameters extends React.Component {
+export default class DBLogsParameters extends React.Component {
   state = {
     isFromTimeValid: true,
     isToTimeValid: true
@@ -12,7 +12,7 @@ export default class APILogsParameters extends React.Component {
 
   filterParameters = (parameters) => {
     return Object.keys(parameters).reduce((acc, parameterName) => {
-      if (['type', 'fromTime', 'toTime', 'textFilter', 'session', 'server'].indexOf(parameterName) !== -1) {
+      if (['type', 'fromTime', 'toTime', 'textFilter', 'table', 'objectId'].indexOf(parameterName) !== -1) {
         acc[parameterName] = parameters[parameterName];
       }
       return acc;
@@ -36,7 +36,7 @@ export default class APILogsParameters extends React.Component {
   }
 
   render() {
-    const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange } = this.props;
+    const { textFilter, objectId, table, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
 
     return (
@@ -81,9 +81,9 @@ export default class APILogsParameters extends React.Component {
           </Grid>
           <Grid item xs={4}>
             <TextField fullWidth
-                       name="server"
-                       label="Server"
-                       value={server}
+                       name="table"
+                       label="Table"
+                       value={table}
                        onChange={onChange}
                        InputLabelProps={{
                          shrink: true,
@@ -93,9 +93,9 @@ export default class APILogsParameters extends React.Component {
           <Grid item xs={4}>
             <TextField
               fullWidth
-              name="session"
-              label="Session"
-              value={session}
+              name="objectId"
+              label="Object ID"
+              value={objectId}
               onChange={onChange}
               InputLabelProps={{
                 shrink: true,
