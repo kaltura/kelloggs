@@ -5,7 +5,8 @@ require_once(dirname(__file__) . '/DatabaseSecretRepository.php');
 require_once(dirname(__file__) . '/ApiLogUtils.php');
 require_once(dirname(__file__) . '/BaseFilter.php');
 
-define('LOG_TYPE_API', 1);
+define('LOG_TYPE_APIV3', 1);
+define('LOG_TYPE_PS2', 5);
 define('PATTERN_API', '^(\d{4}\-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) [^ ]+ [^ ]+ \[(\d+)\]');		// $1 = timestamp, $2 = session
 define('TIME_FORMAT_API', '%Y-%m-%d %H:%M:%S');
 
@@ -13,13 +14,53 @@ define('LOG_TYPE_API_ACCESS', 2);
 define('PATTERN_API_ACCESS', '^[^ ]+ [^ ]+ [^ ]+ \[([^\]]+)\]');	// $1 = timestamp
 define('TIME_FORMAT_API_ACCESS', '%d/%b/%Y:%H:%M:%S %z');
 
+define('LOG_TYPE_API_ERROR', 3);
+define('PATTERN_API_ERROR', '^\[(\w+ \w+ \d+ [\d:]+)(\.\d+)? (\d+)\]');
+define('TIME_FORMAT_API_ERROR', '%a %b %d %H:%M:%S %Y');
+
 class ApiLogFilter extends BaseFilter
 {
+	protected $logTypes;
+
+	protected static $logTypesMap = array(
+		'apiV3' => LOG_TYPE_APIV3,
+		'ps2' => LOG_TYPE_PS2,
+	);
+
+	protected static $errorLogSeverityMap = array(
+		'PHP Notice:' => 'warn',
+		'PHP Warning:' => 'warn',
+		'PHP Fatal error:' => 'crit',
+	);
+
+	protected function __construct($filter)
+	{
+		parent::__construct($filter);
+
+		$logTypes = isset($filter['logTypes']) ? explode(',', $filter['logTypes']) : array();
+		$this->logTypes = array();
+		foreach ($this->logTypes as $logType)
+		{
+			$logType = trim($logType);
+			if (!isset(self::$logTypesMap[$logType]))
+			{
+				dieError(ERROR_BAD_REQUEST, 'Invalid log type');
+			}
+
+			$this->logTypes[] = self::$logTypesMap[$logType];
+		}
+
+		if (!$this->logTypes)
+		{
+			$this->logTypes = array_values(self::$logTypesMap);
+		}
+	}
+
 	protected function getGrepCommand()
 	{
 		global $responseFormat, $zblockgrep;
 
-		list($fileRanges, $totalSize, $fileToServerMap) = self::getFileRanges(array(LOG_TYPE_API), $this->fromTime, $this->toTime, $this->serverPattern);
+		list($fileRanges, $totalSize, $fileMap) = self::getFileRanges($this->logTypes, $this->fromTime, $this->toTime, $this->serverPattern);
 		if (!$fileRanges)
 		{
 			dieError(ERROR_NO_RESULTS, 'No logs matched the search filter');
@@ -47,36 +88,50 @@ class ApiLogFilter extends BaseFilter
 		$delimiter = $responseFormat != RESPONSE_FORMAT_RAW ? '-d' . BLOCK_DELIMITER : '';
 		$this->grepCommand = "$zblockgrep -p '$pattern' -c '$captureConditions' $textFilter $delimiter $fileRanges";
 
-		if (count($fileToServerMap) == 1)
+		$serverNames = array();
+		foreach ($fileMap as $fileInfo)
 		{
-			$this->server = reset($fileToServerMap);
+			$serverName = $fileInfo[0];
+			$serverNames[$serverName] = 1;
+			if (count($serverNames) > 1)
+			{
+				break;
+			}
 		}
-		$this->fileToServerMap = $fileToServerMap;
+		if (count($serverNames) == 1)
+		{
+			reset($serverNames);
+			$this->server = key($serverNames);
+		}
+		$this->fileMap = $fileMap;
 	}
 
 	protected function getAccessLogMetadataFields()
 	{
 		global $zblockgrep;
 
-		list($accessRanges, $ignore, $ignore) = self::getFileRanges(array(LOG_TYPE_API_ACCESS), $this->fromTime, $this->toTime, $this->server);
-		if (!$accessRanges)
+		list($fileRanges, $ignore, $ignore) = self::getFileRanges(array(LOG_TYPE_API_ACCESS), $this->fromTime, $this->toTime, $this->server);
+		if (!$fileRanges)
 		{
 			return array();
 		}
 
-		$accessRanges = implode(' ', $accessRanges);
+		$fileRanges = implode(' ', $fileRanges);
+
+		$timeFormat = TIME_FORMAT_API_ACCESS;
+		$timeCapture = '$1';
 		$captureConditions = array(
-			'$1>=' . strftime(TIME_FORMAT_API_ACCESS, $this->fromTime),
-			'$1<=' . strftime(TIME_FORMAT_API_ACCESS, $this->toTime),
+			$timeCapture . '@>=' . strftime(TIME_FORMAT_API_ACCESS, $this->fromTime),
+			$timeCapture . '@<=' . strftime(TIME_FORMAT_API_ACCESS, $this->toTime),
 		);
 		$captureConditions = implode(',', $captureConditions);
 
 		$textFilter = self::getTextFilterParam(array('type' => 'match', 'text' => $this->session));
 
 		$pattern = PATTERN_API_ACCESS;
-		$accessGrepCommand = "$zblockgrep -h -p '$pattern' -c '$captureConditions' $textFilter $accessRanges";
+		$grepCommand = "$zblockgrep -h -p '$pattern' -t '$timeFormat' -c '$captureConditions' $textFilter $fileRanges";
 
-		exec($accessGrepCommand, $output);
+		exec($grepCommand, $output);
 
 		if (!is_array($output))
 		{
@@ -129,7 +184,102 @@ class ApiLogFilter extends BaseFilter
 		);
 	}
 
-	protected function getResponseHeader($multiSession)
+	protected function getErrorLogLines()
+	{
+		global $zblockgrep;
+
+		list($fileRanges, $ignore, $ignore) = self::getFileRanges(array(LOG_TYPE_API_ERROR), $this->fromTime, $this->toTime, $this->server);
+		if (!$fileRanges)
+		{
+			return array();
+		}
+
+		$fileRanges = implode(' ', $fileRanges);
+
+		$timeFormat = TIME_FORMAT_API_ERROR;
+		$timeCapture = '"$1 $3"';
+		$captureConditions = array(
+			$timeCapture . '@>=' . strftime($timeFormat, $this->fromTime),
+			$timeCapture . '@<=' . strftime($timeFormat, $this->toTime),
+		);
+		$captureConditions = implode(',', $captureConditions);
+
+		$textFilter = self::getTextFilterParam(array('type' => 'match', 'text' => 'session ' . $this->session));
+
+		$pattern = PATTERN_API_ERROR;
+		$grepCommand = "$zblockgrep -h -p '$pattern' -t '$timeFormat' -c '$captureConditions' $textFilter $fileRanges";
+
+		exec($grepCommand, $output);
+
+		if (!is_array($output))
+		{
+			return array();
+		}
+
+		$result = array();
+		foreach ($output as $curLine)
+		{
+			$curLine = trim($curLine);
+			$fields = array();
+			for ($curPos = 0; $curPos < strlen($curLine); )
+			{
+				if ($curLine[$curPos] == '[')
+				{
+					$endPos = strpos($curLine, ']', $curPos);
+					if ($endPos !== false)
+					{
+						$fields[] = substr($curLine, $curPos + 1, $endPos - $curPos - 1);
+						$curPos = $endPos + 2;
+						continue;
+					}
+				}
+
+				$fields[] = substr($curLine, $curPos);
+				break;
+			}
+
+			$fields = array_filter($fields);
+
+			if (!$fields)
+			{
+				continue;
+			}
+
+			$timestamp = reset($fields);
+			$timestamp = preg_replace('/\.\d+/', '', $timestamp);
+			$timestamp = strtotime($timestamp);
+
+			$body = end($fields);
+
+			$body = str_replace(', session ' . $this->session, '', $body);		// strip out the session id
+
+			$severity = 'error';
+			foreach (self::$errorLogSeverityMap as $prefix => $curSeverity)
+			{
+				if (startsWith($body, $prefix))
+				{
+					$severity = $curSeverity;
+					$body = trim(substr($body, strlen($prefix)));
+					break;
+				}
+			}
+
+			$func = 'error_log';
+			$line = array(
+				'severity' => $severity,
+				'timestamp' => $timestamp,
+				'took' => 0,
+				'function' => $func,
+				'body' => self::formatApiBlock($func, $body),
+			);
+
+			$result[] = $line;
+		}
+
+		return $result;
+	}
+
+	protected function getResponseHeader($multiSession, &$bufferedLines)
 	{
 		$columns = array();
 		$metadata = array();
@@ -166,6 +316,8 @@ class ApiLogFilter extends BaseFilter
 			$metadata = array_merge($metadata, $this->getAccessLogMetadataFields());
 
 			$columns[] = array('label' => 'Indent by event consumer level', 'name' => 'indent', 'type' => 'indent', 'column' => 'body');
+
+			$bufferedLines = $this->getErrorLogLines();
 		}
 
 		return array(
@@ -354,14 +506,22 @@ class ApiLogFilter extends BaseFilter
 		}
 
 		// output the response header
-		$multiSession = count($this->fileToServerMap) > 1 || !$this->session;
-		$header = $this->getResponseHeader($multiSession);
+		$multiSession = !$this->server || !$this->session;
+		$header = $this->getResponseHeader($multiSession, $bufferedLines);
 		echo json_encode($header) . "\n";
 
+		$bufferedLine = reset($bufferedLines);
 		$curServer = $this->server;
+		$curType = count($this->logTypes) == 1 ? reset($this->logTypes) : null;
 		$block = '';
-		while ($line = fgets($pipes[1]))
+		for (;;)
 		{
+			$line = fgets($pipes[1]);
+			if ($line === false)
+			{
+				break;
+			}
+
 			if ($line != BLOCK_DELIMITER . "\n")
 			{
 				if ($block)
@@ -376,11 +536,11 @@ class ApiLogFilter extends BaseFilter
 					// get the server name
 					$fileEndPos = strpos($line, ': ');
 					$fileName = substr($line, 0, $fileEndPos);
-					if (!isset($this->fileToServerMap[$fileName]))
+					if (!isset($this->fileMap[$fileName]))
 					{
 						continue;
 					}
-					$curServer = $this->fileToServerMap[$fileName];
+					list($curServer, $curType) = $this->fileMap[$fileName];
 					$line = substr($line, $fileEndPos + 2);
 				}
 
@@ -402,12 +562,20 @@ class ApiLogFilter extends BaseFilter
 			}
 
 			// block finished
+
+			while ($bufferedLine && $bufferedLine['timestamp'] < $timestamp)
+			{
+				echo json_encode($bufferedLine) . "\n";
+				$bufferedLine = next($bufferedLines);
+			}
+
 			$commands = array();
 
 			if ($multiSession)
 			{
 				$commands = array_merge($commands,
-					self::gotoSessionCommands($curServer, $curSession, $timestamp));
+					self::gotoSessionCommands($curServer, $curSession, $timestamp, 
+					$curType ? array_search($curType, $logTypesMap) : null));
 			}
 			else
 			{
@@ -421,7 +589,6 @@ class ApiLogFilter extends BaseFilter
 				'took' => $took,
 				'function' => $func,
 				'body' => self::formatApiBlock($func, $block),
-
 			);
 			if (!$multiSession)
 			{
@@ -444,6 +611,12 @@ class ApiLogFilter extends BaseFilter
 			}
 			echo json_encode($line) . "\n";
 			$block = '';
+		}
+
+		while ($bufferedLine)
+		{
+			echo json_encode($bufferedLine) . "\n";
+			$bufferedLine = next($bufferedLines);
 		}
 	}
 

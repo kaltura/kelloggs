@@ -14,5 +14,6 @@ CREATE TABLE `kelloggs_files` (
   PRIMARY KEY (`id`),
   KEY `file_path` (`file_path`(255)),
   KEY `start` (`start`),
-  KEY `parent_id` (`parent_id`)
+  KEY `parent_id` (`parent_id`),
+  KEY `status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;

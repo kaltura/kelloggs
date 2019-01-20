@@ -313,8 +313,14 @@ class DbWritesFilter extends BaseFilter
 		echo json_encode($header) . "\n";
 
 		$block = '';
-		while ($line = fgets($pipes[1]))
+		for (;;)
 		{
+			$line = fgets($pipes[1]);
+			if ($line === false)
+			{
+				break;
+			}
+
 			$parseResult = $parser->processLine($line);
 			if (!$parseResult)
 			{

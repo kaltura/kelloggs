@@ -11,7 +11,7 @@ class BaseFilter
 	protected $textFilter;
 
 	protected $grepCommand;
-	protected $fileToServerMap;
+	protected $fileMap;
 	protected $multiRanges;
 
 	protected function __construct($filter)
@@ -119,7 +119,7 @@ class BaseFilter
 	{
 		global $kelloggsPdo;
 
-		$sql = 'SELECT server, file_path, ranges FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2';
+		$sql = 'SELECT server, type, file_path, ranges FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2';
 		$values = array(
 			$toTime,
 			$fromTime,
@@ -138,17 +138,19 @@ class BaseFilter
 
 		$fileRanges = array();
 		$totalSize = 0;
-		$fileToServerMap = array();
+		$fileMap = array();
 		foreach ($rows as $row)
 		{
 			$curServer = $row['server'];
-			$curFilePath = $row['file_path'];
 			if ($serverPattern && !fnmatch($serverPattern, $curServer))
 			{
 				continue;
 			}
 
+			$curFilePath = $row['file_path'];
+			$curFileType = $row['type'];
 			$ranges = json_decode($row['ranges']);
+			
 			$minOffset = null;
 			$maxOffset = null;
 			$curOffset = 0;
@@ -179,7 +181,7 @@ class BaseFilter
 
 			$rangeSize = $maxOffset - $minOffset;
 			$totalSize += $rangeSize;
-			$fileToServerMap[$curFilePath] = $curServer;
+			$fileMap[$curFilePath] = array($curServer, $curFileType);
 			while (isset($fileRanges[$rangeSize]))
 			{
 				$rangeSize++;
@@ -189,7 +191,7 @@ class BaseFilter
 
 		ksort($fileRanges);		// sort by ascending size - if a log is not segmented it will be scanned last
 
-		return array($fileRanges, $totalSize, $fileToServerMap);
+		return array($fileRanges, $totalSize, $fileMap);
 	}
 
 	protected static function getTextFilterParam($filter)
@@ -326,7 +328,7 @@ class BaseFilter
 		}
 	}
 
-	protected static function gotoSessionCommands($server, $session, $timestamp, $margin = 300)
+	protected static function gotoSessionCommands($server, $session, $timestamp, $logType = null, $margin = 300)
 	{
 		$sessionFilter = array(
 			'type' => 'apiLogFilter',
@@ -335,6 +337,11 @@ class BaseFilter
 			'fromTime' => $timestamp - $margin,
 			'toTime' => $timestamp + $margin,
 		);
+		
+		if ($logType)
+		{
+			$sessionFilter['logTypes'] = $logType;
+		}
 
 		return array(
 			array('label' => 'Go to session', 'action' => COMMAND_SEARCH, 'data' => $sessionFilter),

@@ -170,6 +170,10 @@ for ($index = 4; $index < $argc; $index++)
 	{
 		$params .= " -t '" . $workerConf['timePattern'] . "'";
 	}
+	if (isset($workerConf['captureExpression']))
+	{
+		$params .= " -c '" . $workerConf['captureExpression'] . "'";
+	}
 
 	// get the file ranges
 	$ranges = getFileRanges($conf['ZGREPINDEX'], $params, $filePath);
