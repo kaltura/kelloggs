@@ -575,7 +575,7 @@ class ApiLogFilter extends BaseFilter
 			{
 				$commands = array_merge($commands,
 					self::gotoSessionCommands($curServer, $curSession, $timestamp, 
-					$curType ? array_search($curType, $logTypesMap) : null));
+					$curType ? array_search($curType, self::$logTypesMap) : null));
 			}
 			else
 			{
