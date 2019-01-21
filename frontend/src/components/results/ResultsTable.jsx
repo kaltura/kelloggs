@@ -251,7 +251,7 @@ export default class ResultsTable extends React.PureComponent {
 
 
     _textCellRenderer({column, value, cellStyle}) {
-        return <ToolTip title={value}>
+        return <ToolTip placement={'left'} enterDelay={1000} title={value}>
               <span style={{...cellStyle, userSelect: "text", whiteSpace: "pre"}}>
                 {value}
               </span>
