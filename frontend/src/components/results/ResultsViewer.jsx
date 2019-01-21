@@ -21,7 +21,14 @@ const styles = {
   },
   metadataChip: {
     margin: '4px',
-    cursor: 'pointer'
+  },
+  chipLabel: {
+    overflow: 'hidden',
+    maxWidth: '400px',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    padding: 0,
+    margin: '0 12px'
   }
 }
 
@@ -139,8 +146,8 @@ class ResultsViewer extends React.Component {
           <Paper classes={{root: classes.metadata}}>
               {
                   results.metadata.map((meta, index) => {
-                      return <Chip onClick={() => globalCommands.copyToClipboard(meta.value)} key={index} label={meta.label + " = " + meta.value}
-                                   className={classes.metadataChip}></Chip>
+                      return <Chip clickable={true} onClick={() => globalCommands.copyToClipboard(meta.value)} key={index} label={meta.label + " = " + meta.value}
+                                   className={classes.metadataChip} classes={{label: classes.chipLabel}}></Chip>
                   })
               }
           </Paper>
