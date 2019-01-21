@@ -8,13 +8,13 @@ import CheckCircleIcon from "@material-ui/core/SvgIcon/SvgIcon";
 import IconButton from "@material-ui/core/IconButton/IconButton";
 import CloseIcon from '@material-ui/icons/Close';
 import {
-  getCurrentUrl,
   getQueryString,
   copyToClipboardEnabled,
   openUrlInNewTab,
   copyToClipboard,
   updateUrlQueryParams,
-  buildQuerystring, getCurrentUrlWithoutQuerystring
+  buildQuerystring,
+  getPageUrl, getPageUrlWithoutQuerystring
 } from '../utils';
 import Dialog from '@material-ui/core/Dialog';
 import MuiDialogTitle from '@material-ui/core/DialogTitle';
@@ -137,9 +137,11 @@ export default class GlobalCommands extends React.Component {
   }
 
   _buildSearchUrl = (queryParams) => {
+    debugger
     queryParams = this._addAppParamsToQueryString(queryParams);
     const queryParamsToken = buildQuerystring(queryParams);
-    return `${getCurrentUrlWithoutQuerystring()}?${queryParamsToken}`;
+    const host = this.state.config.hostUrl || getPageUrlWithoutQuerystring();
+    return `${host}?${queryParamsToken}`;
   }
 
   _addAppParamsToQueryString = (queryParams) => {
@@ -240,6 +242,16 @@ export default class GlobalCommands extends React.Component {
     }
   }
 
+  _getCurrentUrl = () => {
+    if (this.state.config.hostUrl) {
+      const hostUrl = this.state.config.hostUrl;
+      const params = buildQuerystring(getQueryString());
+      return `${hostUrl}?${params}`;
+    }else {
+      return getPageUrl();
+    }
+  }
+
   render() {
     const { children } = this.props;
     const { items, config, initialParameters, showCopiedToClipboard } = this.state;
@@ -255,7 +267,7 @@ export default class GlobalCommands extends React.Component {
       getInitialParameters: () => initialParameters,
       config,
       handleCommand: this._handleCommand,
-      getCurrentUrl,
+      getCurrentUrl: this._getCurrentUrl,
       addOnSearchParamsChanged: this._addOnSearchParamsChanged,
       removeOnSearchParamsChanged: this._removeOnSearchParamsChanged
     }
