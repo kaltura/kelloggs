@@ -211,7 +211,7 @@ export default class ResultsTable extends React.PureComponent {
     _commandsCellRenderer({column, value, cellStyle}) {
         if (value && value.length > 0) {
             return <div style={{...cellStyle, width: "5"}}>
-                <CommandsMenu commands={value} showBadge={false}></CommandsMenu>
+                <CommandsMenu type={'text'} commands={value} showBadge={false}></CommandsMenu>
             </div>
         }
         return null

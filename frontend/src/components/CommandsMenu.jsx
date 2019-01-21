@@ -10,6 +10,12 @@ import {withGlobalCommands} from "./GlobalCommands";
 
 const styles = {
   root: { padding: '0 4px'},
+  menu: {
+    color: 'blue',
+    fontSize: '0.6rem',
+    cursor: 'pointer',
+    margin: '0 0 0 4px'
+  }
 }
 
 const ITEM_HEIGHT = 48;
@@ -41,14 +47,15 @@ class CommandsMenu extends React.Component {
 
   render() {
     const { anchorEl, visibleCommands } = this.state;
-    const { classes, commands, className : classNameProp, buttonRender } = this.props;
+    const { classes, commands, className : classNameProp, type } = this.props;
     const open = Boolean(anchorEl);
     const hasCommands = commands && commands.length;
 
     return hasCommands ?
       (<div >
-        { buttonRender ?
-          buttonRender() : (
+        { type === 'text' ?
+            <div class={classes.menu} onClick={this.openMenu}>({commands.length})</div>
+           :
             <IconButton
               className={classNameProp}
               classes={{root: classes.root}}
@@ -59,7 +66,7 @@ class CommandsMenu extends React.Component {
             >
               <MoreVertIcon/>
             </IconButton>
-          ) }
+           }
         <Menu
           id="long-menu"
           anchorEl={anchorEl}
