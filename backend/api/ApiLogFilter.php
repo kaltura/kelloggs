@@ -281,6 +281,8 @@ class ApiLogFilter extends BaseFilter
 
 	protected function getResponseHeader($multiSession, &$bufferedLines)
 	{
+		$bufferedLines = array();
+
 		$columns = array();
 		$metadata = array();
 
@@ -315,8 +317,6 @@ class ApiLogFilter extends BaseFilter
 		{
 			$metadata = array_merge($metadata, $this->getAccessLogMetadataFields());
 
-			$columns[] = array('label' => 'Indent by event consumer level', 'name' => 'indent', 'type' => 'indent', 'column' => 'body');
-
 			$bufferedLines = $this->getErrorLogLines();
 		}
 
@@ -325,6 +325,79 @@ class ApiLogFilter extends BaseFilter
 			'columns' => $columns,
 			'commands' => $this->getTopLevelCommands(),
 			'metadata' => self::formatMetadata($metadata),
+		);
+	}
+
+	protected static function parsePS2Params($block)
+	{
+		$startPos = strpos($block, '(');
+		$endPos = strrpos($block, ')');
+		if ($startPos === false || $endPos === false)
+		{
+			return null;
+		}
+
+		$result = array();
+		$arrayBody = substr($block, $startPos + 1, $endPos - $startPos - 1);
+		$curPos = 0;
+		for (;;)
+		{
+			$keyStart = strpos($block, "'", $curPos);
+			if ($keyStart === false)
+			{
+				break;
+			}
+
+			$keyStart++;
+			$keyEnd = strpos($block, "' => '", $keyStart);
+			if ($keyEnd === false)
+			{
+				break;
+			}
+
+			$valueStart = $keyEnd + strlen("' => '");
+			$valueEnd = strpos($block, "'", $valueStart);
+			if ($valueEnd === false)
+			{
+				break;
+			}
+
+			$key = substr($block, $keyStart, $keyEnd - $keyStart);
+			$value = substr($block, $valueStart, $valueEnd - $valueStart);
+			$result[$key] = $value;
+
+			$curPos = $valueEnd + 1;
+		}
+
+		return $result;
+	}
+
+	protected static function addPS2CurlCommands(&$commands, $func, $block)
+	{
+		global $conf;
+
+		if ($func != 'sfWebRequest->loadParameters' || !startsWith($block, '{sfRequest} request parameters '))
+		{
+			return;
+		}
+
+		$params = self::parsePS2Params($block);
+		if (!isset($params['module']) || !isset($params['action']))
+		{
+			return;
+		}
+
+		$module = $params['module'];
+		$action = $params['action'];
+		unset($params['module']);
+		unset($params['action']);
+
+		$uri = $conf['BASE_KALTURA_API_URL'] . "/index.php/$module/$action?" . http_build_query($params, null, '&');
+
+		$commands[] = array(
+			'label' => 'Copy curl command', 
+			'action' => COMMAND_COPY, 
+			'data' => "curl '$uri'", 
 		);
 	}
 
@@ -483,6 +556,14 @@ class ApiLogFilter extends BaseFilter
 				$result[] = array('text' => substr($block, $fromPos));
 				return $result;
 			}
+
+			$commentEnd = strpos($block, ' */');
+			if ($commentEnd !== false)
+			{
+				return array(
+					array('text' => trim(substr($block, $commentEnd + 3)))
+				);
+			}
 		}
 
 		$commandsByRange = array();
@@ -514,6 +595,7 @@ class ApiLogFilter extends BaseFilter
 		$curServer = $this->server;
 		$curType = count($this->logTypes) == 1 ? reset($this->logTypes) : null;
 		$block = '';
+		$indent = 0;
 		for (;;)
 		{
 			$line = fgets($pipes[1]);
@@ -580,7 +662,24 @@ class ApiLogFilter extends BaseFilter
 			else
 			{
 				self::addKalcliCommands($commands, $func, $block);
+				self::addPS2CurlCommands($commands, $func, $block);
 				self::addQueryCacheCommands($commands, $func, $block);
+			}
+
+			if ($indent > 0 && startsWith($block, 'consumer ') && strpos($block, 'finished handling'))
+			{
+				$indent--;
+			}
+
+			$formattedBlock = self::formatApiBlock($func, $block);
+			if ($indent > 0)
+			{
+				$formattedBlock[0]['text'] = str_repeat('| ', $indent) . $formattedBlock[0]['text'];
+			}
+
+			if (!$multiSession && startsWith($block, 'consumer ') && strpos($block, 'started handling'))
+			{
+				$indent++;
 			}
 
 			$line = array(
@@ -588,12 +687,8 @@ class ApiLogFilter extends BaseFilter
 				'timestamp' => $timestamp,
 				'took' => $took,
 				'function' => $func,
-				'body' => self::formatApiBlock($func, $block),
+				'body' => $formattedBlock,
 			);
-			if (!$multiSession)
-			{
-				$line['indent'] = 0;
-			}
 
 			if (!$this->session)
 			{
