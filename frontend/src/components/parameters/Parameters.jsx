@@ -40,11 +40,12 @@ const toUnixDate = (date) => {
   return parsedDate.isValid() ? parsedDate.format('X') : ""
 }
 
+const defaultFromTime = moment().add(-1, 'days').startOf('day');
 const defaultParameters = {
   type: "",
   textFilter: { type: 'match', text: ''},
-  fromTime:moment().add(-1, 'days').startOf('day'),
-  toTime: moment().add(-1, 'days').endOf('day'),
+  fromTime:defaultFromTime,
+  toTime: moment(defaultFromTime).add(10, 'minutes'),
   server: "",
   session: "",
   table: "",
