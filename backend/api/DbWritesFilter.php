@@ -35,7 +35,7 @@ class DbWritesFilter extends BaseFilter
 	{
 		global $kelloggsPdo, $zblockgrep;
 
-		$sql = 'SELECT file_path, ranges, parent_id FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2 AND type = ? ORDER BY start DESC';
+		$sql = 'SELECT file_path, ranges, parent_id FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2 AND type = ? ORDER BY start ASC';
 		$values = array(
 			1 => $toTime,
 			2 => $fromTime,
@@ -228,11 +228,25 @@ class DbWritesFilter extends BaseFilter
 
 		$captureConditions = implode(',', $captureConditions);
 
-		$textFilter = self::getTextFilterParam(
-			array('type' => 'and', 'filters' => array(
-				array('type' => 'match', 'text' => $this->table),
-				array('type' => 'match', 'text' => $this->objectId),
-			)));
+		$filters = array();
+		if ($this->table)
+		{
+			$filters[] = array('type' => 'match', 'text' => $this->table);
+		}
+		if ($this->objectId)
+		{
+			$filters[] = array('type' => 'match', 'text' => $this->objectId);
+		}
+
+		if ($filters)
+		{
+			$textFilter = self::getTextFilterParam(
+				array('type' => 'and', 'filters' => $filters));
+		}
+		else
+		{
+			$textFilter = '';
+		}
 
 		$this->grepCommand = "$zblockgrep -h -p '$pattern' -c '$captureConditions' $textFilter $fileRanges";
 	}

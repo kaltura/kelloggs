@@ -157,7 +157,7 @@ function genCurlCommand($parsedParams)
 
 	$service = $parsedParams['service'];
 	$action = $parsedParams['action'];
-	$url = $conf['BASE_KALTURA_API_URL'] . "/service/{$service}/action/{$action}";
+	$url = $conf['BASE_KALTURA_API_URL'] . "/api_v3/service/{$service}/action/{$action}";
 	unset($parsedParams['service']);
 	unset($parsedParams['action']);
 	return "curl -d '" . http_build_query($parsedParams) . "' " . $url;
