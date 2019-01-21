@@ -108,7 +108,8 @@ export default class DBLogsParameters extends React.Component {
             />
           </Grid>
           <Grid item xs={4}>
-            <FormControl               fullWidth
+            <FormControl
+              fullWidth
             >
               <InputLabel>Log Types</InputLabel>
             <Select

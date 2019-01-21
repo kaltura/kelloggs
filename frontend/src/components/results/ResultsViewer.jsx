@@ -20,7 +20,8 @@ const styles = {
     margin: '10px'
   },
   metadataChip: {
-    margin: '4px'
+    margin: '4px',
+    cursor: 'pointer'
   }
 }
 
@@ -115,7 +116,7 @@ class ResultsViewer extends React.Component {
   };
 
   render() {
-    const { results, classes } = this.props;
+    const { results, classes, globalCommands } = this.props;
 
     if (!results || !results.schema) {
       return null;
@@ -138,7 +139,7 @@ class ResultsViewer extends React.Component {
           <Paper classes={{root: classes.metadata}}>
               {
                   results.metadata.map((meta, index) => {
-                      return <Chip key={index} label={meta.label + " = " + meta.value}
+                      return <Chip onClick={() => globalCommands.copyToClipboard(meta.value)} key={index} label={meta.label + " = " + meta.value}
                                    className={classes.metadataChip}></Chip>
                   })
               }

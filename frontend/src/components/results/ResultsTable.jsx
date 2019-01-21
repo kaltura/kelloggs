@@ -45,7 +45,7 @@ export default class ResultsTable extends React.PureComponent {
 
         this.state = {
             overscanRowCount: 20,
-            defaultColumnWidth: 40,
+            defaultColumnWidth: 80,
             completed: false,
             rowCount: props.results.items.length,
             scrollToIndex: undefined
@@ -149,7 +149,7 @@ export default class ResultsTable extends React.PureComponent {
 
                         let cellStyle = {
                             left: left + "px",
-                            width: column.width + "px",
+                            width: (column.width || this.state.defaultColumnWidth) + "px",
                             overflow: "hidden",
                             padding: "2px",
                             position: "absolute",
