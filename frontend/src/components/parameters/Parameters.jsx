@@ -48,7 +48,8 @@ const defaultParameters = {
   server: "",
   session: "",
   table: "",
-  objectId: ""
+  objectId: "",
+  logTypes: "apiV3, ps2"
 }
 
 const displayDateFromat = 'YYYY-MM-DD HH:mm';
