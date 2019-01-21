@@ -137,7 +137,6 @@ export default class GlobalCommands extends React.Component {
   }
 
   _buildSearchUrl = (queryParams) => {
-    debugger
     queryParams = this._addAppParamsToQueryString(queryParams);
     const queryParamsToken = buildQuerystring(queryParams);
     const host = this.state.config.hostUrl || getPageUrlWithoutQuerystring();

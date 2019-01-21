@@ -135,12 +135,22 @@ class Parameters extends React.Component
 
   _handleChange = (e) => {
     const { name, value } = e.target;
+
+    const extra = {};
+    if (name === 'fromTime') {
+      const date = moment(value);
+      const isValid = date.isValid();
+      if (isValid) {
+        extra['toTime'] = toStringDate(date.add(10, 'minutes'));
+      }
+    }
     this.setState(state => {
       return (
         {
           parameters: {
             ...state.parameters,
-            [name]: value
+            [name]: value,
+            ...extra
           }
         }
       )
