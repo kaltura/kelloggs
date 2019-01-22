@@ -60,7 +60,7 @@ class App extends React.Component {
       hostUrl: config.hostUrl,
       serviceUrl: config.serviceUrl,
       isHosted: true
-    });
+    }, searchParams);
 
     this.setState({
       isReady: true
@@ -74,17 +74,17 @@ class App extends React.Component {
 
   componentDidMount() {
     const { globalCommands } = this.props;
-    const searchParams = globalCommands.extractQueryString();
-    if (searchParams.jwt) {
+    const queryParams = globalCommands.extractQueryString();
+    if (queryParams.jwt) {
       const location = window.location;
       const currentUrl = window.location.protocol + '//' + location.host + location.pathname;
 
       globalCommands.setConfig({
         isHosted: false,
-        jwt: searchParams.jwt,
-        hostUrl: currentUrl,
-        serviceUrl: searchParams.serviceUrl || '/api'
-      }, searchParams.searchParams);
+        jwt: queryParams.jwt,
+        hostUrl: queryParams.hostUrl || currentUrl,
+        serviceUrl: queryParams.serviceUrl || '/api'
+      }, queryParams.searchParams);
 
       this.setState({
         isReady: true

@@ -96,19 +96,20 @@ export function getQueryString() {
   return urlParams;
 }
 
-export function getCurrentUrlWithoutQuerystring() {
+export function getPageUrlWithoutQuerystring() {
   return window.location.protocol + "//" + window.location.host + window.location.pathname;
 }
 
 
-export function getCurrentUrl() {
+export function getPageUrl() {
   return window.location.href;
 }
+
 
 export function updateUrlQueryParams(queryParams) {
   if (window.history.pushState) {
     const queryParamsToken = buildQuerystring(queryParams);
-    var url =  `${getCurrentUrlWithoutQuerystring()}?${queryParamsToken}`;
+    var url =  `${getPageUrlWithoutQuerystring()}?${queryParamsToken}`;
     window.history.pushState({},'',url);
   }
 }

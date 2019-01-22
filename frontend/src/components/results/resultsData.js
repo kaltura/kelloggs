@@ -8,7 +8,11 @@ const defaultColumnsProperties  ={
             "err": "red",
             "debug": "blue",
             "info": "green",
-            "notice": "cyan"
+            "notice": "cyan",
+            "emerg": "red",
+            "alert": "red",
+            "crit": "red",
+            "warn": "yellow"
         }
     },
     timestamp: {
