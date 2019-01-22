@@ -2,6 +2,7 @@
 
 require_once(dirname(__file__) . '/../lib/PdoWrapper.php');
 require_once(dirname(__file__) . '/../lib/Utils.php');
+require_once(dirname(__file__) . '/../shared/Globals.php');
 require_once(dirname(__file__) . '/Common.php');
 
 define('LOG_TYPE_DB_WRITES', 4);		// TODO: move to some common file
@@ -60,17 +61,15 @@ function getFileRanges($zgrepIndex, $params, $filePath)
 	return array($result, $result[0][2], $lastTime);
 }
 
-function createDbWritesIndex($pdo, $filePath, $id, $start, $end)
+function createDbWritesIndex($confFile, $pdo, $filePath, $id, $start, $end)
 {
-	global $conf, $confFile;
-
 	// create an index file
 	$pathInfo = pathinfo($filePath);
 	$indexPath = $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '-index.gz';
 
-	if (isset($conf['OUTPUT_LOGS_SEARCH']))
+	if (K::Get()->hasConfParam('OUTPUT_LOGS_SEARCH'))
 	{
-		$outputPath = preg_replace($conf['OUTPUT_LOGS_SEARCH'], $conf['OUTPUT_LOGS_REPLACE'], $indexPath);
+		$outputPath = preg_replace(K::Get()->getConfParam('OUTPUT_LOGS_SEARCH'), K::Get()->getConfParam('OUTPUT_LOGS_REPLACE'), $indexPath);
 	}
 	else
 	{
@@ -134,11 +133,11 @@ if ($argc < 5)
 }
 
 $confFile = realpath($argv[2]);
-$conf = loadIniFiles($confFile);
 $workers = loadIniFiles($argv[3]);
 
 // initialize
-$pdo = PdoWrapper::create($conf['kelloggsdb'], array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+K::init($confFile);
+$pdo = K::Get()->getKelloggsRWPdo();
 $workers = getWorkerConfById($workers);
 
 for ($index = 4; $index < $argc; $index++)
@@ -176,7 +175,7 @@ for ($index = 4; $index < $argc; $index++)
 	}
 
 	// get the file ranges
-	$ranges = getFileRanges($conf['ZGREPINDEX'], $params, $filePath);
+	$ranges = getFileRanges(K::Get()->getConfParam('ZGREPINDEX'), $params, $filePath);
 	if (!$ranges)
 	{
 		writeLog("Warning: no ranges found in file $filePath");
@@ -186,7 +185,7 @@ for ($index = 4; $index < $argc; $index++)
 
 	if ($type == LOG_TYPE_DB_WRITES)
 	{
-		createDbWritesIndex($pdo, $filePath, $id, $start, $end);
+		createDbWritesIndex($confFile, $pdo, $filePath, $id, $start, $end);
 	}
 
 	// update the result

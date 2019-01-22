@@ -2,6 +2,7 @@
 
 class DbWritesParser
 {
+	const STMT_PREFIX_SELECT = 'SELECT ';
 	const STMT_PREFIX_INSERT = 'INSERT INTO ';
 	const STMT_PREFIX_UPDATE = 'UPDATE ';
 	const STMT_PREFIX_DELETE = 'DELETE FROM ';
@@ -28,7 +29,18 @@ class DbWritesParser
 			$tables = $stmt->fetchall(PDO::FETCH_NUM);
 			$tables = array_map('reset', $tables);
 		}
+		else
+		{
+			foreach ($tables as $table)
+			{
+				if (!preg_match('/^[a-zA-Z0-9_]+$/', $table))
+				{
+					return false;
+				}
+			}
+		}
 
+		$result = array();
 		foreach ($tables as $table)
 		{
 			$stmt = $pdo->queryRetry('DESCRIBE ' . $table);
@@ -126,6 +138,34 @@ class DbWritesParser
 			$fieldIndex--;
 			$curPos = $nextPos + 1;
 		}
+	}
+
+	public static function getFieldValueFromWhere($statement, $tableName, $field)
+	{
+		$condStr = $tableName . '.' . $field . '=';
+		$condPos = strpos($statement, $condStr);
+		if ($condPos === false)
+		{
+			return false;
+		}
+
+		$value = substr($statement, $condPos + strlen($condStr));
+		if ($value[0] == "'")
+		{
+			$endPos = strpos($value, "'", 1);
+			if ($endPos === false)
+			{
+				return false;
+			}
+
+			$value = substr($value, 1, $endPos - 1);
+		}
+		else
+		{
+			$value = intval($value);
+		}
+
+		return $value;
 	}
 
 	public static function parseComment($comment)
@@ -238,28 +278,7 @@ class DbWritesParser
 
 		if ($wherePos !== false)
 		{
-			$condStr = $tableName . '.' . $field . '=';
-			$condPos = strpos($statement, $condStr, $wherePos);
-			if ($condPos === false)
-			{
-				return false;
-			}
-
-			$value = substr($statement, $condPos + strlen($condStr));
-			if ($value[0] == "'")
-			{
-				$endPos = strpos($value, "'", 1);
-				if ($endPos === false)
-				{
-					return false;
-				}
-
-				$id = substr($value, 1, $endPos - 1);
-			}
-			else
-			{
-				$id = intval($value);
-			}
+			$id = self::getFieldValueFromWhere(substr($statement, $wherePos), $tableName, $field);
 		}
 		else
 		{
@@ -282,5 +301,46 @@ class DbWritesParser
 		}
 
 		return array($tableName, $id, $this->timestamp, $comment, $statement);
+	}
+
+	public static function parseSelectStatement($statement)
+	{
+		$fromPos = strpos($statement, ' FROM ');
+		if ($fromPos === false)
+		{
+			return null;
+		}
+
+		$selectFields = substr($statement, strlen(self::STMT_PREFIX_SELECT), $fromPos);
+		$selectStatement = substr($statement, $fromPos);
+
+		// get the table name
+		$tableName = trim(substr($statement, $fromPos + strlen(' FROM ')));
+		$tableNameEnd = $tableName[0] == '`' ? strpos($tableName, '`', 1) : strpos($tableName, ' ');
+		if ($tableNameEnd !== false)
+		{
+			$tableName = trim(substr($tableName, 0, $tableNameEnd), '`');
+		}
+
+		// get the where block
+		$wherePos = strpos($statement, ' WHERE ');
+		if ($wherePos === false)
+		{
+			return array($selectFields, $selectStatement, $tableName, null);
+		}
+
+		// get the primary key
+		// TODO: cache the primary key mapping
+		$primaryKeys = self::getPrimaryKeysMap(K::get()->getProdPdo(), array($tableName));
+		if (!$primaryKeys)
+		{
+			return array($selectFields, $selectStatement, $tableName, null);
+		}
+		list($field, $autoIncrement) = $primaryKeys[$tableName];
+
+		// get the object id
+		$objectId = self::getFieldValueFromWhere(substr($statement, $wherePos), $tableName, $field);
+
+		return array($selectFields, $selectStatement, $tableName, $objectId);
 	}
 }

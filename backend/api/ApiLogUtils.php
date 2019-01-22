@@ -1,5 +1,8 @@
 <?php
 
+require_once(dirname(__file__) . '/../lib/KalturaSession.php');
+require_once(dirname(__file__) . '/DatabaseSecretRepository.php');
+
 function print_r_reverse($in)
 {
     $lines = explode("\n", trim($in));
@@ -71,6 +74,36 @@ function flattenArray($input, $prefix)
 		}
 	}
 	return $result;
+}
+
+function renewKss($params)
+{
+	$renewedSessions = array();		// cache the renewed kss for multirequest
+	foreach ($params as $key => &$value)
+	{
+		if ($key != 'ks' && !preg_match('/[\d]+:ks/', $key))
+		{
+			continue;
+		}
+
+		if (isset($renewedSessions[$value]))
+		{
+			$value = $renewedSessions[$value];
+			continue;
+		}
+
+		DatabaseSecretRepository::init();
+		$renewedKs = KalturaSession::extendKs($value);
+		if (!$renewedKs)
+		{
+			continue;
+		}
+
+		$renewedSessions[$value] = $renewedKs; 
+		$value = $renewedKs;
+	}
+
+	return $params;
 }
 
 function parseMultirequest($parsedParams)
@@ -148,8 +181,6 @@ function genKalcliCommand($parsedParams)
 
 function genCurlCommand($parsedParams)
 {
-	global $conf;
-
 	if (!isset($parsedParams['service']) || !isset($parsedParams['action']))
 	{
 		return false;
@@ -157,7 +188,7 @@ function genCurlCommand($parsedParams)
 
 	$service = $parsedParams['service'];
 	$action = $parsedParams['action'];
-	$url = $conf['BASE_KALTURA_API_URL'] . "/api_v3/service/{$service}/action/{$action}";
+	$url = K::Get()->getConfParam('BASE_KALTURA_API_URL') . "/api_v3/service/{$service}/action/{$action}";
 	unset($parsedParams['service']);
 	unset($parsedParams['action']);
 	return "curl -d '" . http_build_query($parsedParams) . "' " . $url;

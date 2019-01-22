@@ -2,6 +2,7 @@
 
 require_once(dirname(__file__) . '/../lib/Utils.php');
 require_once(dirname(__file__) . '/../lib/PdoWrapper.php');
+require_once(dirname(__file__) . '/../shared/Globals.php');
 require_once(dirname(__file__) . '/Common.php');
 
 define('FILEMTIME_MARGIN', 900);
@@ -114,11 +115,12 @@ if ($argc < 3)
 	exit(1);
 }
 
-$conf = loadIniFiles($argv[1]);
+$confFile = $argv[1];
 $workers = loadIniFiles($argv[2]);
 
 // initialize
-$pdo = PdoWrapper::create($conf['kelloggsdb'], array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+K::init($confFile);
+$pdo = K::Get()->getKelloggsRWPdo();
 $workers = getWorkerConfById($workers);
 
 // get the files from disk
