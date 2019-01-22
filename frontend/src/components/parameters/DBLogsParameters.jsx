@@ -3,11 +3,6 @@ import Grid from "@material-ui/core/Grid/Grid";
 import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
 import moment from 'moment';
-import Input from "@material-ui/core/Input/Input";
-import FormControl from "@material-ui/core/FormControl/FormControl";
-import MenuItem from "@material-ui/core/MenuItem/MenuItem";
-import InputLabel from "@material-ui/core/InputLabel/InputLabel";
-import Select from "@material-ui/core/Select/Select";
 
 export default class DBLogsParameters extends React.Component {
   state = {
@@ -17,7 +12,7 @@ export default class DBLogsParameters extends React.Component {
 
   filterParameters = (parameters) => {
     return Object.keys(parameters).reduce((acc, parameterName) => {
-      if (['type', 'fromTime', 'toTime', 'textFilter', 'table', 'objectId', 'logTypes'].indexOf(parameterName) !== -1) {
+      if (['type', 'fromTime', 'toTime', 'textFilter', 'table', 'objectId'].indexOf(parameterName) !== -1) {
         acc[parameterName] = parameters[parameterName];
       }
       return acc;
@@ -41,7 +36,7 @@ export default class DBLogsParameters extends React.Component {
   }
 
   render() {
-    const { textFilter, objectId, table, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange, logTypes } = this.props;
+    const { textFilter, objectId, table, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
 
     return (
@@ -106,22 +101,6 @@ export default class DBLogsParameters extends React.Component {
                 shrink: true,
               }}
             />
-          </Grid>
-          <Grid item xs={4}>
-            <FormControl
-              fullWidth
-            >
-              <InputLabel>Log Types</InputLabel>
-            <Select
-              value={logTypes}
-              onChange={onChange}
-              input={<Input name="logTypes" id="type-input" />}
-            >
-              <MenuItem value={'apiV3, ps2'}>apiV3, ps2</MenuItem>
-              <MenuItem value={'apiV3'}>apiV3</MenuItem>
-              <MenuItem value={'ps2'}>ps2</MenuItem>
-            </Select>
-            </FormControl>
           </Grid>
         </Grid>
       </Paper>
