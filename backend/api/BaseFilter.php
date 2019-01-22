@@ -14,8 +14,18 @@ class BaseFilter
 	protected $fileMap;
 	protected $multiRanges;
 
-	protected function __construct($filter)
+	protected $params;
+	protected $responseFormat;
+	protected $zblockgrep;
+
+	protected function __construct($params, $filter)
 	{
+		$this->responseFormat = isset($params['responseFormat']) ? $params['responseFormat'] : RESPONSE_FORMAT_JSON;
+		if (!in_array($this->responseFormat, array(RESPONSE_FORMAT_RAW, RESPONSE_FORMAT_DOWNLOAD, RESPONSE_FORMAT_JSON)))
+		{
+			dieError(ERROR_BAD_REQUEST, 'Invalid responseFormat');
+		}
+
 		if (!isset($filter['fromTime']) || !isset($filter['toTime']))
 		{
 			dieError(ERROR_BAD_REQUEST, 'Missing fromTime/toTime');
@@ -41,6 +51,9 @@ class BaseFilter
 		}
 
 		$this->textFilter = isset($filter['textFilter']) ? $filter['textFilter'] : null;
+
+		$this->zblockgrep = 'timeout ' . K::get()->getConfParam('GREP_TIMEOUT') . ' ' . K::get()->getConfParam('ZBLOCKGREP');
+		$this->params = $params;
 	}
 
 	protected function getDownloadFileName()
@@ -55,7 +68,7 @@ class BaseFilter
 			$result .= '-' . $this->session;
 		}
 		$result .= date('-Y-m-d-H-i', $this->fromTime);
-		if (!$session)
+		if (!$this->session)
 		{
 			$result .= date('-Y-m-d-H:i', $this->toTime);
 		}
@@ -66,11 +79,9 @@ class BaseFilter
 
 	protected function getTopLevelCommands()
 	{
-		global $conf, $params;
-
-		$baseApiUrl = $conf['BASE_KELLOGGS_API_URL'];
-		$rawUrl = $baseApiUrl . '?' . http_build_query(array_merge($params, array('responseFormat' => RESPONSE_FORMAT_RAW)));
-		$downloadUrl = $baseApiUrl . '?' . http_build_query(array_merge($params, array('responseFormat' => RESPONSE_FORMAT_DOWNLOAD)));
+		$baseApiUrl = K::Get()->getConfParam('BASE_KELLOGGS_API_URL');
+		$rawUrl = $baseApiUrl . '?' . http_build_query(array_merge($this->params, array('responseFormat' => RESPONSE_FORMAT_RAW)));
+		$downloadUrl = $baseApiUrl . '?' . http_build_query(array_merge($this->params, array('responseFormat' => RESPONSE_FORMAT_DOWNLOAD)));
 
 		return array(
 			array('label' => 'Copy grep command', 'action' => COMMAND_COPY, 'data' => $this->grepCommand),
@@ -81,9 +92,7 @@ class BaseFilter
 
 	protected function handleRawFormats()
 	{
-		global $responseFormat;
-
-		switch ($responseFormat)
+		switch ($this->responseFormat)
 		{
 		case RESPONSE_FORMAT_DOWNLOAD:
 			$downloadFileName = $this->getDownloadFileName();
@@ -99,26 +108,8 @@ class BaseFilter
 		}
 	}
 
-	protected static function getProdPdo()
-	{
-		global $kelloggsPdo, $conf;
-
-		if ($conf['kelloggsdb_read'] == $conf['database'])
-		{
-			return $kelloggsPdo;
-		}
-
-		ob_start();
-		$pdo = PdoWrapper::create($conf['database']);
-		ob_end_clean();
-
-		return $pdo;
-	}
-
 	protected static function getFileRanges($logTypes, $fromTime, $toTime, $serverPattern = null)
 	{
-		global $kelloggsPdo;
-
 		$sql = 'SELECT server, type, file_path, ranges FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2';
 		$values = array(
 			$toTime,
@@ -133,7 +124,7 @@ class BaseFilter
 			$serverPattern = null;
 		}
 		$sql .= ' AND type IN (@ids@)';
-		$stmt = $kelloggsPdo->executeInStatement($sql, $logTypes, $values, false);
+		$stmt = K::get()->getKelloggsPdo()->executeInStatement($sql, $logTypes, $values, false);
 		$rows = $stmt->fetchall(PDO::FETCH_ASSOC);
 
 		$fileRanges = array();
@@ -150,7 +141,7 @@ class BaseFilter
 			$curFilePath = $row['file_path'];
 			$curFileType = $row['type'];
 			$ranges = json_decode($row['ranges']);
-			
+
 			$minOffset = null;
 			$maxOffset = null;
 			$curOffset = 0;
@@ -266,8 +257,8 @@ class BaseFilter
 			for ($i = 0; $i < $matchCount; $i++)
 			{
 				$match = $matches[0][$i];
-				$fileName = $matches[1][$i];
-				$fileLine = $matches[2][$i];
+				$fileName = $matches['file'][$i];
+				$fileLine = $matches['line'][$i];
 
 				$sourceRefs[$match] = array($fileName, $fileLine);
 			}
@@ -337,7 +328,7 @@ class BaseFilter
 			'fromTime' => $timestamp - $margin,
 			'toTime' => $timestamp + $margin,
 		);
-		
+
 		if ($logType)
 		{
 			$sessionFilter['logTypes'] = $logType;

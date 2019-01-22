@@ -4,6 +4,7 @@ require_once(dirname(__file__) . '/../lib/Utils.php');
 require_once(dirname(__file__) . '/../lib/PdoWrapper.php');
 require_once(dirname(__file__) . '/../lib/AccessLogParser.php');
 require_once(dirname(__file__) . '/../lib/Jwt.php');
+require_once(dirname(__file__) . '/../shared/Globals.php');
 
 define('RESPONSE_FORMAT_RAW', 'raw');
 define('RESPONSE_FORMAT_DOWNLOAD', 'download');
@@ -149,13 +150,14 @@ if($_SERVER['REQUEST_METHOD'] == 'OPTIONS')
 $params = getRequestParams();
 $params = groupParams($params);
 
-$conf = loadIniFiles(dirname(__file__) . '/../conf/kelloggs.ini');
 if (!isset($params['jwt']))
 {
 	dieError(ERROR_UNAUTHORIZED, 'Unauthorized');
 }
 
-$jwtPayload = jwtDecode($params['jwt'], $conf['JWT_KEY']);
+K::init(dirname(__file__) . '/../conf/kelloggs.ini');
+
+$jwtPayload = jwtDecode($params['jwt'], K::get()->getConfParam('JWT_KEY'));
 if (!$jwtPayload)
 {
 	dieError(ERROR_UNAUTHORIZED, 'Unauthorized');
@@ -164,17 +166,7 @@ if (!$jwtPayload)
 // initialize
 enableStreamingOutput();
 
-ob_start();
-$kelloggsPdo = PdoWrapper::create($conf['kelloggsdb_read']);
-ob_end_clean();
-
 // validate input params
-$responseFormat = isset($params['responseFormat']) ? $params['responseFormat'] : RESPONSE_FORMAT_JSON;
-if (!in_array($responseFormat, array(RESPONSE_FORMAT_RAW, RESPONSE_FORMAT_DOWNLOAD, RESPONSE_FORMAT_JSON)))
-{
-	dieError(ERROR_BAD_REQUEST, 'Invalid responseFormat');
-}
-
 if (!isset($params['filter']))
 {
 	dieError(ERROR_BAD_REQUEST, 'Missing filter param');
@@ -192,9 +184,8 @@ if (!isset($filter['type']) || !isset($filterTypeMap[$filter['type']]))
 }
 
 // run query handler
-ini_set('max_execution_time', $conf['GREP_TIMEOUT']);
-$zblockgrep = "timeout {$conf['GREP_TIMEOUT']} {$conf['ZBLOCKGREP']}";
+ini_set('max_execution_time', K::get()->getConfParam('GREP_TIMEOUT'));
 
 $handler = $filterTypeMap[$filter['type']];
 require_once(dirname(__file__) . "/$handler.php");
-$handler::main($filter);
+$handler::main($params, $filter);

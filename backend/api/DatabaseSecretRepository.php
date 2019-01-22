@@ -6,17 +6,12 @@ class DatabaseSecretRepository
 
 	public static function init()
 	{
-		global $conf;
-
 		if (self::$instance)
 		{
 			return;
 		}
 
-		ob_start();
-		$pdo = PdoWrapper::create($conf['database']);
-		ob_end_clean();
-		self::$instance = new DatabaseSecretRepository($pdo);
+		self::$instance = new DatabaseSecretRepository(K::get()->getProdPdo());
 		KalturaSession::registerSecretRepository(self::$instance);
 	}
 

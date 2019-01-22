@@ -12,9 +12,9 @@ class DbWritesFilter extends BaseFilter
 	protected $table;
 	protected $objectId;
 
-	protected function __construct($filter)
+	protected function __construct($params, $filter)
 	{
-		parent::__construct($filter);
+		parent::__construct($params, $filter);
 
 		if (isset($filter['table']) && $filter['table'])
 		{
@@ -31,10 +31,8 @@ class DbWritesFilter extends BaseFilter
 		$this->objectId = isset($filter['objectId']) ? $filter['objectId'] : null;
 	}
 
-	protected static function searchIndexes($key, $fromTime, $toTime)
+	protected function searchIndexes($key, $fromTime, $toTime)
 	{
-		global $kelloggsPdo, $zblockgrep;
-
 		$sql = 'SELECT file_path, ranges, parent_id FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2 AND type = ? ORDER BY start ASC';
 		$values = array(
 			1 => $toTime,
@@ -43,7 +41,7 @@ class DbWritesFilter extends BaseFilter
 			4 => LOG_TYPE_DB_WRITES_INDEX,
 		);
 
-		$stmt = $kelloggsPdo->executeStatement($sql, $values, false);
+		$stmt = K::get()->getKelloggsPdo()->executeStatement($sql, $values, false);
 		$rows = $stmt->fetchall(PDO::FETCH_ASSOC);
 
 		$fileRanges = array();
@@ -82,7 +80,7 @@ class DbWritesFilter extends BaseFilter
 
 		$pattern = '([^ ]+) ';
 		$captureConditions = "\$1=$key";
-		$grepCommand = "$zblockgrep -H -p '$pattern' -c '$captureConditions' $fileRanges";
+		$grepCommand = $this->zblockgrep . " -H -p '$pattern' -c '$captureConditions' $fileRanges";
 		exec($grepCommand, $output);
 
 		$result = array();
@@ -139,16 +137,14 @@ class DbWritesFilter extends BaseFilter
 
 	protected function getFileRangesUsingIndex()
 	{
-		global $kelloggsPdo;
-
-		$indexResult = self::searchIndexes($this->table . '_' . $this->objectId, $this->fromTime, $this->toTime);
+		$indexResult = $this->searchIndexes($this->table . '_' . $this->objectId, $this->fromTime, $this->toTime);
 		if (!$indexResult)
 		{
 			dieError(ERROR_NO_RESULTS, 'No logs matched the search filter');
 		}
 
 		$sql = 'SELECT id, file_path, ranges FROM kelloggs_files WHERE id IN (@ids@)';
-		$stmt = $kelloggsPdo->executeInStatement($sql, array_keys($indexResult), null, false);
+		$stmt = K::get()->getKelloggsPdo()->executeInStatement($sql, array_keys($indexResult), null, false);
 		$rows = $stmt->fetchall(PDO::FETCH_ASSOC);
 
 		$fileRanges = array();
@@ -200,8 +196,6 @@ class DbWritesFilter extends BaseFilter
 
 	protected function getGrepCommand()
 	{
-		global $zblockgrep;
-
 		if ($this->table && $this->objectId && $this->toTime - $this->fromTime > 3600)
 		{
 			list($fileRanges, $totalSize) = $this->getFileRangesUsingIndex();
@@ -248,13 +242,11 @@ class DbWritesFilter extends BaseFilter
 			$textFilter = '';
 		}
 
-		$this->grepCommand = "$zblockgrep -h -p '$pattern' -c '$captureConditions' $textFilter $fileRanges";
+		$this->grepCommand = $this->zblockgrep . " -h -p '$pattern' -c '$captureConditions' $textFilter $fileRanges";
 	}
 
 	protected function getResponseHeader()
 	{
-		global $conf, $params;
-
 		$columns = array();
 		$metadata = array();
 
@@ -296,7 +288,7 @@ class DbWritesFilter extends BaseFilter
 	{
 		// initialize the parser
 		$primaryKeys = DbWritesParser::getPrimaryKeysMap(
-			self::getProdPdo(), 
+			K::get()->getProdPdo(), 
 			$this->table ? array($this->table) : null);
 		if (!$primaryKeys)
 		{
@@ -393,9 +385,9 @@ class DbWritesFilter extends BaseFilter
 		$this->handleJsonFormat();
 	}
 
-	public static function main($filter)
+	public static function main($params, $filter)
 	{
-		$obj = new DbWritesFilter($filter);
+		$obj = new DbWritesFilter($params, $filter);
 		$obj->doMain();
 	}
 }

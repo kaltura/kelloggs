@@ -3,6 +3,7 @@
 require_once(dirname(__file__) . '/../lib/PdoWrapper.php');
 require_once(dirname(__file__) . '/../lib/Stream.php');
 require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
+require_once(dirname(__file__) . '/../shared/Globals.php');
 
 define('TIME_GRANULARITY', 60);
 
@@ -98,12 +99,13 @@ if ($argc < 5)
 	exit(1);
 }
 
-$conf = loadIniFiles($argv[1]);
+$confFile = $argv[1];
 $inputPath = $argv[2];
 $outputPath = $argv[3];
 $rangesPath = $argv[4];
 
-$pdo = PdoWrapper::create($conf['database']);
+K::init($confFile);
+$pdo = K::get()->getProdPdo();
 
 writeLog('Info: started, pid=' . getmypid());
 

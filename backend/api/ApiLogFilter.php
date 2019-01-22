@@ -1,6 +1,7 @@
 <?php
 
 require_once(dirname(__file__) . '/../lib/KalturaSession.php');
+require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
 require_once(dirname(__file__) . '/DatabaseSecretRepository.php');
 require_once(dirname(__file__) . '/ApiLogUtils.php');
 require_once(dirname(__file__) . '/BaseFilter.php');
@@ -33,9 +34,9 @@ class ApiLogFilter extends BaseFilter
 		'PHP Fatal error:' => 'crit',
 	);
 
-	protected function __construct($filter)
+	protected function __construct($params, $filter)
 	{
-		parent::__construct($filter);
+		parent::__construct($params, $filter);
 
 		$logTypes = isset($filter['logTypes']) ? explode(',', $filter['logTypes']) : array();
 		$this->logTypes = array();
@@ -58,8 +59,6 @@ class ApiLogFilter extends BaseFilter
 
 	protected function getGrepCommand()
 	{
-		global $responseFormat, $zblockgrep;
-
 		list($fileRanges, $totalSize, $fileMap) = self::getFileRanges($this->logTypes, $this->fromTime, $this->toTime, $this->serverPattern);
 		if (!$fileRanges)
 		{
@@ -85,8 +84,8 @@ class ApiLogFilter extends BaseFilter
 
 		$textFilter = self::getTextFilterParam($this->textFilter);
 
-		$delimiter = $responseFormat != RESPONSE_FORMAT_RAW ? '-d' . BLOCK_DELIMITER : '';
-		$this->grepCommand = "$zblockgrep -p '$pattern' -c '$captureConditions' $textFilter $delimiter $fileRanges";
+		$delimiter = $this->responseFormat != RESPONSE_FORMAT_RAW ? '-d' . BLOCK_DELIMITER : '';
+		$this->grepCommand = $this->zblockgrep . " -p '$pattern' -c '$captureConditions' $textFilter $delimiter $fileRanges";
 
 		$serverNames = array();
 		foreach ($fileMap as $fileInfo)
@@ -108,8 +107,6 @@ class ApiLogFilter extends BaseFilter
 
 	protected function getAccessLogMetadataFields()
 	{
-		global $zblockgrep;
-
 		list($fileRanges, $ignore, $ignore) = self::getFileRanges(array(LOG_TYPE_API_ACCESS), $this->fromTime, $this->toTime, $this->server);
 		if (!$fileRanges)
 		{
@@ -129,7 +126,7 @@ class ApiLogFilter extends BaseFilter
 		$textFilter = self::getTextFilterParam(array('type' => 'match', 'text' => $this->session));
 
 		$pattern = PATTERN_API_ACCESS;
-		$grepCommand = "$zblockgrep -h -p '$pattern' -t '$timeFormat' -c '$captureConditions' $textFilter $fileRanges";
+		$grepCommand = $this->zblockgrep . " -h -p '$pattern' -t '$timeFormat' -c '$captureConditions' $textFilter $fileRanges";
 
 		exec($grepCommand, $output);
 
@@ -186,8 +183,6 @@ class ApiLogFilter extends BaseFilter
 
 	protected function getErrorLogLines()
 	{
-		global $zblockgrep;
-
 		list($fileRanges, $ignore, $ignore) = self::getFileRanges(array(LOG_TYPE_API_ERROR), $this->fromTime, $this->toTime, $this->server);
 		if (!$fileRanges)
 		{
@@ -207,7 +202,7 @@ class ApiLogFilter extends BaseFilter
 		$textFilter = self::getTextFilterParam(array('type' => 'match', 'text' => 'session ' . $this->session));
 
 		$pattern = PATTERN_API_ERROR;
-		$grepCommand = "$zblockgrep -h -p '$pattern' -t '$timeFormat' -c '$captureConditions' $textFilter $fileRanges";
+		$grepCommand = $this->zblockgrep . " -h -p '$pattern' -t '$timeFormat' -c '$captureConditions' $textFilter $fileRanges";
 
 		exec($grepCommand, $output);
 
@@ -264,14 +259,22 @@ class ApiLogFilter extends BaseFilter
 				}
 			}
 
+			$commands = array();
+			$formattedBlock = self::formatApiBlock($timestamp, $func, $body, $commands);
+
 			$func = 'error_log';
 			$line = array(
 				'severity' => $severity,
 				'timestamp' => $timestamp,
 				'took' => 0,
 				'function' => $func,
-				'body' => self::formatApiBlock($func, $body),
+				'body' => $formattedBlock,
 			);
+
+			if ($commands)
+			{
+				$line['commands'] = $commands;
+			}
 
 			$result[] = $line;
 		}
@@ -374,8 +377,6 @@ class ApiLogFilter extends BaseFilter
 
 	protected static function addPS2CurlCommands(&$commands, $func, $block)
 	{
-		global $conf;
-
 		if ($func != 'sfWebRequest->loadParameters' || !startsWith($block, '{sfRequest} request parameters '))
 		{
 			return;
@@ -391,8 +392,9 @@ class ApiLogFilter extends BaseFilter
 		$action = $params['action'];
 		unset($params['module']);
 		unset($params['action']);
+		$params = renewKss($params);
 
-		$uri = $conf['BASE_KALTURA_API_URL'] . "/index.php/$module/$action?" . http_build_query($params, null, '&');
+		$uri = K::Get()->getConfParam('BASE_KALTURA_API_URL') . "/index.php/$module/$action?" . http_build_query($params, null, '&');
 
 		$commands[] = array(
 			'label' => 'Copy curl command', 
@@ -443,6 +445,8 @@ class ApiLogFilter extends BaseFilter
 			}*/
 			$parsedParams['action'] = 'null';
 		}
+
+		$parsedParams = renewKss($parsedParams);
 
 		$kalcliCommand = genKalcliCommand($parsedParams);
 		if ($kalcliCommand)
@@ -535,40 +539,64 @@ class ApiLogFilter extends BaseFilter
 		}
 	}
 
-	protected static function formatApiBlock($func, $block)
+	protected static function gotoObjectWritesCommands($timestamp, $tableName, $objectId, $margin = 864000)
 	{
-		global $conf;
+		$sessionFilter = array(
+			'type' => 'dbWritesFilter',
+			'fromTime' => $timestamp - $margin,
+			'toTime' => $timestamp + $margin,
+			'table' => $tableName,
+			'objectId' => $objectId,
+		);
 
+		return array(
+			array('label' => "Go to $tableName:$objectId writes", 'action' => COMMAND_SEARCH, 'data' => $sessionFilter),
+			array('label' => "Open $tableName:$objectId writes in new tab", 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $sessionFilter),
+		);
+	}
+
+	protected static function formatApiBlock($timestamp, $func, $block, &$commands)
+	{
 		$block = rtrim($block);
 
 		if ($func == 'KalturaStatement->execute' && startsWith($block, '/* '))
 		{
-			$selectPos = strpos($block, ' SELECT ');
-			$fromPos = strpos($block, ' FROM ');
-			if ($selectPos !== false && $fromPos !== false && $selectPos < $fromPos)
-			{
-				// hide select fields by default
-				$result = array();
-				$result[] = array('text' => 'SELECT ');
-				$result[] = array('text' => '...', 'commands' => array( 
-					array('label' => 'Show fields', 'action' => COMMAND_TOOLTIP, 'data' => substr($block, $selectPos + 8, $fromPos - $selectPos - 8))
-				));
-				$result[] = array('text' => substr($block, $fromPos));
-				return $result;
-			}
-
+			// strip the comment
 			$commentEnd = strpos($block, ' */');
 			if ($commentEnd !== false)
 			{
-				return array(
-					array('text' => trim(substr($block, $commentEnd + 3)))
-				);
+				$block = trim(substr($block, $commentEnd + 3));
+			}
+
+			if (startsWith($block, DbWritesParser::STMT_PREFIX_SELECT))
+			{
+				$select = DbWritesParser::parseSelectStatement($block);
+				if ($select)
+				{
+					list($selectFields, $selectStatement, $tableName, $objectId) = $select;
+
+					// hide select fields by default
+					$result = array();
+					$result[] = array('text' => 'SELECT ');
+					$result[] = array('text' => '...', 'commands' => array( 
+						array('label' => 'Show fields', 'action' => COMMAND_TOOLTIP, 'data' => $selectFields)
+					));
+					$result[] = array('text' => $selectStatement);
+
+					if ($tableName && $objectId)
+					{
+						$commands = array_merge($commands,
+							self::gotoObjectWritesCommands($timestamp, $tableName, $objectId));
+					}
+
+					return $result;
+				}
 			}
 		}
 
 		$commandsByRange = array();
 		self::addKsCommands($commandsByRange, $block);
-		self::addSourceCodeCommands($commandsByRange, $conf['api_source'], $block);
+		self::addSourceCodeCommands($commandsByRange, K::Get()->getConfParam('api_source'), $block);
 		return self::formatBlock($block, $commandsByRange);
 	}
 
@@ -671,7 +699,7 @@ class ApiLogFilter extends BaseFilter
 				$indent--;
 			}
 
-			$formattedBlock = self::formatApiBlock($func, $block);
+			$formattedBlock = self::formatApiBlock($timestamp, $func, $block, $commands);
 			if ($indent > 0)
 			{
 				$formattedBlock[0]['text'] = str_repeat('| ', $indent) . $formattedBlock[0]['text'];
@@ -724,9 +752,9 @@ class ApiLogFilter extends BaseFilter
 		$this->handleJsonFormat();
 	}
 
-	public static function main($filter)
+	public static function main($params, $filter)
 	{
-		$obj = new ApiLogFilter($filter);
+		$obj = new ApiLogFilter($params, $filter);
 		$obj->doMain();
 	}
 }
