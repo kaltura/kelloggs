@@ -18,6 +18,8 @@ class BaseFilter
 	protected $responseFormat;
 	protected $zblockgrep;
 
+	protected static $primaryKeys;
+
 	protected function __construct($params, $filter)
 	{
 		$this->responseFormat = isset($params['responseFormat']) ? $params['responseFormat'] : RESPONSE_FORMAT_JSON;
@@ -213,7 +215,7 @@ class BaseFilter
 		}
 	}
 
-	protected static function formatBlock($block, $commandsByRange)
+	protected static function formatBlock($block, $commandsByRange = array())
 	{
 		sort($commandsByRange);
 
@@ -368,5 +370,34 @@ class BaseFilter
 			$result[] = array('label' => $key, 'value' => $value);
 		}
 		return $result;
+	}
+
+	protected static function getPrimaryKeysMap()
+	{
+		if (self::$primaryKeys)
+		{
+			return self::$primaryKeys;
+		}
+
+		if (function_exists('apcu_fetch'))
+		{
+			self::$primaryKeys = apcu_fetch('primary_keys_map');
+			if (self::$primaryKeys)
+			{
+				return self::$primaryKeys;
+			}
+		}
+
+		self::$primaryKeys = DbWritesParser::getPrimaryKeysMap(K::get()->getProdPdo());
+		if (!self::$primaryKeys)
+		{
+			return false;
+		}
+
+		if (function_exists('apcu_fetch'))
+		{
+			self::$primaryKeys = apcu_store('primary_keys_map', self::$primaryKeys, 86400);
+		}
+		return self::$primaryKeys;
 	}
 }

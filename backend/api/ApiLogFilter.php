@@ -260,9 +260,9 @@ class ApiLogFilter extends BaseFilter
 			}
 
 			$commands = array();
+			$func = 'error_log';
 			$formattedBlock = self::formatApiBlock($timestamp, $func, $body, $commands);
 
-			$func = 'error_log';
 			$line = array(
 				'severity' => $severity,
 				'timestamp' => $timestamp,
@@ -375,7 +375,7 @@ class ApiLogFilter extends BaseFilter
 		return $result;
 	}
 
-	protected static function addPS2CurlCommands(&$commands, $func, $block)
+	protected static function addPS2CurlCommands(&$commands, $func, &$block)
 	{
 		if ($func != 'sfWebRequest->loadParameters' || !startsWith($block, '{sfRequest} request parameters '))
 		{
@@ -401,6 +401,8 @@ class ApiLogFilter extends BaseFilter
 			'action' => COMMAND_COPY, 
 			'data' => "curl '$uri'", 
 		);
+
+		$block = str_replace("  '", "\n  '", $block);
 	}
 
 	protected static function addKalcliCommands(&$commands, $func, $block)
@@ -489,31 +491,17 @@ class ApiLogFilter extends BaseFilter
 	protected static function addKsCommands(&$commandsByRange, $block)
 	{
 		$kss = array();
-		$offset = 1;
-		for (;;)
+		if (preg_match_all("/[\[:]ks\] => (.*)$/m", $block, $matches))
 		{
-			$offset = strpos($block, 'ks] => ', $offset);
-			if ($offset === false)
-			{
-				break;
-			}
-
-			if (!in_array($block[$offset - 1], array(':', '[')))
-			{
-				continue;
-			}
-
-			$offset += strlen('ks] => ');
-			$newLinePos = strpos($block, "\n", $offset);
-			$ks = substr($block, $offset, $newLinePos - $offset);
-			if (!isset($kss[$ks]))
-			{
-				$kss[$ks] = array();
-			}
-			$kss[$ks][] = $offset;
+			$kss = array_merge($kss, $matches[1]);
 		}
+		if (preg_match_all("/'ks' => '([^']+)'/", $block, $matches))
+		{
+			$kss = array_merge($kss, $matches[1]);
+		}
+		$kss = array_unique($kss);
 
-		foreach ($kss as $ks => $offsets)
+		foreach ($kss as $ks)
 		{
 			DatabaseSecretRepository::init();
 			$ksObj = KalturaSession::getKsObject($ks);
@@ -532,10 +520,7 @@ class ApiLogFilter extends BaseFilter
 				array('label' => 'Renew + copy', 'action' => COMMAND_COPY, 'data' => $renewedKs),
 			);
 
-			foreach ($offsets as $offset)
-			{
-				$commandsByRange[] = array($offset, strlen($ks), $commands);
-			}
+			self::addCommandsByString($commandsByRange, $block, $ks, $commands);
 		}
 	}
 
@@ -555,43 +540,73 @@ class ApiLogFilter extends BaseFilter
 		);
 	}
 
+	protected static function formatDbStatements($block, $timestamp, &$commands)
+	{
+		// strip the comment
+		$commentEnd = strpos($block, ' */');
+		if ($commentEnd === false)
+		{
+			return self::formatBlock($block);
+		}
+		$block = trim(substr($block, $commentEnd + 3));
+
+		// get the primary keys map
+		$primaryKeys = self::getPrimaryKeysMap();
+		if (!$primaryKeys)
+		{
+			return self::formatBlock($block);
+		}
+
+		if (!startsWith($block, DbWritesParser::STMT_PREFIX_SELECT))
+		{
+			$parseResult = DbWritesParser::parseWriteStatement($block, $primaryKeys);
+			if (!$parseResult)
+			{
+				return self::formatBlock($block);
+			}
+
+			list($tableName, $objectId) = $parseResult;
+			if ($tableName && $objectId)
+			{
+				$commands = array_merge($commands,
+					self::gotoObjectWritesCommands($timestamp, $tableName, $objectId));
+			}
+
+			return self::formatBlock($block);
+		}
+
+		$select = DbWritesParser::parseSelectStatement($block, $primaryKeys);
+		if (!$select)
+		{
+			return self::formatBlock($block);
+		}
+
+		list($selectFields, $selectStatement, $tableName, $objectId) = $select;
+
+		// hide select fields by default
+		$result = array();
+		$result[] = array('text' => 'SELECT ');
+		$result[] = array('text' => '...', 'commands' => array( 
+			array('label' => 'Show fields', 'action' => COMMAND_TOOLTIP, 'data' => $selectFields)
+		));
+		$result[] = array('text' => $selectStatement);
+
+		if ($tableName && $objectId)
+		{
+			$commands = array_merge($commands,
+				self::gotoObjectWritesCommands($timestamp, $tableName, $objectId));
+		}
+
+		return $result;
+	}
+
 	protected static function formatApiBlock($timestamp, $func, $block, &$commands)
 	{
 		$block = rtrim($block);
 
 		if ($func == 'KalturaStatement->execute' && startsWith($block, '/* '))
 		{
-			// strip the comment
-			$commentEnd = strpos($block, ' */');
-			if ($commentEnd !== false)
-			{
-				$block = trim(substr($block, $commentEnd + 3));
-			}
-
-			if (startsWith($block, DbWritesParser::STMT_PREFIX_SELECT))
-			{
-				$select = DbWritesParser::parseSelectStatement($block);
-				if ($select)
-				{
-					list($selectFields, $selectStatement, $tableName, $objectId) = $select;
-
-					// hide select fields by default
-					$result = array();
-					$result[] = array('text' => 'SELECT ');
-					$result[] = array('text' => '...', 'commands' => array( 
-						array('label' => 'Show fields', 'action' => COMMAND_TOOLTIP, 'data' => $selectFields)
-					));
-					$result[] = array('text' => $selectStatement);
-
-					if ($tableName && $objectId)
-					{
-						$commands = array_merge($commands,
-							self::gotoObjectWritesCommands($timestamp, $tableName, $objectId));
-					}
-
-					return $result;
-				}
-			}
+			return self::formatDbStatements($block, $timestamp, $commands);
 		}
 
 		$commandsByRange = array();

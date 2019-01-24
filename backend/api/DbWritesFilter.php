@@ -287,16 +287,9 @@ class DbWritesFilter extends BaseFilter
 	protected function handleJsonFormat()
 	{
 		// initialize the parser
-		$primaryKeys = DbWritesParser::getPrimaryKeysMap(
-			K::get()->getProdPdo(), 
-			$this->table ? array($this->table) : null);
+		$primaryKeys = self::getPrimaryKeysMap();
 		if (!$primaryKeys)
 		{
-			if ($this->table)
-			{
-				dieError(ERROR_BAD_REQUEST, 'Invalid table');
-			}
-
 			dieError(ERROR_INTERNAL_ERROR, 'Failed to get database schema');
 		}
 

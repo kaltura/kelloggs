@@ -17,28 +17,15 @@ class DbWritesParser
 		return mktime($hour, $minute, $second, $month, $day, $year);
 	}
 
-	public static function getPrimaryKeysMap($pdo, $tables = null)
+	public static function getPrimaryKeysMap($pdo)
 	{
-		if (!$tables)
+		$stmt = $pdo->queryRetry('SHOW TABLES');
+		if (!$stmt)
 		{
-			$stmt = $pdo->queryRetry('SHOW TABLES');
-			if (!$stmt)
-			{
-				return false;
-			}
-			$tables = $stmt->fetchall(PDO::FETCH_NUM);
-			$tables = array_map('reset', $tables);
+			return false;
 		}
-		else
-		{
-			foreach ($tables as $table)
-			{
-				if (!preg_match('/^[a-zA-Z0-9_]+$/', $table))
-				{
-					return false;
-				}
-			}
-		}
+		$tables = $stmt->fetchall(PDO::FETCH_NUM);
+		$tables = array_map('reset', $tables);
 
 		$result = array();
 		foreach ($tables as $table)
@@ -218,7 +205,7 @@ class DbWritesParser
 		}
 
 		// reset the insert id (must come right before the insert)
-		$curInsertId = $this->insertId;
+		$insertId = $this->insertId;
 		$this->insertId = null;
 
 		if (!startsWith($line, '/*'))
@@ -235,6 +222,18 @@ class DbWritesParser
 		$comment = trim(substr($line, 2, $commentEnd - 2));
 		$statement = trim(substr($line, $commentEnd + 2));
 
+		$parseResult = self::parseWriteStatement($statement, $this->primaryKeys, $insertId);
+		if (!$parseResult)
+		{
+			return false;
+		}
+
+		list($tableName, $id) = $parseResult;
+		return array($tableName, $id, $this->timestamp, $comment, $statement);
+	}
+
+	public static function parseWriteStatement($statement, $primaryKeys, $insertId = null)
+	{
 		$wherePos = false;
 		foreach (array(self::STMT_PREFIX_UPDATE, self::STMT_PREFIX_DELETE) as $prefix)
 		{
@@ -269,12 +268,11 @@ class DbWritesParser
 
 		$tableName = trim(substr($statement, $tableStart, $spacePos - $tableStart));
 
-		if (!isset($this->primaryKeys[$tableName]))
+		if (!isset($primaryKeys[$tableName]))
 		{
 			return false;
 		}
-
-		list($field, $autoIncrement) = $this->primaryKeys[$tableName];
+		list($field, $autoIncrement) = $primaryKeys[$tableName];
 
 		if ($wherePos !== false)
 		{
@@ -284,11 +282,11 @@ class DbWritesParser
 		{
 			if ($autoIncrement)
 			{
-				if (!$curInsertId)
+				if (!$insertId)
 				{
 					return false;
 				}
-				$id = $curInsertId;
+				$id = $insertId;
 			}
 			else
 			{
@@ -300,10 +298,10 @@ class DbWritesParser
 			}
 		}
 
-		return array($tableName, $id, $this->timestamp, $comment, $statement);
+		return array($tableName, $id);
 	}
 
-	public static function parseSelectStatement($statement)
+	public static function parseSelectStatement($statement, $primaryKeys)
 	{
 		$fromPos = strpos($statement, ' FROM ');
 		if ($fromPos === false)
@@ -330,9 +328,7 @@ class DbWritesParser
 		}
 
 		// get the primary key
-		// TODO: cache the primary key mapping
-		$primaryKeys = self::getPrimaryKeysMap(K::get()->getProdPdo(), array($tableName));
-		if (!$primaryKeys)
+		if (!isset($primaryKeys[$tableName]))
 		{
 			return array($selectFields, $selectStatement, $tableName, null);
 		}
