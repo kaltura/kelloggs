@@ -12,9 +12,11 @@ import {
   copyToClipboardEnabled,
   openUrlInNewTab,
   copyToClipboard,
-  updateUrlQueryParams,
+  replaceCurrentUrl,
+  buildSearchParamsHash,
   buildQuerystring,
-  getPageUrl, getPageUrlWithoutQuerystring
+  getCurrentHash,
+  getPageUrl, getPageUrlWithoutQuerystring, getSearchParamsFromHash
 } from '../utils';
 import Dialog from '@material-ui/core/Dialog';
 import MuiDialogTitle from '@material-ui/core/DialogTitle';
@@ -122,7 +124,9 @@ export default class GlobalCommands extends React.Component {
     items: [],
     showCopiedToClipboard: false,
     viewerCommand: null,
+    initialParameters: getSearchParamsFromHash()
   }
+
 
   updateItems = (items) => {
     this.setState({
@@ -136,15 +140,17 @@ export default class GlobalCommands extends React.Component {
     })
   }
 
-  _buildSearchUrl = (queryParams) => {
-    queryParams = this._addAppParamsToQueryString(queryParams);
-    const queryParamsToken = buildQuerystring(queryParams);
+  _buildSearchUrl = (searchParams) => {
+    const queryString = this._createAppQueryString();
+    const searchParamsHash = buildSearchParamsHash(searchParams);
     const host = this.state.config.hostUrl || getPageUrlWithoutQuerystring();
-    return `${host}?${queryParamsToken}`;
+    return `${host}?${queryString}#${searchParamsHash}`;
   }
 
-  _addAppParamsToQueryString = (queryParams) => {
+  _createAppQueryString = () => {
     const { config } = this.state;
+
+    let queryParams = {};
 
     if (!config.isHosted) {
       queryParams = {
@@ -154,19 +160,18 @@ export default class GlobalCommands extends React.Component {
       }
     }
 
-    return queryParams;
+    return buildQuerystring(queryParams);
   }
 
-  _updateURL = (queryParams) => {
-    queryParams = this._addAppParamsToQueryString(queryParams);
-    updateUrlQueryParams(queryParams);
+  _updateURL = (searchParams) => {
+    const queryString = this._createAppQueryString();
+    replaceCurrentUrl(queryString, searchParams);
   };
 
 
-  _setConfig = (config, initialParameters = null) => {
+  _setConfig = (config) => {
     this.setState({
-      config,
-      initialParameters
+      config
     })
   }
 
@@ -225,27 +230,28 @@ export default class GlobalCommands extends React.Component {
   }
 
   _extractQueryString = () => {
-    const searchParams = getQueryString();
-    const jwt = searchParams['jwt'];
-    const hostUrl = searchParams['hostUrl'];
-    const serviceUrl = searchParams['serviceUrl'];
-    delete searchParams['serviceUrl'];
-    delete searchParams['jwt'];
-    delete searchParams['hostUrl'];
+    const queryParams = getQueryString();
+    const jwt = queryParams['jwt'];
+    const hostUrl = queryParams['hostUrl'];
+    const serviceUrl = queryParams['serviceUrl'];
+    delete queryParams['serviceUrl'];
+    delete queryParams['jwt'];
+    delete queryParams['hostUrl'];
 
     return {
       jwt,
       hostUrl,
-      serviceUrl,
-      searchParams,
+      serviceUrl
     }
   }
+
 
   _getCurrentUrl = () => {
     if (this.state.config.hostUrl) {
       const hostUrl = this.state.config.hostUrl;
-      const params = buildQuerystring(getQueryString());
-      return `${hostUrl}?${params}`;
+      const queryString = this._createAppQueryString();
+      const searchParamsHash = getCurrentHash();
+      return `${hostUrl}${queryString ? `?${queryString}` : ''}${searchParamsHash ? `#${searchParamsHash}` : ''}`;
     }else {
       return getPageUrl();
     }

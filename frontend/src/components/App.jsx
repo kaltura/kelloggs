@@ -53,14 +53,12 @@ class App extends React.Component {
       return;
     }
 
-    const { searchParams } = globalCommands.extractQueryString;
-
     globalCommands.setConfig({
       jwt: config.jwt,
       hostUrl: config.hostUrl,
       serviceUrl: config.serviceUrl,
       isHosted: true
-    }, searchParams);
+    });
 
     this.setState({
       isReady: true
@@ -84,7 +82,7 @@ class App extends React.Component {
         jwt: queryParams.jwt,
         hostUrl: queryParams.hostUrl || currentUrl,
         serviceUrl: queryParams.serviceUrl || '/api'
-      }, queryParams.searchParams);
+      });
 
       this.setState({
         isReady: true
