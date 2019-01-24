@@ -1,3 +1,4 @@
+import { compressToBase64, decompressFromBase64 } from 'lz-string';
 
 
 export function isSafari() {
@@ -68,6 +69,45 @@ export function buildQuerystring(data, prefix = "") {
   return str.join("&");
 }
 
+export function buildSearchParamsHash(searchParams)
+{
+  if (!searchParams) {
+    return '';
+  }
+
+  return compressToBase64(JSON.stringify(searchParams));
+}
+
+export function replaceCurrentUrl(queryString, searchParams) {
+  if (window.history.replaceState) {
+    const hash = buildSearchParamsHash(searchParams);
+    var url =  `${getPageUrlWithoutQuerystring()}?${queryString}#${hash}`;
+
+    // Acts like window.location.hash = newHash but doesn't clutter the history
+    // See http://stackoverflow.com/a/23924886/863119
+    window.history.replaceState(undefined, undefined, url);
+  }
+}
+
+export function getCurrentHash() {
+  return window.location.hash ? window.location.hash.substring(1) : '';
+}
+
+export function getSearchParamsFromHash() {
+  let rawHash = getCurrentHash();
+
+
+  if (!rawHash) {
+    return {};
+  }
+
+  try {
+    const decompressedHash = decompressFromBase64(rawHash);
+    return JSON.parse(decompressedHash);
+  } catch (e) {
+    return {};
+  }
+}
 
 export function getQueryString() {
   var match,
@@ -106,18 +146,6 @@ export function getPageUrl() {
 }
 
 
-export function updateUrlQueryParams(queryParams) {
-  if (window.history.pushState) {
-    const queryParamsToken = buildQuerystring(queryParams);
-    var url =  `${getPageUrlWithoutQuerystring()}?${queryParamsToken}`;
-    window.history.pushState({},'',url);
-  }
-}
-
 export function openUrlInNewTab(url) {
   window.open(url, '_blank');
-}
-export function reloadUrl(queryParams) {
-  const queryParamsToken = buildQuerystring(queryParams);
-  window.location.search = `?${queryParamsToken}`;
 }
