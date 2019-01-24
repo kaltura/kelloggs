@@ -575,13 +575,13 @@ class ApiLogFilter extends BaseFilter
 			return self::formatBlock($block);
 		}
 
-		$select = DbWritesParser::parseSelectStatement($block, $primaryKeys);
-		if (!$select)
+		$parseResult = DbWritesParser::parseSelectStatement($block, $primaryKeys);
+		if (!$parseResult)
 		{
 			return self::formatBlock($block);
 		}
 
-		list($selectFields, $selectStatement, $tableName, $objectId) = $select;
+		list($selectFields, $selectStatement, $tableName, $objectId) = $parseResult;
 
 		// hide select fields by default
 		$result = array();

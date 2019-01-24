@@ -379,7 +379,8 @@ class BaseFilter
 			return self::$primaryKeys;
 		}
 
-		if (function_exists('apcu_fetch'))
+		$useCache = function_exists('apcu_fetch');
+		if ($useCache)
 		{
 			self::$primaryKeys = apcu_fetch('primary_keys_map');
 			if (self::$primaryKeys)
@@ -394,7 +395,7 @@ class BaseFilter
 			return false;
 		}
 
-		if (function_exists('apcu_fetch'))
+		if ($useCache)
 		{
 			self::$primaryKeys = apcu_store('primary_keys_map', self::$primaryKeys, 86400);
 		}
