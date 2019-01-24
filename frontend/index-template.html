@@ -34,17 +34,17 @@
       'type': 'config',
       'config': {
         'hostUrl': '',
-        'serviceUrl': '',
+        'serviceUrl': 'https://kelloggs.kaltura.com/api/',
         'jwt': '',
       }
     };
 
-    if (!appConfig.config.ks || !appConfig.config.serviceUrl) {
-      alert("Cannot initialize test page, missing configuration. Please modify file index.html to include ks and service url");
+    if (!appConfig.config.jwt || !appConfig.config.serviceUrl) {
+      alert("Cannot initialize test page, missing configuration. Please modify file index.html to include jwt and service url");
       return;
     }
 
-    window.document.getElementById('iframe').src = 'https://localhost:3000/';
+    window.document.getElementById('iframe').src = 'https://localhost:3001' + window.location.hash;
 
     window.addEventListener('message', function(e) {
       var postMessageData;
