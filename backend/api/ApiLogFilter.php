@@ -1,7 +1,6 @@
 <?php
 
 require_once(dirname(__file__) . '/../lib/KalturaSession.php');
-require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
 require_once(dirname(__file__) . '/DatabaseSecretRepository.php');
 require_once(dirname(__file__) . '/ApiLogUtils.php');
 require_once(dirname(__file__) . '/BaseFilter.php');
@@ -40,7 +39,7 @@ class ApiLogFilter extends BaseFilter
 
 		$logTypes = isset($filter['logTypes']) ? explode(',', $filter['logTypes']) : array();
 		$this->logTypes = array();
-		foreach ($this->logTypes as $logType)
+		foreach ($logTypes as $logType)
 		{
 			$logType = trim($logType);
 			if (!isset(self::$logTypesMap[$logType]))
@@ -562,6 +561,7 @@ class ApiLogFilter extends BaseFilter
 			$parseResult = DbWritesParser::parseWriteStatement($block, $primaryKeys);
 			if (!$parseResult)
 			{
+				$block = self::prettyPrintStatement($block, $commands);
 				return self::formatBlock($block);
 			}
 
@@ -572,6 +572,7 @@ class ApiLogFilter extends BaseFilter
 					self::gotoObjectWritesCommands($timestamp, $tableName, $objectId));
 			}
 
+			$block = self::prettyPrintStatement($block, $commands);
 			return self::formatBlock($block);
 		}
 
@@ -582,6 +583,13 @@ class ApiLogFilter extends BaseFilter
 		}
 
 		list($selectFields, $selectStatement, $tableName, $objectId) = $parseResult;
+		if ($tableName)
+		{
+			$selectFields = str_replace($tableName . '.', '', $selectFields);
+		}
+
+		$selectStatement = str_replace(' AND ', " AND\n  ", $selectStatement);
+		$selectStatement = str_replace(' WHERE ', " WHERE\n  ", $selectStatement);
 
 		// hide select fields by default
 		$result = array();
@@ -607,6 +615,10 @@ class ApiLogFilter extends BaseFilter
 		if ($func == 'KalturaStatement->execute' && startsWith($block, '/* '))
 		{
 			return self::formatDbStatements($block, $timestamp, $commands);
+		}
+		if ($func == 'kSphinxSearchManager->execSphinx')
+		{
+			$block = self::prettyPrintStatement($block, $commands);
 		}
 
 		$commandsByRange = array();

@@ -1,5 +1,7 @@
 <?php
 
+require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
+
 class BaseFilter
 {
 	// filter
@@ -400,5 +402,22 @@ class BaseFilter
 			self::$primaryKeys = apcu_store('primary_keys_map', self::$primaryKeys, 86400);
 		}
 		return self::$primaryKeys;
+	}
+
+	protected static function prettyPrintStatement($block, &$commands)
+	{
+		$prettyBlock = DbWritesParser::prettyPrintStatement($block);
+		if ($prettyBlock == $block)
+		{
+			return $block;
+		}
+
+		$commands[] = array(
+			'label' => 'Copy original SQL', 
+			'action' => COMMAND_COPY, 
+			'data' => $block, 
+		);
+
+		return $prettyBlock;
 	}
 }

@@ -231,11 +231,19 @@ class DbWritesFilter extends BaseFilter
 		{
 			$filters[] = array('type' => 'match', 'text' => $this->objectId);
 		}
+		if ($this->textFilter)
+		{
+			$filters[] = $this->textFilter;
+		}
 
-		if ($filters)
+		if (count($filters) > 1)
 		{
 			$textFilter = self::getTextFilterParam(
 				array('type' => 'and', 'filters' => $filters));
+		}
+		else if (count($filters) > 0)
+		{
+			$textFilter = self::getTextFilterParam(reset($filters));
 		}
 		else
 		{
@@ -346,6 +354,7 @@ class DbWritesFilter extends BaseFilter
 			list($server, $session) = $parsedComment;
 
 			$commands = self::gotoSessionCommands($server, $session, $timestamp);
+			$statement = self::prettyPrintStatement($statement, $commands);
 
 			$line = array(
 				'timestamp' => $timestamp,
