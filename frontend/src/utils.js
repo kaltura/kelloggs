@@ -74,7 +74,7 @@ export function buildSearchParamsHash(searchParams)
     return '';
   }
 
-  const result = pako.deflate(JSON.stringify(searchParams), { to: 'string' });
+  const result = pako.deflate(JSON.stringify(searchParams), { to: 'string', level: 9 });
   return btoa(result);
 }
 
@@ -102,7 +102,7 @@ export function getSearchParamsFromHash() {
   }
 
   try {
-    const decompressedHash = pako.inflate(atob(rawHash), { to: 'string' });
+    const decompressedHash = pako.inflate(atob(rawHash), { to: 'string', level: 9 });
     return JSON.parse(decompressedHash);
   } catch (e) {
     return {};
