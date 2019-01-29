@@ -4,6 +4,7 @@ class DbWritesParser
 {
 	const STMT_PREFIX_SELECT = 'SELECT ';
 	const STMT_PREFIX_INSERT = 'INSERT INTO ';
+	const STMT_PREFIX_REPLACE = 'replace into ';
 	const STMT_PREFIX_UPDATE = 'UPDATE ';
 	const STMT_PREFIX_DELETE = 'DELETE FROM ';
 
@@ -17,28 +18,15 @@ class DbWritesParser
 		return mktime($hour, $minute, $second, $month, $day, $year);
 	}
 
-	public static function getPrimaryKeysMap($pdo, $tables = null)
+	public static function getPrimaryKeysMap($pdo)
 	{
-		if (!$tables)
+		$stmt = $pdo->queryRetry('SHOW TABLES');
+		if (!$stmt)
 		{
-			$stmt = $pdo->queryRetry('SHOW TABLES');
-			if (!$stmt)
-			{
-				return false;
-			}
-			$tables = $stmt->fetchall(PDO::FETCH_NUM);
-			$tables = array_map('reset', $tables);
+			return false;
 		}
-		else
-		{
-			foreach ($tables as $table)
-			{
-				if (!preg_match('/^[a-zA-Z0-9_]+$/', $table))
-				{
-					return false;
-				}
-			}
-		}
+		$tables = $stmt->fetchall(PDO::FETCH_NUM);
+		$tables = array_map('reset', $tables);
 
 		$result = array();
 		foreach ($tables as $table)
@@ -77,11 +65,11 @@ class DbWritesParser
 		return $result;
 	}
 
-	protected static function getFieldValueFromInsert($statement, $field)
+	public static function getInsertValues($statement, $field = null, $valuesDelim = ') VALUES (')
 	{
 		// find the columns and values
 		$colsStart = strpos($statement, '(');
-		$valuesStart = strpos($statement, ') VALUES (');
+		$valuesStart = strpos($statement, $valuesDelim);
 		if ($colsStart === false || $valuesStart === false)
 		{
 			return false;
@@ -90,24 +78,54 @@ class DbWritesParser
 		// get the field index in the column list
 		$columns = substr($statement, $colsStart + 1, $valuesStart - $colsStart - 1);
 		$columns = explode(',', $columns);
-		$fieldIndex = array_search("`$field`", $columns);
-		if ($fieldIndex === false)
+
+		if ($field)
 		{
-			return false;
+			$fieldIndex = array_search("`$field`", $columns);
+			if ($fieldIndex === false)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			$fieldIndex = false;
 		}
 
-		$curPos = $valuesStart + strlen(') VALUES (');
+		$curPos = $valuesStart + strlen($valuesDelim);
 		for (;;)
 		{
 			// extract a value
 			if ($statement[$curPos] == "'")
 			{
-				$nextPos = strpos($statement, "'", $curPos + 1);
-				if ($nextPos === false)
+				$nextPos = $curPos + 1;
+				for (;;)
 				{
-					return false;
+					$nextPos = strpos($statement, "'", $nextPos);
+					if ($nextPos === false)
+					{
+						return false;
+					}
+					$nextPos++;
+
+					if ($statement[$nextPos - 2] == '\\')		// \' escape (Note: this is not entirely accurate - doesn't handle \\')
+					{
+						continue;
+					}
+
+					if ($statement[$nextPos] == "'")			// '' escape
+					{
+						$nextPos++;
+						continue;
+					}
+
+					if (!in_array($statement[$nextPos], array(',', ')')))
+					{
+						return false;
+					}
+
+					break;
 				}
-				$nextPos++;
 			}
 			else
 			{
@@ -122,20 +140,36 @@ class DbWritesParser
 				}
 			}
 
-			if ($fieldIndex == 0)
+			if ($fieldIndex === false)
 			{
-				// got the required value
-				$value = substr($statement, $curPos, $nextPos - $curPos);
-				return trim($value, "'");
+				$values[] = substr($statement, $curPos, $nextPos - $curPos);
+				if (count($values) > count($columns))
+				{
+					return false;
+				}
+
+				if ($statement[$nextPos] != ',')
+				{
+					return count($columns) == count($values) ? array_combine($columns, $values) : false;
+				}
+			}
+			else
+			{
+				if ($fieldIndex == 0)
+				{
+					// got the required value
+					$value = substr($statement, $curPos, $nextPos - $curPos);
+					return trim($value, "'");
+				}
+
+				if ($statement[$nextPos] != ',')
+				{
+					return false;
+				}
+				$fieldIndex--;
 			}
 
 			// continue to the next value
-			if ($statement[$nextPos] != ',')
-			{
-				return false;
-			}
-
-			$fieldIndex--;
 			$curPos = $nextPos + 1;
 		}
 	}
@@ -218,7 +252,7 @@ class DbWritesParser
 		}
 
 		// reset the insert id (must come right before the insert)
-		$curInsertId = $this->insertId;
+		$insertId = $this->insertId;
 		$this->insertId = null;
 
 		if (!startsWith($line, '/*'))
@@ -235,25 +269,41 @@ class DbWritesParser
 		$comment = trim(substr($line, 2, $commentEnd - 2));
 		$statement = trim(substr($line, $commentEnd + 2));
 
+		$parseResult = self::parseWriteStatement($statement, $this->primaryKeys, $insertId);
+		if (!$parseResult)
+		{
+			return false;
+		}
+
+		list($tableName, $id) = $parseResult;
+		return array($tableName, $id, $this->timestamp, $comment, $statement);
+	}
+
+	public static function parseWriteStatement($statement, $primaryKeys, $insertId = null)
+	{
 		$wherePos = false;
 		foreach (array(self::STMT_PREFIX_UPDATE, self::STMT_PREFIX_DELETE) as $prefix)
 		{
-			if (startsWith($statement, $prefix))
+			if (!startsWith($statement, $prefix))
 			{
-				$tableStart = strlen($prefix);
-				$wherePos = strpos($statement, ' WHERE ');
-				if ($wherePos === false)
-				{
-					return false;
-				}
+				continue;
 			}
+
+			$tableStart = strlen($prefix);
+			$wherePos = strpos($statement, ' WHERE ');
+			if ($wherePos === false)
+			{
+				return false;
+			}
+			break;
 		}
 
 		if ($wherePos === false)
 		{
-			if (startsWith($statement, self::STMT_PREFIX_INSERT))
+			$prefix = self::STMT_PREFIX_INSERT;
+			if (startsWith($statement, $prefix))
 			{
-				$tableStart = strlen(self::STMT_PREFIX_INSERT);
+				$tableStart = strlen($prefix);
 			}
 			else
 			{
@@ -269,12 +319,11 @@ class DbWritesParser
 
 		$tableName = trim(substr($statement, $tableStart, $spacePos - $tableStart));
 
-		if (!isset($this->primaryKeys[$tableName]))
+		if (!isset($primaryKeys[$tableName]))
 		{
 			return false;
 		}
-
-		list($field, $autoIncrement) = $this->primaryKeys[$tableName];
+		list($field, $autoIncrement) = $primaryKeys[$tableName];
 
 		if ($wherePos !== false)
 		{
@@ -284,15 +333,15 @@ class DbWritesParser
 		{
 			if ($autoIncrement)
 			{
-				if (!$curInsertId)
+				if (!$insertId)
 				{
 					return false;
 				}
-				$id = $curInsertId;
+				$id = $insertId;
 			}
 			else
 			{
-				$id = self::getFieldValueFromInsert($statement, $field);
+				$id = self::getInsertValues($statement, $field);
 				if ($id === false)
 				{
 					return false;
@@ -300,10 +349,10 @@ class DbWritesParser
 			}
 		}
 
-		return array($tableName, $id, $this->timestamp, $comment, $statement);
+		return array($tableName, $id);
 	}
 
-	public static function parseSelectStatement($statement)
+	public static function parseSelectStatement($statement, $primaryKeys)
 	{
 		$fromPos = strpos($statement, ' FROM ');
 		if ($fromPos === false)
@@ -311,7 +360,7 @@ class DbWritesParser
 			return null;
 		}
 
-		$selectFields = substr($statement, strlen(self::STMT_PREFIX_SELECT), $fromPos);
+		$selectFields = substr($statement, strlen(self::STMT_PREFIX_SELECT), $fromPos - strlen(self::STMT_PREFIX_SELECT));
 		$selectStatement = substr($statement, $fromPos);
 
 		// get the table name
@@ -330,9 +379,7 @@ class DbWritesParser
 		}
 
 		// get the primary key
-		// TODO: cache the primary key mapping
-		$primaryKeys = self::getPrimaryKeysMap(K::get()->getProdPdo(), array($tableName));
-		if (!$primaryKeys)
+		if (!isset($primaryKeys[$tableName]))
 		{
 			return array($selectFields, $selectStatement, $tableName, null);
 		}
@@ -342,5 +389,57 @@ class DbWritesParser
 		$objectId = self::getFieldValueFromWhere(substr($statement, $wherePos), $tableName, $field);
 
 		return array($selectFields, $selectStatement, $tableName, $objectId);
+	}
+
+	protected static function prettyPrintInsertStatement($block, $prefix, $valuesDelim)
+	{
+		$insertValues = self::getInsertValues($block, null, $valuesDelim);
+		if (!$insertValues)
+		{
+			return $block;
+		}
+
+		// get the table name
+		$spacePos = strpos($block, ' ');
+		if ($spacePos === false)
+		{
+			return $block;
+		}
+
+		$tableName = trim(substr($block, 0, $spacePos));
+
+		// format the values
+		$block = $prefix . " $tableName (\n";
+		foreach ($insertValues as $column => $value)
+		{
+			$block .= "  $column=$value,\n";
+		}
+		$block .= ')';
+		return $block;
+	}
+
+	public static function prettyPrintStatement($block)
+	{
+		if (startsWith($block, self::STMT_PREFIX_INSERT))
+		{
+			return self::prettyPrintInsertStatement(
+				trim(substr($block, strlen(self::STMT_PREFIX_INSERT))), 
+				'INSERT INTO', 
+				') VALUES (');
+		}
+		else if (startsWith($block, self::STMT_PREFIX_REPLACE))
+		{
+			return self::prettyPrintInsertStatement(
+				trim(substr($block, strlen(self::STMT_PREFIX_REPLACE))), 
+				'REPLACE INTO', 
+				') values(');
+		}
+		else if (startsWith($block, self::STMT_PREFIX_UPDATE))
+		{
+			$block = str_replace(' `', "\n  `", $block);
+			$block = str_replace(' WHERE ', "\n  WHERE ", $block);
+		}
+
+		return $block;
 	}
 }

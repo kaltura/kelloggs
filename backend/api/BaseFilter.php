@@ -1,5 +1,7 @@
 <?php
 
+require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
+
 class BaseFilter
 {
 	// filter
@@ -17,6 +19,8 @@ class BaseFilter
 	protected $params;
 	protected $responseFormat;
 	protected $zblockgrep;
+
+	protected static $primaryKeys;
 
 	protected function __construct($params, $filter)
 	{
@@ -213,7 +217,7 @@ class BaseFilter
 		}
 	}
 
-	protected static function formatBlock($block, $commandsByRange)
+	protected static function formatBlock($block, $commandsByRange = array())
 	{
 		sort($commandsByRange);
 
@@ -368,5 +372,52 @@ class BaseFilter
 			$result[] = array('label' => $key, 'value' => $value);
 		}
 		return $result;
+	}
+
+	protected static function getPrimaryKeysMap()
+	{
+		if (self::$primaryKeys)
+		{
+			return self::$primaryKeys;
+		}
+
+		$useCache = function_exists('apcu_fetch');
+		if ($useCache)
+		{
+			self::$primaryKeys = apcu_fetch('primary_keys_map');
+			if (self::$primaryKeys)
+			{
+				return self::$primaryKeys;
+			}
+		}
+
+		self::$primaryKeys = DbWritesParser::getPrimaryKeysMap(K::get()->getProdPdo());
+		if (!self::$primaryKeys)
+		{
+			return false;
+		}
+
+		if ($useCache)
+		{
+			self::$primaryKeys = apcu_store('primary_keys_map', self::$primaryKeys, 86400);
+		}
+		return self::$primaryKeys;
+	}
+
+	protected static function prettyPrintStatement($block, &$commands)
+	{
+		$prettyBlock = DbWritesParser::prettyPrintStatement($block);
+		if ($prettyBlock == $block)
+		{
+			return $block;
+		}
+
+		$commands[] = array(
+			'label' => 'Copy original SQL', 
+			'action' => COMMAND_COPY, 
+			'data' => $block, 
+		);
+
+		return $prettyBlock;
 	}
 }
