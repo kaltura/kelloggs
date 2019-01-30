@@ -1,5 +1,4 @@
-import { compressToBase64, decompressFromBase64 } from 'lz-string';
-
+import * as pako from 'pako';
 
 export function isSafari() {
   const isChrome = !!window['chrome'] && !!window['chrome'].webstore;
@@ -75,7 +74,8 @@ export function buildSearchParamsHash(searchParams)
     return '';
   }
 
-  return compressToBase64(JSON.stringify(searchParams));
+  const result = pako.deflate(JSON.stringify(searchParams), { to: 'string', level: 9 });
+  return btoa(result);
 }
 
 export function replaceCurrentUrl(queryString, searchParams) {
@@ -102,7 +102,7 @@ export function getSearchParamsFromHash() {
   }
 
   try {
-    const decompressedHash = decompressFromBase64(rawHash);
+    const decompressedHash = pako.inflate(atob(rawHash), { to: 'string', level: 9 });
     return JSON.parse(decompressedHash);
   } catch (e) {
     return {};
