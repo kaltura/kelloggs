@@ -175,6 +175,8 @@ if (!isset($params['filter']))
 $filterTypeMap = array(
 	'apiLogFilter' => 'ApiLogFilter',
 	'dbWritesFilter' => 'DbWritesFilter',
+	'objectListFilter' => 'ObjectListFilter',
+	'objectInfoFilter' => 'ObjectInfoFilter',
 );
 
 $filter = $params['filter'];

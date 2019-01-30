@@ -3,7 +3,7 @@
 require_once(dirname(__file__) . '/../lib/KalturaSession.php');
 require_once(dirname(__file__) . '/DatabaseSecretRepository.php');
 require_once(dirname(__file__) . '/ApiLogUtils.php');
-require_once(dirname(__file__) . '/BaseFilter.php');
+require_once(dirname(__file__) . '/BaseLogFilter.php');
 
 define('LOG_TYPE_APIV3', 1);
 define('LOG_TYPE_PS2', 5);
@@ -18,7 +18,7 @@ define('LOG_TYPE_API_ERROR', 3);
 define('PATTERN_API_ERROR', '^\[(\w+ \w+ \d+ [\d:]+)(\.\d+)? (\d+)\]');
 define('TIME_FORMAT_API_ERROR', '%a %b %d %H:%M:%S %Y');
 
-class ApiLogFilter extends BaseFilter
+class ApiLogFilter extends BaseLogFilter
 {
 	protected $logTypes;
 

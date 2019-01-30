@@ -1,13 +1,13 @@
 <?php
 
-require_once(dirname(__file__) . '/BaseFilter.php');
+require_once(dirname(__file__) . '/BaseLogFilter.php');
 require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
 
 define('LOG_TYPE_DB_WRITES', 4);		// TODO: move to some common file
 define('LOG_TYPE_DB_WRITES_INDEX', 6);
 define('TIME_FORMAT_DB_WRITES', '%Y-%m-%d %H:%M:%S');
 
-class DbWritesFilter extends BaseFilter
+class DbWritesFilter extends BaseLogFilter
 {
 	protected $table;
 	protected $objectId;

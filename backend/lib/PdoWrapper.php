@@ -96,9 +96,9 @@ class PdoWrapper
 		return false;
 	}
 
-	protected static function logStatement($sql, $values)
+	public static function formatStatement($sql, $values)
 	{
-		$preparedSql = '';
+		$result = '';
 		$curPos = 0;
 		reset($values);
 		for (;;)
@@ -106,22 +106,23 @@ class PdoWrapper
 			$nextPos = strpos($sql, '?', $curPos);
 			if ($nextPos === false)
 			{
-				$preparedSql .= substr($sql, $curPos);
+				$result .= substr($sql, $curPos);
 				break;
 			}
-			$preparedSql .= substr($sql, $curPos, $nextPos - $curPos);
-			$preparedSql .= "'" . str_replace("'", "''", current($values)) . "'";
+			$result .= substr($sql, $curPos, $nextPos - $curPos);
+			$result .= "'" . str_replace("'", "''", current($values)) . "'";
 			next($values);
 			$curPos = $nextPos + 1;
 		}
-		writeLog("Notice: running $preparedSql");
+		return $result;
 	}
+	
 	public function executeStatement($sql, $values, $log = true, $retry = false)
 	{
 		// log the sql
 		if ($log)
 		{
-			self::logStatement($sql, $values);
+			writeLog('Notice: running ' . self::formatStatement($sql, $values));
 		}
 		$retryLimit = $retry ? self::RETRY_COUNT : 1;
 		for ($attempt = 0; $attempt < $retryLimit; $attempt++)
