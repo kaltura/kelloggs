@@ -23,7 +23,8 @@ const styles = {
     boxSizing: 'border-box'
   },
   appBar: {
-    background: 'rgb(60, 66, 82)'
+    background: '#f4f4f4',// TODO change according to standalone mode - 'rgb(60, 66, 82)'
+    color: 'black !important'
   },
   grow: {
     flexGrow: 1

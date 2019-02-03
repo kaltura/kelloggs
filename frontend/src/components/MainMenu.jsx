@@ -7,7 +7,7 @@ import CommandsMenu from "./CommandsMenu";
 
 const styles = {
   menuIcon: {
-    color: 'white'
+    color: 'black' // TODO change according to standalone mode - 'white'
   }
 }
 

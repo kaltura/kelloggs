@@ -14,6 +14,8 @@ import {compose} from "recompose";
 import {withGlobalCommands} from "../GlobalCommands";
 import isEqual from 'lodash.isequal';
 import DBLogsParameters from "./DBLogsParameters";
+import ObjectInfoParameters from "./ObjectInfoParameters";
+import ObjectListParameters from "./ObjectListParameters";
 
 
 const styles = {
@@ -50,6 +52,12 @@ const defaultParameters = {
   session: "",
   table: "",
   objectId: "",
+  entryIdIn: "",
+  objectIdIn: "",
+  jobTypeIn: "",
+  objectTypeIn: "",
+  typeIn: "",
+  idIn: "",
   logTypes: "apiV3, ps2"
 }
 
@@ -232,7 +240,8 @@ class Parameters extends React.Component
                 </MenuItem>
                 <MenuItem value={'apiLogFilter'}>API Logs</MenuItem>
                 <MenuItem value={'dbWritesFilter'}>Database changes</MenuItem>
-                {/*<MenuItem value={'batchJobs'}>Batch jobs</MenuItem>*/}
+                <MenuItem value={'objectInfoFilter'}>Object Info</MenuItem>
+                <MenuItem value={'objectListFilter'}>Object List</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -244,6 +253,8 @@ class Parameters extends React.Component
         <Grid item xs={12}>
           { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
           { parameters.type === 'dbWritesFilter' && <DBLogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></DBLogsParameters> }
+          { parameters.type === 'objectInfoFilter' && <ObjectInfoParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></ObjectInfoParameters> }
+          { parameters.type === 'objectListFilter' && <ObjectListParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></ObjectListParameters> }
         </Grid>
       </Grid>
       <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>

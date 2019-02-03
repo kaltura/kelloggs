@@ -197,7 +197,7 @@ export default class ResultsTable extends React.PureComponent {
 
     _headerRenderer({column, cellStyle}) {
 
-        return <ToolTip title={column.label ? column.label : column.name}>
+        return <ToolTip title={column.label ? column.label : column.name || ''}>
             <div style={{...cellStyle, "whiteSpace": "pre"}}>
                 {column.label ? column.label : column.name}
             </div>
@@ -227,7 +227,7 @@ export default class ResultsTable extends React.PureComponent {
     }
 
     _timestampCellRenderer({column, value, cellStyle}) {
-        return <span style={{...cellStyle}}>{value.format('YYYY/MM/DD HH:mm:ss')}</span>
+        return <span style={{...cellStyle}}>{value ? value.format('YYYY/MM/DD HH:mm:ss') : ''}</span>
     }
 
     _indexCellRenderer({column, value, cellStyle}) {
@@ -251,7 +251,7 @@ export default class ResultsTable extends React.PureComponent {
 
 
     _textCellRenderer({column, value, cellStyle}) {
-        return <ToolTip placement={'left'} enterDelay={500} title={value}>
+        return <ToolTip placement={'left'} enterDelay={500} title={value || ''}>
               <span style={{...cellStyle, userSelect: "text", whiteSpace: "pre"}}>
                 {value}
               </span>
