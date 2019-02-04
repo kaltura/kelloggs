@@ -119,18 +119,24 @@ export default  class ResultsData {
             return column.name==="body";
         });
 
-        if (index>=0) {
-            this.schema.columns.splice(index, 0,{
-                name: "commands",
-                label: "Cmd",
-                type: "commands",
-                width: 20
-            });
-        }
+
+        this.schema.columns.splice(Math.max(0,index), 0,{
+            name: "commands",
+            label: "Cmd",
+            type: "commands",
+            width: 20
+        });
+        this.timestampColumns=[];
 
         this.schema.columns.forEach( column=>{
             Object.assign(column,{},defaultColumnsProperties[column.name])
         });
+
+        this.schema.columns.forEach( column=>{
+            if (column.type==="timestamp") {
+                this.timestampColumns.push(column);
+            }
+         });
 
         let options = this.getHistrogramOptions();
         for(let option in options) {
@@ -176,20 +182,21 @@ export default  class ResultsData {
 
     append(result) {
 
-
-        if (result.timestamp) {
-            result.timestamp=moment(result.timestamp*1000);
-        } else {
-            result.timestamp=moment();
-            result.severity="ERR";
-        }
-
+        this.timestampColumns.forEach( column=> {
+            if (result[column.name]) {
+                result[column.name] = moment(result[column.name] * 1000);
+            }
+        });
 
         if (this.schema.heatmap) {
             let value=this.schema.heatmap.key ? result[this.schema.heatmap.key] : "count";
             this._addToHistogram(moment(result.timestamp).startOf('minute'),value,this.items.length) ;;
         }
-        result.lines=getLineCount(result.body);
+        if (result.body) {
+            result.lines = getLineCount(result.body);
+        }else {
+            result.lines=1;
+        }
         this.items.push(result);
     }
 
