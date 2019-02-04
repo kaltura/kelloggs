@@ -252,6 +252,18 @@ class DbWritesFilter extends BaseLogFilter
 
 		$this->grepCommand = $this->zblockgrep . " -h -p '$pattern' -c '$captureConditions' $textFilter $fileRanges";
 	}
+	
+	protected function getTopLevelCommands()
+	{
+		$result = parent::getTopLevelCommands();
+		
+		if ($this->table && $this->objectId)
+		{
+			$result = array_merge($result, self::objectInfoCommands($this->table, $this->objectId));
+		}
+		
+		return $result;
+	}
 
 	protected function getResponseHeader()
 	{

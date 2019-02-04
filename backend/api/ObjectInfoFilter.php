@@ -106,11 +106,16 @@ class ObjectInfoFilter extends BaseFilter
 			array('label' => 'Value', 'name' => 'body', 'type' => 'richText'),
 		);
 
+		$metadata = array(
+			'Table' => $this->table,
+			'Object Id' => $this->objectId,
+		);
+		
 		return array(
 			'type' => 'searchResponse',
 			'columns' => $columns,
 			'commands' => $this->getTopLevelCommands($row),
-			'metadata' => array(), 
+			'metadata' => self::formatMetadata($metadata), 
 		);
 	}
 
@@ -233,12 +238,13 @@ class ObjectInfoFilter extends BaseFilter
 
 		foreach ($row as $key => $value)
 		{
-			if (preg_match('/^a:\d+:\{/', $value))
+			if (preg_match('/^a:\d+:\{/', $value) || preg_match('/^O:\d+:"/', $value))
 			{
 				$decodedValue = unserialize($value);
 				if ($decodedValue)
 				{
 					$value = print_r($decodedValue, true);
+					$value = preg_replace('/__PHP_Incomplete_Class Object\n(\s*)\(\n\s*\[__PHP_Incomplete_Class_Name\] => (.*)/m', "object \$2\n\$1(", $value);
 				}
 			}
 
@@ -249,21 +255,11 @@ class ObjectInfoFilter extends BaseFilter
 				$foreignTable = substr($key, 0, -3);
 				if (isset($primaryKeys[$foreignTable]))
 				{
-					$objectFilter = array(
-						'type' => 'objectInfoFilter',
-						'table' => $foreignTable,
-						'objectId' => $value
-					);
-
-					$commands = array(
-						array('label' => 'Go to object', 'action' => COMMAND_SEARCH, 'data' => $objectFilter),
-						array('label' => 'Go to object in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $objectFilter),
-					);
-					$body['commands'] = $commands;
+					$body['commands'] = self::objectInfoCommands($foreignTable, $value);
 				}
 			}
 
-			$line = array('column' => $key, 'body' => $body);
+			$line = array('column' => $key, 'body' => array($body));
 			echo json_encode($line) . "\n";
 		}
 	}

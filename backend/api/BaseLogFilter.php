@@ -352,19 +352,6 @@ class BaseLogFilter extends BaseFilter
 		return strval($micros / 1000000.0);
 	}
 
-	protected static function formatMetadata($metadata)
-	{
-		$metadata = array_filter($metadata, function ($value) { 
-			return $value && $value != '-'; });
-
-		$result = array();
-		foreach ($metadata as $key => $value)
-		{
-			$result[] = array('label' => $key, 'value' => $value);
-		}
-		return $result;
-	}
-
 	protected static function prettyPrintStatement($block, &$commands)
 	{
 		$prettyBlock = DbWritesParser::prettyPrintStatement($block);

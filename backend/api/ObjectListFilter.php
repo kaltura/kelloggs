@@ -171,10 +171,15 @@ class ObjectListFilter extends BaseFilter
 			$commands = array();
 			if ($primaryKey)
 			{
-				$commands = array_merge($commands, self::dbWritesCommands(
-					$this->table, 
-					$row[$primaryKey], 
-					$row));
+				$objectId = $row[$primaryKey];
+				$commands = array_merge($commands, 
+					self::objectInfoCommands(
+						$this->table, 
+						$objectId),
+					self::dbWritesCommands(
+						$this->table, 
+						$row[$primaryKey], 
+						$row));
 			}
 
 			foreach ($this->columnMap as $fieldName => $fieldType)
