@@ -21,7 +21,6 @@ const styles = theme => ({
 });
 
 
-
 class RichTextCommandMenu extends React.Component {
     state = {
         anchorEl: null
@@ -90,6 +89,14 @@ class RichTextCommandMenu extends React.Component {
 }
 
 
+RichTextCommandMenu.propTypes = {
+    classes: PropTypes.object.isRequired,
+};
+
+var RichTextCommandMenuWithStyle=compose(
+    withStyles(styles),
+    withGlobalCommands)(RichTextCommandMenu);
+
 class RichTextView extends React.PureComponent {
     state = {
     };
@@ -108,7 +115,7 @@ class RichTextView extends React.PureComponent {
                 this.props.data.map((data,dataIndex) => {
                     if (data.commands) {
 
-                        return <RichTextCommandMenu key={"commandMenu-"+dataIndex} data={data} dataIndex={dataIndex} globalCommands={globalCommands}></RichTextCommandMenu>;
+                        return <RichTextCommandMenuWithStyle key={"commandMenu-"+dataIndex} data={data} dataIndex={dataIndex} globalCommands={globalCommands}></RichTextCommandMenuWithStyle>;
                     }
                     return data.text;
                 })
