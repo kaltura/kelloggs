@@ -90,4 +90,31 @@ class BaseFilter
 			array('label' => 'Search updates in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $objectFilter),
 		);
 	}
+
+	protected static function objectInfoCommands($table, $objectId)
+	{
+		$objectFilter = array(
+			'type' => 'objectInfoFilter',
+			'table' => $table,
+			'objectId' => $objectId
+		);
+
+		return array(
+			array('label' => 'Go to object', 'action' => COMMAND_SEARCH, 'data' => $objectFilter),
+			array('label' => 'Go to object in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $objectFilter),
+		);
+	}
+	
+	protected static function formatMetadata($metadata)
+	{
+		$metadata = array_filter($metadata, function ($value) { 
+			return $value && $value != '-'; });
+
+		$result = array();
+		foreach ($metadata as $key => $value)
+		{
+			$result[] = array('label' => $key, 'value' => $value);
+		}
+		return $result;
+	}
 }

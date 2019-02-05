@@ -523,7 +523,7 @@ class ApiLogFilter extends BaseLogFilter
 		}
 	}
 
-	protected static function gotoObjectWritesCommands($timestamp, $tableName, $objectId, $margin = 864000)
+	protected static function gotoObjectCommands($timestamp, $tableName, $objectId, $margin = 864000)
 	{
 		$sessionFilter = array(
 			'type' => 'dbWritesFilter',
@@ -533,10 +533,12 @@ class ApiLogFilter extends BaseLogFilter
 			'objectId' => $objectId,
 		);
 
-		return array(
-			array('label' => "Go to $tableName:$objectId writes", 'action' => COMMAND_SEARCH, 'data' => $sessionFilter),
-			array('label' => "Open $tableName:$objectId writes in new tab", 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $sessionFilter),
-		);
+		return array_merge(
+			self::objectInfoCommands($tableName, $objectId), 
+			array(
+				array('label' => 'Search updates', 'action' => COMMAND_SEARCH, 'data' => $sessionFilter),
+				array('label' => 'Search updates in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $sessionFilter),
+			));
 	}
 
 	protected static function formatDbStatements($block, $timestamp, &$commands)
@@ -569,7 +571,7 @@ class ApiLogFilter extends BaseLogFilter
 			if ($tableName && $objectId)
 			{
 				$commands = array_merge($commands,
-					self::gotoObjectWritesCommands($timestamp, $tableName, $objectId));
+					self::gotoObjectCommands($timestamp, $tableName, $objectId));
 			}
 
 			$block = self::prettyPrintStatement($block, $commands);
@@ -602,7 +604,7 @@ class ApiLogFilter extends BaseLogFilter
 		if ($tableName && $objectId)
 		{
 			$commands = array_merge($commands,
-				self::gotoObjectWritesCommands($timestamp, $tableName, $objectId));
+				self::gotoObjectCommands($timestamp, $tableName, $objectId));
 		}
 
 		return $result;
