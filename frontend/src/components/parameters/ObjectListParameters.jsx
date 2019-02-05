@@ -29,7 +29,7 @@ export default class ObjectListParameters extends React.Component {
       case 'metadata':
         fieldList = ['type', 'table', 'objectIdIn', 'objectTypeIn'];
         break;
-      case 'fileSync':
+      case 'file_sync':
         fieldList = ['type', 'table', 'objectIdIn', 'objectTypeIn'];
         break;
     }
@@ -62,9 +62,9 @@ export default class ObjectListParameters extends React.Component {
   render() {
     const { table, entryIdIn, typeIn, objectIdIn, jobTypeIn, objectTypeIn, idIn, onChange, className: classNameProp } = this.props;
 
-    const objectIdInEnabled = ['batch_job_sep', 'metadata', 'fileSync'].indexOf(table) !== -1;
+    const objectIdInEnabled = ['batch_job_sep', 'metadata', 'file_sync'].indexOf(table) !== -1;
     const entryIdInEnabled = ['flavor_asset', 'batch_job_sep'].indexOf(table) !== -1;
-    const objectTypeInEnabled = ['metadata', 'fileSync'].indexOf(table) !== -1;
+    const objectTypeInEnabled = ['metadata', 'file_sync'].indexOf(table) !== -1;
     const jobTypeInEnabled = ['batch_job_sep'].indexOf(table) !== -1;
     const idInEnabled = ['flavor_asset'].indexOf(table) !== -1;
     const typeInEnabled = ['flavor_asset'].indexOf(table) !== -1;
@@ -85,7 +85,7 @@ export default class ObjectListParameters extends React.Component {
                 <MenuItem value={'flavor_asset'}>Flavor Asset</MenuItem>
                 <MenuItem value={'batch_job_sep'}>Batch Job Sep</MenuItem>
                 <MenuItem value={'metadata'}>Metadata</MenuItem>
-                <MenuItem value={'fileSync'}>File Sync</MenuItem>
+                <MenuItem value={'file_sync'}>File Sync</MenuItem>
               </Select>
             </FormControl>
           </Grid>
