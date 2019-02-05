@@ -59,10 +59,14 @@ function getLineCount(body){
         if (Array.isArray(body)) {
             return body.reduce((count, item) => {
                 try {
-                    let lines = char_count(item.text, '\n');
-                    return count + lines;
-                }catch
-                    (e)
+                    if (item.text)  {
+                        let lines = char_count(item.text, '\n');
+                        return count + lines;
+                    }
+                    else {
+                        return count+1;
+                    }
+                }catch(e)
                     {
                         console.warn("exception in item: ", item, " exception: ", e)
                         return count;

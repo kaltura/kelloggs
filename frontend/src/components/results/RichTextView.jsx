@@ -20,69 +20,95 @@ const styles = theme => ({
     }
 });
 
-class RichTextView extends React.PureComponent {
+
+
+class RichTextCommandMenu extends React.Component {
     state = {
-        anchorEl: null,
+        anchorEl: null
     };
 
     constructor(props) {
         super(props);
     }
 
-    handleClick = event => {
+    handleChange = (event, checked) => {
+        this.setState({ auth: checked });
+    };
+
+    handleMenu = event => {
         this.setState({ anchorEl: event.currentTarget });
     };
 
     handleClose = () => {
         this.setState({ anchorEl: null });
     };
-
     clickCommand(cmd) {
         this.handleClose()
         this.props.globalCommands.handleCommand(cmd);
     }
 
     render() {
+
         const { anchorEl } = this.state;
-        const { classes } = this.props;
+        const { classes, data, dataIndex } = this.props;
+
+        let toolTipAction=data.commands.find(cmd=>cmd.action==="tooltip");
+        //let otherActions=data.commands.filter(cmd=>cmd.action!=="tooltip")
+        return  <React.Fragment key={"fragment"+dataIndex}>
+            {
+                toolTipAction ? <ToolTip  title={toolTipAction.data}
+                                          classes={{ tooltip: classes.lightTooltip }}
+                    >
+                        <a href="#"
+                           onClick={this.handleMenu}
+                        >
+                            {data.text}
+                        </a>
+                    </ToolTip> :
+                    <a href="#"
+                       onClick={this.handleMenu}
+                    >{data.text}</a>
+            }
+
+            <Menu
+                key={"menu"+(dataIndex)}
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={this.handleClose}
+            >
+                {
+                    data.commands.map( (cmd,cmdIndex) => {
+                        return <MenuItem key={`menuitem-${dataIndex}-${cmdIndex}`} onClick={ ()=> {
+                            this.clickCommand(cmd)
+                        }}>{cmd.label}</MenuItem>
+                    })
+                }
+            </Menu>
+        </React.Fragment>
+    }
+
+}
+
+
+class RichTextView extends React.PureComponent {
+    state = {
+    };
+
+    constructor(props) {
+        super(props);
+    }
+
+
+    render() {
+        const { anchorEl } = this.state;
+        const { classes,globalCommands } = this.props;
 
         return <div  style={{...this.props.style, paddingLeft: this.props.indent*35+"px"}}>
             {
-                this.props.data.map(data => {
+                this.props.data.map((data,dataIndex) => {
                     if (data.commands) {
 
-                        let toolTipAction=data.commands.find(cmd=>cmd.action==="tooltip");
-                        //let otherActions=data.commands.filter(cmd=>cmd.action!=="tooltip")
-                        return  <React.Fragment>
-                                    {
-                                      toolTipAction ? <ToolTip  title={toolTipAction.data}
-                                                  classes={{ tooltip: classes.lightTooltip }}
-                                        >
-                                            <a href="#"
-                                               onClick={this.handleClick}
-                                            >
-                                                {data.text}
-                                            </a>
-                                        </ToolTip> :
-                                        <a href="#"
-                                           onClick={this.handleClick}
-                                        >{data.text}</a>
-                                    }
-
-
-                                    <Menu
-                                        id="simple-menu"
-                                        anchorEl={anchorEl}
-                                        open={Boolean(anchorEl)}
-                                        onClose={this.handleClose}
-                                        >
-                                    {
-                                        data.commands.map(cmd => {
-                                            return <MenuItem onClick={ ()=> { this.clickCommand(cmd)}}>{cmd.label}</MenuItem>
-                                        })
-                                    }
-                                    </Menu>
-                        </React.Fragment>
+                        return <RichTextCommandMenu key={"commandMenu-"+dataIndex} data={data} dataIndex={dataIndex} globalCommands={globalCommands}></RichTextCommandMenu>;
                     }
                     return data.text;
                 })
