@@ -54,7 +54,7 @@ class CommandsMenu extends React.Component {
     return hasCommands ?
       (<div >
         { type === 'text' ?
-            <div class={classes.menu} onClick={this.openMenu}>({commands.length})</div>
+            <div className={classes.menu} onClick={this.openMenu}>({commands.length})</div>
            :
             <IconButton
               className={classNameProp}
