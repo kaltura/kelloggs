@@ -33,9 +33,9 @@
     var appConfig = {
       'type': 'config',
       'config': {
-        'hostUrl': '',
+        'hostUrl': 'https://localhost:8000',
         'serviceUrl': 'https://kelloggs.kaltura.com/api/',
-        'jwt': '',
+        'jwt': ''
       }
     };
 
@@ -44,7 +44,7 @@
       return;
     }
 
-    window.document.getElementById('iframe').src = 'https://localhost:3001' + window.location.hash;
+    window.document.getElementById('iframe').src = 'https://localhost:3000' + window.location.hash;
 
     window.addEventListener('message', function(e) {
       var postMessageData;
