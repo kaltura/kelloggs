@@ -88,9 +88,9 @@ const styles = theme =>({
   search: {
     position: 'relative',
     borderRadius: theme.shape.borderRadius,
-    backgroundColor: fade(theme.palette.common.white, 0.4),
+    backgroundColor: fade(theme.palette.common.white, 0),
     '&:hover': {
-      backgroundColor: fade(theme.palette.common.white, 0.65),
+      backgroundColor: fade(theme.palette.common.white, 0.3),
     },
     marginRight: theme.spacing.unit * 2,
     marginLeft: 0,
@@ -148,8 +148,13 @@ class MainView extends React.Component {
     timeZone: 'est'
   }
 
-  _toggleOpen = () => {
-    this.setState(state => ({expanded: !state.expanded}));
+  _showParameters = () => {
+    this.setState(state => ({expanded: true}));
+  }
+
+  _hideParameters = () => {
+    this.setState(state => ({expanded: false}));
+
   }
 
   _abortSearch = () => {
@@ -194,7 +199,7 @@ class MainView extends React.Component {
               <ArrowBackIcon className={classes.leftIcon} />
               Back
             </Button>
-            <Button  className={classes.button}>
+            <Button  className={classes.button} onClick={this._showParameters}>
               <InputIcon className={classes.leftIcon} />
               Modify Search
             </Button>
@@ -229,21 +234,11 @@ class MainView extends React.Component {
           <Parameters onSearch={this._handleSearch}></Parameters>
         </div>
         <div className={classnames(classes.content, expanded && classes.contentShift)}>
-          {canCollapse && <Button onClick={this._toggleOpen} className={classes.toggler}>
-            {expanded ? (
-                <React.Fragment>
-                  <ExpandLess fontSize="small"/>
-                  Hide Search Parameters
-                </React.Fragment>
-              )
-              :
-              (
-                <React.Fragment>
-                  <ExpandMore fontSize="small"/>
-                  Modify Search Parameters
-                </React.Fragment>
-              )
-            }
+          {expanded && canCollapse && <Button onClick={this._hideParameters} className={classes.toggler}>
+            <React.Fragment>
+              <ExpandLess fontSize="small"/>
+              Hide Parameters
+            </React.Fragment>
           </Button>
           }
           <div className={classes.result}>

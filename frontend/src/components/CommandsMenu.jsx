@@ -84,9 +84,10 @@ class CommandsMenu extends React.Component {
               {command.label}
             </MenuItem>
           ))}
-          <MenuItem>
-          { children }
+          {children && <MenuItem>
+            {children}
           </MenuItem>
+          }
         </Menu>
       </div>)
       : null
