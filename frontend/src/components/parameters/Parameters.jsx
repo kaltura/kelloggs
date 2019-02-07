@@ -17,6 +17,7 @@ import DBLogsParameters from "./DBLogsParameters";
 import ObjectInfoParameters from "./ObjectInfoParameters";
 import ObjectListParameters from "./ObjectListParameters";
 import KMSLogParameters from "./KMSLogParameters";
+import SphinxLogsParameters from "./SphinxLogsParameters";
 
 
 const styles = {
@@ -227,6 +228,7 @@ class Parameters extends React.Component
                 <MenuItem value={'apiLogFilter'}>API Logs</MenuItem>
                 <MenuItem value={'kmsLogFilter'}>KMS Logs</MenuItem>
                 <MenuItem value={'dbWritesFilter'}>Database changes</MenuItem>
+                <MenuItem value={'sphinxWritesFilter'}>Sphinx changes</MenuItem>
                 <MenuItem value={'objectInfoFilter'}>Object Info</MenuItem>
                 <MenuItem value={'objectListFilter'}>Object List</MenuItem>
               </Select>
@@ -241,6 +243,7 @@ class Parameters extends React.Component
           { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
           { parameters.type === 'kmsLogFilter' && <KMSLogParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></KMSLogParameters> }
           { parameters.type === 'dbWritesFilter' && <DBLogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></DBLogsParameters> }
+          { parameters.type === 'sphinxWritesFilter' && <SphinxLogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></SphinxLogsParameters> }
           { parameters.type === 'objectInfoFilter' && <ObjectInfoParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></ObjectInfoParameters> }
           { parameters.type === 'objectListFilter' && <ObjectListParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></ObjectListParameters> }
         </Grid>
