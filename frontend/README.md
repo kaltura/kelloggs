@@ -4,12 +4,9 @@
 ## Developer:
 
 ### Setup:
-1. Install local-web-server
-``` 
-npm i -g local-web-server
-```
 
-2. copy index-template.html to index.html and edit
+
+1. copy index-template.html to index.html and edit
 
 ```
    var appConfig = {
