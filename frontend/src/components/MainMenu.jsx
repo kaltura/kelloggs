@@ -40,7 +40,7 @@ class MainMenu extends React.Component {
   };
 
   render() {
-    const { classes, globalCommands } = this.props;
+    const { classes, globalCommands, children } = this.props;
     const commands = [
       { action: 'copyToClipboard', label: 'Copy search link', data: this.props.globalCommands.getCurrentUrl()},
       ...globalCommands.items
@@ -50,7 +50,9 @@ class MainMenu extends React.Component {
     return (
       <div>
         <Badge color="secondary" badgeContent={commands.length} invisible={!hasCommands || commands.length < 2}>
-          <CommandsMenu commands={commands} className={classes.menuIcon}/>
+          <CommandsMenu commands={commands}  className={classes.menuIcon}>
+            { children }
+          </CommandsMenu>
         </Badge>
       </div>
     );

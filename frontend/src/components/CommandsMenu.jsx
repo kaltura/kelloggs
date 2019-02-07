@@ -47,7 +47,7 @@ class CommandsMenu extends React.Component {
 
   render() {
     const { anchorEl, visibleCommands } = this.state;
-    const { classes, commands, className : classNameProp, type } = this.props;
+    const { classes, commands, className : classNameProp, type, children } = this.props;
     const open = Boolean(anchorEl);
     const hasCommands = commands && commands.length;
 
@@ -84,6 +84,9 @@ class CommandsMenu extends React.Component {
               {command.label}
             </MenuItem>
           ))}
+          <MenuItem>
+          { children }
+          </MenuItem>
         </Menu>
       </div>)
       : null

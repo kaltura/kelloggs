@@ -11,11 +11,19 @@ import ExpandLess from '@material-ui/icons/ExpandLess';
 import MainMenu from './MainMenu';
 import Parameters from './parameters/Parameters';
 import SearchResult from "./SearchResult";
+import InputBase from '@material-ui/core/InputBase';
+import SearchIcon from '@material-ui/icons/Search';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import InputIcon from '@material-ui/icons/Input';
+import { fade } from '@material-ui/core/styles/colorManipulator';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
+import Input from '@material-ui/core/Input';
 
 const drawerHeight = 220;
 const drawerPaddingTop = 24;
 
-const styles = {
+const styles = theme =>({
   root: {
     display: 'flex',
     flexDirection: 'column',
@@ -77,10 +85,58 @@ const styles = {
       marginTop: '10px'
     }
   },
+  search: {
+    position: 'relative',
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: fade(theme.palette.common.white, 0.4),
+    '&:hover': {
+      backgroundColor: fade(theme.palette.common.white, 0.65),
+    },
+    marginRight: theme.spacing.unit * 2,
+    marginLeft: 0,
+    width: '100%',
+    [theme.breakpoints.up('sm')]: {
+      marginLeft: theme.spacing.unit * 3,
+      width: 'auto',
+    },
+  },
+  searchIcon: {
+    width: theme.spacing.unit * 9,
+    height: '100%',
+    position: 'absolute',
+    pointerEvents: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   alignCenter: {
     textAlign: 'center'
+  },
+  inputRoot: {
+    color: 'inherit',
+    width: '100%',
+  },
+  inputInput: {
+    paddingTop: theme.spacing.unit,
+    paddingRight: theme.spacing.unit,
+    paddingBottom: theme.spacing.unit,
+    paddingLeft: theme.spacing.unit * 10,
+    transition: theme.transitions.create('width'),
+    width: '100%',
+    [theme.breakpoints.up('md')]: {
+      width: 200,
+    },
+  },
+  leftIcon: {
+    marginRight: theme.spacing.unit,
+  },
+  button: {
+    margin: theme.spacing.unit,
+  },
+  title: {
+    marginRight: theme.spacing.unit,
   }
-};
+});
 
 
 class MainView extends React.Component {
@@ -89,6 +145,7 @@ class MainView extends React.Component {
     expanded: true,
     canCollapse: false,
     parameters: null,
+    timeZone: 'est'
   }
 
   _toggleOpen = () => {
@@ -113,21 +170,59 @@ class MainView extends React.Component {
         parameters
       })
     })
+  }
 
+  handleChangeTimeZone = (e) => {
+    this.setState({
+      timeZone: e.target.value
+    })
   }
 
   render() {
     const {classes, globalCommands } = this.props;
-    const {expanded, canCollapse, parameters} = this.state;
+    const {expanded, canCollapse, parameters, timeZone} = this.state;
 
     return (
       <div className={classes.root}>
         <AppBar position="relative" classes={{root: classes.appBar}}>
           <Toolbar>
-            <Typography variant="h6" color="inherit" className={classes.grow}>
+            <Typography variant="h6" color="inherit" className={classes.title} >
               Kelloggs!
             </Typography>
-            <MainMenu/>
+
+            <Button  className={classes.button}>
+              <ArrowBackIcon className={classes.leftIcon} />
+              Back
+            </Button>
+            <Button  className={classes.button}>
+              <InputIcon className={classes.leftIcon} />
+              Modify Search
+            </Button>
+            <div className={classes.grow} />
+            <div className={classes.search}>
+              <div className={classes.searchIcon}>
+                <SearchIcon />
+              </div>
+              <InputBase
+                placeholder="Search…"
+                classes={{
+                  root: classes.inputRoot,
+                  input: classes.inputInput,
+                }}
+              />
+            </div>
+            <Select
+              value={timeZone}
+              onChange={this.handleChangeTimeZone}
+              inputProps={{
+                name: 'timezone',
+              }}
+            >
+              <MenuItem value={'est'}>EST Time</MenuItem>
+              <MenuItem value={'gmt'}>GMT Time</MenuItem>
+              <MenuItem value={'local'}>Local Time</MenuItem>
+            </Select>
+            <MainMenu />
           </Toolbar>
         </AppBar>
         <div className={classnames(classes.parameters, !expanded && classes.parametersShift)}>
