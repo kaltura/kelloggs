@@ -3,9 +3,9 @@ import {AutoSizer, MultiGrid} from 'react-virtualized';
 import 'react-virtualized/styles.css';
 import ToolTip from '@material-ui/core/Tooltip'
 import RichTextView from './RichTextView'
-import IconButton from "@material-ui/core/IconButton/IconButton";
-import MoreVertIcon from "@material-ui/core/SvgIcon/SvgIcon";
 import CommandsMenu from '../CommandsMenu';
+import {compose} from "recompose";
+import {withGlobalCommands} from "../GlobalCommands";
 
 const styles = {
     table: {
@@ -33,7 +33,7 @@ const styles = {
     }
 };
 
-export default class ResultsTable extends React.PureComponent {
+class ResultsTable extends React.PureComponent {
 
     constructor(props) {
         super(props);
@@ -226,8 +226,9 @@ export default class ResultsTable extends React.PureComponent {
         </div>
     }
 
-    _timestampCellRenderer({column, value, cellStyle}) {
-        return <span style={{...cellStyle}}>{value ? value.format('YYYY/MM/DD HH:mm:ss') : ''}</span>
+    _timestampCellRenderer = ({column, value, cellStyle}) => {
+        const formattedValue = value ? this.props.globalCommands.toStringDate(value, true) : '';
+        return <span style={{...cellStyle}}>{formattedValue}</span>
     }
 
     _indexCellRenderer({column, value, cellStyle}) {
@@ -267,3 +268,9 @@ export default class ResultsTable extends React.PureComponent {
     }
 
 }
+
+export default compose(
+  withGlobalCommands
+)(ResultsTable);
+
+

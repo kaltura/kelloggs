@@ -24,6 +24,7 @@ import MuiDialogContent from '@material-ui/core/DialogContent';
 import MuiDialogActions from '@material-ui/core/DialogActions';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
+import moment from 'moment-timezone';
 
 
 const DialogTitle = withStyles(theme => ({
@@ -118,15 +119,42 @@ const CustomSnackbarContent = withStyles(SnackbarContentStyles)(function(props) 
 
 const GlobalCommandsContext = React.createContext({});
 
+const displayDateFromat = 'YYYY-MM-DD HH:mm';
+const displayDateFromatWithSeconds = 'YYYY-MM-DD HH:mm:ss';
+
 export default class GlobalCommands extends React.Component {
 
   state = {
     items: [],
+    timezone: 'EST',
     showCopiedToClipboard: false,
     viewerCommand: null,
     initialParameters: getSearchParamsFromHash()
   }
 
+  _changeTimezone = (value) => {
+    this.setState({
+      timezone: value
+    })
+  }
+  _toStringDate = (value, withSeconds = false) => {
+    const dateFormat = withSeconds ? displayDateFromatWithSeconds : displayDateFromat;
+    const { timezone } = this.state;
+
+    var dateRegex = /^\d+$/;
+    if (dateRegex.test(value)) {
+      return moment(value * 1000).tz(timezone).format(dateFormat);
+    } else if (moment.isMoment(value)) {
+      return value.tz(timezone).format(dateFormat);
+    }
+    return moment(value).tz(timezone).format(dateFormat);
+  }
+
+  _toUnixDate = (date) => {
+    const {timezone} = this.state;
+    const parsedDate = moment.tz(date, timezone);
+    return parsedDate.isValid() ? parsedDate.format('X') : ""
+  }
 
   updateItems = (items) => {
     this.setState({
@@ -259,9 +287,10 @@ export default class GlobalCommands extends React.Component {
 
   render() {
     const { children } = this.props;
-    const { items, config, initialParameters, showCopiedToClipboard } = this.state;
+    const { items, config, initialParameters, showCopiedToClipboard, timezone } = this.state;
 
     const context = {
+      timezone,
       items,
       updateItems: this.updateItems,
       clearItems: () => this.updateItems([]),
@@ -274,7 +303,10 @@ export default class GlobalCommands extends React.Component {
       handleCommand: this._handleCommand,
       getCurrentUrl: this._getCurrentUrl,
       addOnSearchParamsChanged: this._addOnSearchParamsChanged,
-      removeOnSearchParamsChanged: this._removeOnSearchParamsChanged
+      removeOnSearchParamsChanged: this._removeOnSearchParamsChanged,
+      changeTimezone: this._changeTimezone,
+      toStringDate: this._toStringDate,
+      toUnixDate: this._toUnixDate,
     }
 
     return (

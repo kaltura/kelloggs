@@ -6,19 +6,17 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
-import ExpandMore from '@material-ui/icons/ExpandMore';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import MainMenu from './MainMenu';
 import Parameters from './parameters/Parameters';
 import SearchResult from "./SearchResult";
-import InputBase from '@material-ui/core/InputBase';
-import SearchIcon from '@material-ui/icons/Search';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import InputIcon from '@material-ui/icons/Input';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-import Input from '@material-ui/core/Input';
+import {compose} from "recompose";
+import {withGlobalCommands} from "./GlobalCommands";
 
 const drawerHeight = 220;
 const drawerPaddingTop = 24;
@@ -195,19 +193,17 @@ class MainView extends React.Component {
 
       const parameters = searchStack.pop();
       this._handleSearch(parameters, false);
-      
+
       return {
         searchStack
       };
     }
-  )
+    )
 
   }
 
   handleChangeTimeZone = (e) => {
-    this.setState({
-      timeZone: e.target.value
-    })
+    this.props.globalCommands.changeTimezone(e.target.value);
   }
 
   render() {
@@ -252,15 +248,16 @@ class MainView extends React.Component {
               {/*/>*/}
             {/*</div>*/}
             <Select
-              value={timeZone}
+              value={globalCommands.timezone}
+              disabled={true}
               onChange={this.handleChangeTimeZone}
               inputProps={{
                 name: 'timezone',
               }}
             >
-              <MenuItem value={'est'}>EST Time</MenuItem>
-              <MenuItem value={'gmt'}>GMT Time</MenuItem>
-              <MenuItem value={'local'}>Local Time</MenuItem>
+              <MenuItem value={'EST'}>EST Time</MenuItem>
+              <MenuItem value={'GMT'}>GMT Time</MenuItem>
+              <MenuItem value={'LOCAL'}>Local Time</MenuItem>
             </Select>
             <MainMenu />
           </Toolbar>
@@ -291,5 +288,9 @@ MainView.propTypes = {
   classes: PropTypes.object.isRequired,
 };
 
+export default compose(
+  withStyles(styles),
+  withGlobalCommands
+)(MainView);
 
-export default withStyles(styles)(MainView);
+

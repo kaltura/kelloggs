@@ -186,12 +186,6 @@ export default  class ResultsData {
 
     append(result) {
 
-        this.timestampColumns.forEach( column=> {
-            if (result[column.name]) {
-                result[column.name] = moment(result[column.name] * 1000);
-            }
-        });
-
         if (this.schema.heatmap) {
             let value=this.schema.heatmap.key ? result[this.schema.heatmap.key] : "count";
             this._addToHistogram(moment(result.timestamp).startOf('minute'),value,this.items.length) ;;
@@ -223,3 +217,4 @@ export default  class ResultsData {
         }
     }
   }
+

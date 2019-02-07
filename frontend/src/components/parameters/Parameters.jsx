@@ -9,7 +9,7 @@ import Select from '@material-ui/core/Select';
 import Button from '@material-ui/core/Button';
 import {withStyles} from "@material-ui/core";
 import APILogsParameters from './APILogsParameters';
-import moment from 'moment';
+import moment from 'moment-timezone';
 import {compose} from "recompose";
 import {withGlobalCommands} from "../GlobalCommands";
 import isEqual from 'lodash.isequal';
@@ -27,21 +27,6 @@ const styles = {
   }
 }
 
-
-const toStringDate = (value) => {
-  var dateRegex = /^\d+$/;
-  if (dateRegex.test(value)) {
-    return moment(value * 1000).format(displayDateFromat);
-  } else if (moment.isMoment(value)) {
-    return value.format(displayDateFromat);
-  }
-  return moment(value).format(displayDateFromat);
-}
-
-const toUnixDate = (date) => {
-  const parsedDate = moment(date);
-  return parsedDate.isValid() ? parsedDate.format('X') : ""
-}
 
 const defaultFromTime = moment().add(-1, 'days').startOf('day');
 const defaultParameters = {
@@ -62,7 +47,6 @@ const defaultParameters = {
   logTypes: "apiV3, ps2"
 }
 
-const displayDateFromat = 'YYYY-MM-DD HH:mm';
 
 class Parameters extends React.Component
 {
@@ -78,6 +62,7 @@ class Parameters extends React.Component
   }
 
   _fixSearchParams = (parameters) => {
+    const { globalCommands : { toStringDate } } = this.props;
     const result = {
       ...defaultParameters,
       ...(parameters || {})
@@ -144,6 +129,7 @@ class Parameters extends React.Component
   }
 
   _handleChange = (e) => {
+    const { globalCommands : { toStringDate } } = this.props;
     const { name, value } = e.target;
 
     const extra = {};
@@ -177,7 +163,6 @@ class Parameters extends React.Component
   }
 
   _handleSearch = (updateUrl = true) => {
-
     const {parameters: rawParameters} = this.state;
     const {onSearch, globalCommands } = this.props;
 
@@ -193,8 +178,8 @@ class Parameters extends React.Component
     let searchParameters =
       {
         ...rawParameters,
-        fromTime: toUnixDate(rawParameters.fromTime),
-        toTime: toUnixDate(rawParameters.toTime),
+        fromTime: globalCommands.toUnixDate(rawParameters.fromTime),
+        toTime: globalCommands.toUnixDate(rawParameters.toTime),
       };
 
     searchParameters = this.parametersFormRef.current.filterParameters(searchParameters);
