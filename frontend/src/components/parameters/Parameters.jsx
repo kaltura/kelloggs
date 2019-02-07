@@ -29,24 +29,7 @@ const styles = {
 }
 
 
-const defaultFromTime = moment().add(-1, 'days').startOf('day');
-const defaultParameters = {
-  type: "",
-  textFilter: { type: 'match', text: ''},
-  fromTime:defaultFromTime,
-  toTime: moment(defaultFromTime).add(10, 'minutes'),
-  server: "",
-  session: "",
-  table: "",
-  objectId: "",
-  entryIdIn: "",
-  objectIdIn: "",
-  jobTypeIn: "",
-  objectTypeIn: "",
-  typeIn: "",
-  idIn: "",
-  logTypes: "apiV3, ps2"
-}
+
 
 
 class Parameters extends React.Component
@@ -63,6 +46,28 @@ class Parameters extends React.Component
   }
 
   _fixSearchParams = (parameters) => {
+
+    const { globalCommands : { toAppDate } } = this.props;
+
+    const defaultFromTime = toAppDate(moment()).add(-1, 'days').startOf('day');
+    const defaultParameters = {
+      type: "",
+      textFilter: { type: 'match', text: ''},
+      fromTime:defaultFromTime,
+      toTime: moment(defaultFromTime).add(10, 'minutes'),
+      server: "",
+      session: "",
+      table: "",
+      objectId: "",
+      entryIdIn: "",
+      objectIdIn: "",
+      jobTypeIn: "",
+      objectTypeIn: "",
+      typeIn: "",
+      idIn: "",
+      logTypes: "apiV3, ps2"
+    }
+
     const { globalCommands : { toStringDate } } = this.props;
     const result = {
       ...defaultParameters,
@@ -130,12 +135,12 @@ class Parameters extends React.Component
   }
 
   _handleChange = (e) => {
-    const { globalCommands : { toStringDate } } = this.props;
+    const { globalCommands : { toStringDate, toAppDate } } = this.props;
     const { name, value } = e.target;
 
     const extra = {};
     if (name === 'fromTime') {
-      const date = moment(value);
+      const date = toAppDate(value);
       const isValid = date.isValid();
       if (isValid) {
         extra['toTime'] = toStringDate(date.add(10, 'minutes'));

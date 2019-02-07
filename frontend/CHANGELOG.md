@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+### Bugs
+- bug with dates in parameter forms
+
 ## 1.1.0
 
 ### Features

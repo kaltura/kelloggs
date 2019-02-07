@@ -137,17 +137,25 @@ export default class GlobalCommands extends React.Component {
       timezone: value
     })
   }
-  _toStringDate = (value, withSeconds = false) => {
-    const dateFormat = withSeconds ? displayDateFromatWithSeconds : displayDateFromat;
+
+  _toAppDate = (value) => {
     const { timezone } = this.state;
 
     var dateRegex = /^\d+$/;
     if (dateRegex.test(value)) {
-      return moment(value * 1000).tz(timezone).format(dateFormat);
-    } else if (moment.isMoment(value)) {
-      return value.tz(timezone).format(dateFormat);
+      return moment(value * 1000).tz(timezone);
     }
-    return moment(value).tz(timezone).format(dateFormat);
+
+    if (moment.isMoment(value)) {
+      return value.tz(timezone);
+    }
+
+    return moment.tz(value, timezone);
+  }
+
+  _toStringDate = (value, withSeconds = false) => {
+    const dateFormat = withSeconds ? displayDateFromatWithSeconds : displayDateFromat;
+    return this._toAppDate(value).format(dateFormat);
   }
 
   _toUnixDate = (date) => {
@@ -307,6 +315,7 @@ export default class GlobalCommands extends React.Component {
       changeTimezone: this._changeTimezone,
       toStringDate: this._toStringDate,
       toUnixDate: this._toUnixDate,
+      toAppDate: this._toAppDate,
     }
 
     return (

@@ -1,6 +1,6 @@
 {
   "name": "kelloggs",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "dependencies": {
     "@material-ui/core": "latest",
@@ -10,7 +10,6 @@
     "echarts-for-react": "^2.0.15-beta.0",
     "hoist-non-react-statics": "^3.2.1",
     "lodash.isequal": "^4.5.0",
-    "moment": "^2.23.0",
     "moment-timezone": "^0.5.23",
     "pako": "^1.0.8",
     "prop-types": "latest",
