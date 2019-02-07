@@ -104,7 +104,7 @@ class BaseFilter
 			array('label' => 'Go to object in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $objectFilter),
 		);
 	}
-	
+
 	protected static function formatMetadata($metadata)
 	{
 		$metadata = array_filter($metadata, function ($value) { 

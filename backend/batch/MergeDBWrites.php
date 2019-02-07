@@ -89,7 +89,7 @@ foreach (array_merge($inputPaths, $childPaths) as $filePath)
 	{
 		$filePath = preg_replace(K::Get()->getConfParam('OUTPUT_LOGS_SEARCH'), K::Get()->getConfParam('OUTPUT_LOGS_REPLACE'), $filePath);
 	}
-	
+
 	if (!unlink($filePath))
 	{
 		writeLog('Error: failed to delete ' . $filePath);

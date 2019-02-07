@@ -116,7 +116,7 @@ class PdoWrapper
 		}
 		return $result;
 	}
-	
+
 	public function executeStatement($sql, $values, $log = true, $retry = false)
 	{
 		// log the sql

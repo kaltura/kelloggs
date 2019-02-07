@@ -14,10 +14,10 @@ $ignoredTables = array(
 	'tag',					// many updates for instance count
 );
 
-function buildIndex($inputPath, $primaryKeys)
+function buildIndex($inputPath, $primaryKeys, $mode)
 {
 	$reader = new GZipReader($inputPath, 1024 * 1024);
-	$parser = new DbWritesParser($primaryKeys);
+	$parser = new DbWritesParser($primaryKeys, $mode);
 
 	$result = array();
 	for (;;)
@@ -93,16 +93,17 @@ function writeIndex($outputPath, $rangesPath, $index)
 }
 
 // parse the command line
-if ($argc < 5)
+if ($argc < 6)
 {
-	echo "Usage:\n\t" . basename(__file__) . " <ini file paths> <input path> <output path> <ranges path>\n";
+	echo "Usage:\n\t" . basename(__file__) . " <ini file paths> <input path> <mode> <output path> <ranges path>\n";
 	exit(1);
 }
 
 $confFile = $argv[1];
 $inputPath = $argv[2];
-$outputPath = $argv[3];
-$rangesPath = $argv[4];
+$mode = $argv[3];
+$outputPath = $argv[4];
+$rangesPath = $argv[5];
 
 K::init($confFile);
 $pdo = K::get()->getProdPdo();
@@ -118,7 +119,7 @@ foreach ($ignoredTables as $table)
 }
 
 writeLog('Info: indexing ' . $inputPath);
-$index = buildIndex($inputPath, $primaryKeys);
+$index = buildIndex($inputPath, $primaryKeys, $mode);
 
 writeLog('Info: writing ' . count($index) . ' lines to ' . $outputPath);
 writeIndex($outputPath, $rangesPath, $index);

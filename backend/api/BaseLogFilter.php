@@ -1,6 +1,7 @@
 <?php
 
 require_once(dirname(__file__) . '/BaseFilter.php');
+require_once(dirname(__file__) . '/../shared/LogTypes.php');
 
 class BaseLogFilter extends BaseFilter
 {
@@ -17,6 +18,12 @@ class BaseLogFilter extends BaseFilter
 	protected $multiRanges;
 
 	protected $zblockgrep;
+
+	protected static $errorLogSeverityMap = array(
+		'PHP Notice:' => 'warn',
+		'PHP Warning:' => 'warn',
+		'PHP Fatal error:' => 'crit',
+	);
 
 	protected function __construct($params, $filter)
 	{
@@ -41,7 +48,7 @@ class BaseLogFilter extends BaseFilter
 
 		$this->serverPattern = isset($filter['server']) ? $filter['server'] : null;
 		$this->session = isset($filter['session']) ? $filter['session'] : null;
-		if ($this->session && !ctype_digit($this->session))
+		if ($this->session && !ctype_alnum($this->session))
 		{
 			dieError(ERROR_BAD_REQUEST, 'Invalid session id');
 		}
@@ -367,5 +374,163 @@ class BaseLogFilter extends BaseFilter
 		);
 
 		return $prettyBlock;
+	}
+
+	protected function getAccessLogLine($logTypes, $pattern, $timeFormat, $sessionIndex)
+	{
+		list($fileRanges, $ignore, $ignore) = self::getFileRanges($logTypes, $this->fromTime, $this->toTime, $this->server);
+		if (!$fileRanges)
+		{
+			return array();
+		}
+
+		$fileRanges = implode(' ', $fileRanges);
+
+		$timeCapture = '$1';
+		$captureConditions = array(
+			$timeCapture . '@>=' . strftime($timeFormat, $this->fromTime),
+			$timeCapture . '@<=' . strftime($timeFormat, $this->toTime),
+		);
+		$captureConditions = implode(',', $captureConditions);
+
+		$textFilter = self::getTextFilterParam(array('type' => 'match', 'text' => $this->session));
+
+		$grepCommand = $this->zblockgrep . " -h -p '$pattern' -t '$timeFormat' -c '$captureConditions' $textFilter $fileRanges";
+
+		exec($grepCommand, $output);
+
+		if (!is_array($output))
+		{
+			return array();
+		}
+
+		foreach ($output as $line)
+		{
+			$parsedLine = AccessLogParser::parse($line);
+			if ($parsedLine[$sessionIndex] == $this->session)
+			{
+				return $parsedLine;
+			}
+		}
+
+		return null;
+	}
+
+	protected static function getAccessLogBaseMetadataFields($parsedLine)
+	{
+		$ipAddress = $parsedLine[12];
+		if (!filter_var($ipAddress, FILTER_VALIDATE_IP))
+		{
+			$ipAddress = $parsedLine[0];
+		}
+
+		$xForwardedFor = $parsedLine[20];
+
+		$remoteAddr = getIpAddress($ipAddress, $xForwardedFor);
+
+		return array(
+			// client -> server
+			'Request line' => $parsedLine[5],
+			'Host' => $parsedLine[14],
+			'Client ip' => ($remoteAddr ? $remoteAddr : $ipAddress),
+			'Referrer' => $parsedLine[9],
+			'User agent' => $parsedLine[10],
+			'Bytes received' => $parsedLine[18],
+
+			// server -> client
+			'Status' => $parsedLine[6],
+			'Bytes sent' => $parsedLine[7],
+			'Execution time' => self::parseApacheExecutionTime($parsedLine[8]),
+			'Kaltura error' => $parsedLine[13],
+			'Connection status' => self::formatApacheConnectionStatus($parsedLine[17]),
+		);
+	}
+
+	protected function getErrorLogLines($logTypes, $pattern, $timeFormat)
+	{
+		list($fileRanges, $ignore, $ignore) = self::getFileRanges($logTypes, $this->fromTime, $this->toTime, $this->server);
+		if (!$fileRanges)
+		{
+			return array();
+		}
+
+		$fileRanges = implode(' ', $fileRanges);
+
+		$timeCapture = '"$1 $3"';
+		$captureConditions = array(
+			$timeCapture . '@>=' . strftime($timeFormat, $this->fromTime),
+			$timeCapture . '@<=' . strftime($timeFormat, $this->toTime),
+		);
+		$captureConditions = implode(',', $captureConditions);
+
+		$textFilter = self::getTextFilterParam(array('type' => 'match', 'text' => 'session ' . $this->session));
+
+		$grepCommand = $this->zblockgrep . " -h -p '$pattern' -t '$timeFormat' -c '$captureConditions' $textFilter $fileRanges";
+
+		exec($grepCommand, $output);
+
+		if (!is_array($output))
+		{
+			return array();
+		}
+
+		$result = array();
+		foreach ($output as $curLine)
+		{
+			$curLine = trim($curLine);
+			$fields = array();
+			for ($curPos = 0; $curPos < strlen($curLine); )
+			{
+				if ($curLine[$curPos] == '[')
+				{
+					$endPos = strpos($curLine, ']', $curPos);
+					if ($endPos !== false)
+					{
+						$fields[] = substr($curLine, $curPos + 1, $endPos - $curPos - 1);
+						$curPos = $endPos + 2;
+						continue;
+					}
+				}
+
+				$fields[] = substr($curLine, $curPos);
+				break;
+			}
+
+			$fields = array_filter($fields);
+
+			if (!$fields)
+			{
+				continue;
+			}
+
+			$timestamp = reset($fields);
+			$timestamp = preg_replace('/\.\d+/', '', $timestamp);
+			$timestamp = strtotime($timestamp);
+
+			$body = end($fields);
+
+			$body = str_replace(', session ' . $this->session, '', $body);		// strip out the session id
+
+			$severity = 'error';
+			foreach (self::$errorLogSeverityMap as $prefix => $curSeverity)
+			{
+				if (startsWith($body, $prefix))
+				{
+					$severity = $curSeverity;
+					$body = trim(substr($body, strlen($prefix)));
+					break;
+				}
+			}
+
+			$line = array(
+				'severity' => $severity,
+				'timestamp' => $timestamp,
+				'body' => $body,
+			);
+
+			$result[] = $line;
+		}
+
+		return $result;
 	}
 }
