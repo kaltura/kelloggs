@@ -145,7 +145,8 @@ class MainView extends React.Component {
     expanded: true,
     canCollapse: false,
     parameters: null,
-    timeZone: 'est'
+    timeZone: 'est',
+    searchStack: []
   }
 
   _showParameters = () => {
@@ -165,16 +166,42 @@ class MainView extends React.Component {
     })
   }
 
-  _handleSearch = (parameters) => {
-    this.setState({
-      parameters: null
-    }, () => {
+  _handleSearch = (parameters, addToStack = true) => {
+
+    this.setState((state) => {
+      return {
+        searchStack: addToStack && state.parameters ? [ ...state.searchStack, state.parameters] : state.searchStack,
+        parameters: null
+      };
+    }, (state) => {
+
       this.setState({
+
         canCollapse: true,
         expanded: false,
         parameters
       })
     })
+  }
+
+  _handleGoBack = () => {
+
+    this.setState((state) => {
+      const { searchStack } = this.state;
+
+      if (searchStack.length === 0) {
+        return;
+      }
+
+      const parameters = searchStack.pop();
+      this._handleSearch(parameters, false);
+      
+      return {
+        searchStack
+      };
+    }
+  )
+
   }
 
   handleChangeTimeZone = (e) => {
@@ -185,7 +212,10 @@ class MainView extends React.Component {
 
   render() {
     const {classes, globalCommands } = this.props;
-    const {expanded, canCollapse, parameters, timeZone} = this.state;
+    const {expanded, canCollapse, parameters, timeZone, searchStack } = this.state;
+
+    const inSearch = !!parameters;
+    const hasBack = searchStack.length > 0;
 
     return (
       <div className={classes.root}>
@@ -195,27 +225,32 @@ class MainView extends React.Component {
               Kelloggs!
             </Typography>
 
-            <Button  className={classes.button}>
-              <ArrowBackIcon className={classes.leftIcon} />
-              Back
-            </Button>
-            <Button  className={classes.button} onClick={this._showParameters}>
+            {hasBack &&
+              <Button className={classes.button} onClick={this._handleGoBack}>
+                <ArrowBackIcon className={classes.leftIcon}/>
+                Back
+              </Button>
+              }
+            { inSearch &&
+            < Button  className={classes.button} onClick={this._showParameters}>
               <InputIcon className={classes.leftIcon} />
               Modify Search
             </Button>
+            }
+
             <div className={classes.grow} />
-            <div className={classes.search}>
-              <div className={classes.searchIcon}>
-                <SearchIcon />
-              </div>
-              <InputBase
-                placeholder="Search…"
-                classes={{
-                  root: classes.inputRoot,
-                  input: classes.inputInput,
-                }}
-              />
-            </div>
+            {/*<div className={classes.search}>*/}
+              {/*<div className={classes.searchIcon}>*/}
+                {/*<SearchIcon />*/}
+              {/*</div>*/}
+              {/*<InputBase*/}
+                {/*placeholder="Search…"*/}
+                {/*classes={{*/}
+                  {/*root: classes.inputRoot,*/}
+                  {/*input: classes.inputInput,*/}
+                {/*}}*/}
+              {/*/>*/}
+            {/*</div>*/}
             <Select
               value={timeZone}
               onChange={this.handleChangeTimeZone}
