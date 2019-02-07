@@ -3,10 +3,9 @@
 require_once(dirname(__file__) . '/../lib/PdoWrapper.php');
 require_once(dirname(__file__) . '/../lib/Utils.php');
 require_once(dirname(__file__) . '/../shared/Globals.php');
+require_once(dirname(__file__) . '/../shared/LogTypes.php');
+require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
 require_once(dirname(__file__) . '/Common.php');
-
-define('LOG_TYPE_DB_WRITES', 4);		// TODO: move to some common file
-define('LOG_TYPE_DB_WRITES_INDEX', 6);
 
 function updateFileData($pdo, $id, $start, $end, $ranges)
 {
@@ -61,7 +60,7 @@ function getFileRanges($zgrepIndex, $params, $filePath)
 	return array($result, $result[0][2], $lastTime);
 }
 
-function createDbWritesIndex($confFile, $pdo, $filePath, $id, $start, $end)
+function createDbWritesIndex($confFile, $pdo, $filePath, $mode, $outputType, $id, $start, $end)
 {
 	// create an index file
 	$pathInfo = pathinfo($filePath);
@@ -77,7 +76,7 @@ function createDbWritesIndex($confFile, $pdo, $filePath, $id, $start, $end)
 	}
 	$indexRangesPath = tempnam('/tmp', 'dbindex');
 
-	$commandLine = 'php ' . dirname(__file__) . "/IndexDBWrites.php '$confFile' '$filePath' '$outputPath' '$indexRangesPath'";
+	$commandLine = 'php ' . dirname(__file__) . "/IndexDBWrites.php '$confFile' '$filePath' '$mode' '$outputPath' '$indexRangesPath'";
 	writeLog('Info: running ' . $commandLine);
 	passthru($commandLine);
 
@@ -112,7 +111,7 @@ function createDbWritesIndex($confFile, $pdo, $filePath, $id, $start, $end)
 			1 => $indexPath,
 			2 => filesize($indexPath),
 			3 => filemtime($indexPath),
-			4 => LOG_TYPE_DB_WRITES_INDEX,
+			4 => $outputType,
 			5 => FILE_STATUS_READY,
 			6 => $start,
 			7 => $end,
@@ -183,9 +182,24 @@ for ($index = 4; $index < $argc; $index++)
 	}
 	list($data, $start, $end) = $ranges;
 
-	if ($type == LOG_TYPE_DB_WRITES)
+	// index writes if needed
+	$mode = null;
+	switch ($type)
 	{
-		createDbWritesIndex($confFile, $pdo, $filePath, $id, $start, $end);
+	case LOG_TYPE_DB_WRITES:
+		$mode = DbWritesParser::MODE_DB_WRITES;
+		$outputType = LOG_TYPE_DB_WRITES_INDEX;
+		break;
+
+	case LOG_TYPE_SPHINX_WRITES:
+		$mode = DbWritesParser::MODE_SPHINX_WRITES;
+		$outputType = LOG_TYPE_SPHINX_WRITES_INDEX;
+		break;
+	}
+
+	if ($mode)
+	{
+		createDbWritesIndex($confFile, $pdo, $filePath, $mode, $outputType, $id, $start, $end);
 	}
 
 	// update the result

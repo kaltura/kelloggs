@@ -8,6 +8,9 @@ class DbWritesParser
 	const STMT_PREFIX_UPDATE = 'UPDATE ';
 	const STMT_PREFIX_DELETE = 'DELETE FROM ';
 
+	const MODE_DB_WRITES = 'db';
+	const MODE_SPHINX_WRITES = 'sphinx';
+
 	protected $primaryKeys;
 	protected $timestamp;
 	protected $insertId;
@@ -219,9 +222,10 @@ class DbWritesParser
 		return array(substr($comment, 0, $openPos), substr($comment, $openPos + 1, $closePos - $openPos - 1));
 	}
 
-	public function __construct($primaryKeys)
+	public function __construct($primaryKeys, $mode)
 	{
 		$this->primaryKeys = $primaryKeys;
+		$this->mode = $mode;
 	}
 
 	public function processLine($line)
@@ -269,7 +273,14 @@ class DbWritesParser
 		$comment = trim(substr($line, 2, $commentEnd - 2));
 		$statement = trim(substr($line, $commentEnd + 2));
 
-		$parseResult = self::parseWriteStatement($statement, $this->primaryKeys, $insertId);
+		if ($this->mode == self::MODE_SPHINX_WRITES)
+		{
+			$parseResult = self::parseSphinxLogStatement($statement);
+		}
+		else
+		{
+			$parseResult = self::parseWriteStatement($statement, $this->primaryKeys, $insertId);
+		}
 		if (!$parseResult)
 		{
 			return false;
@@ -277,6 +288,33 @@ class DbWritesParser
 
 		list($tableName, $id) = $parseResult;
 		return array($tableName, $id, $this->timestamp, $comment, $statement);
+	}
+
+	protected static function parseSphinxLogStatement($statement)
+	{
+		if (!startsWith($statement, 'INSERT INTO sphinx_log '))
+		{
+			return false;
+		}
+
+		$objectType = self::getInsertValues($statement, 'OBJECT_TYPE');
+		if (!$objectType)
+		{
+			return false;
+		}
+
+		$objectId = self::getInsertValues($statement, 'OBJECT_ID');
+		if (!$objectId)
+		{
+			return false;
+		}
+
+		if (in_array($objectType, array('DocumentEntry', 'ExternalMediaEntry', 'LiveStreamEntry')))
+		{
+			$objectType = 'entry';
+		}
+
+		return array($objectType, $objectId);
 	}
 
 	public static function parseWriteStatement($statement, $primaryKeys, $insertId = null)

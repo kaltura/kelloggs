@@ -3,12 +3,11 @@
 require_once(dirname(__file__) . '/BaseLogFilter.php');
 require_once(dirname(__file__) . '/../shared/DbWritesParser.php');
 
-define('LOG_TYPE_DB_WRITES', 4);		// TODO: move to some common file
-define('LOG_TYPE_DB_WRITES_INDEX', 6);
 define('TIME_FORMAT_DB_WRITES', '%Y-%m-%d %H:%M:%S');
 
 class DbWritesFilter extends BaseLogFilter
 {
+	protected $type;
 	protected $table;
 	protected $objectId;
 
@@ -16,6 +15,7 @@ class DbWritesFilter extends BaseLogFilter
 	{
 		parent::__construct($params, $filter);
 
+		$this->type = $filter['type'];
 		if (isset($filter['table']) && $filter['table'])
 		{
 			$this->table = $filter['table'];
@@ -33,12 +33,14 @@ class DbWritesFilter extends BaseLogFilter
 
 	protected function searchIndexes($key, $fromTime, $toTime)
 	{
+		$logType = $this->type == 'dbWritesFilter' ? LOG_TYPE_DB_WRITES_INDEX : LOG_TYPE_SPHINX_WRITES_INDEX;
+
 		$sql = 'SELECT file_path, ranges, parent_id FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2 AND type = ? ORDER BY start ASC';
 		$values = array(
 			1 => $toTime,
 			2 => $fromTime,
 			3 => $fromTime - 86400,
-			4 => LOG_TYPE_DB_WRITES_INDEX,
+			4 => $logType,
 		);
 
 		$stmt = K::get()->getKelloggsPdo()->executeStatement($sql, $values, false);
@@ -202,7 +204,8 @@ class DbWritesFilter extends BaseLogFilter
 		}
 		else
 		{
-			list($fileRanges, $totalSize, $ignore) = self::getFileRanges(array(LOG_TYPE_DB_WRITES), $this->fromTime, $this->toTime);
+			$logType = $this->type == 'dbWritesFilter' ? LOG_TYPE_DB_WRITES : LOG_TYPE_SPHINX_WRITES;
+			list($fileRanges, $totalSize, $ignore) = self::getFileRanges(array($logType), $this->fromTime, $this->toTime);
 		}
 
 		if (!$fileRanges)
@@ -252,16 +255,16 @@ class DbWritesFilter extends BaseLogFilter
 
 		$this->grepCommand = $this->zblockgrep . " -h -p '$pattern' -c '$captureConditions' $textFilter $fileRanges";
 	}
-	
+
 	protected function getTopLevelCommands()
 	{
 		$result = parent::getTopLevelCommands();
-		
+
 		if ($this->table && $this->objectId)
 		{
 			$result = array_merge($result, self::objectInfoCommands($this->table, $this->objectId));
 		}
-		
+
 		return $result;
 	}
 
@@ -313,7 +316,8 @@ class DbWritesFilter extends BaseLogFilter
 			dieError(ERROR_INTERNAL_ERROR, 'Failed to get database schema');
 		}
 
-		$parser = new DbWritesParser($primaryKeys);
+		$mode = $this->type == 'dbWritesFilter' ? DbWritesParser::MODE_DB_WRITES : DbWritesParser::MODE_SPHINX_WRITES;
+		$parser = new DbWritesParser($primaryKeys, $mode);
 
 		// run the grep process
 		$descriptorSpec = array(
@@ -363,10 +367,35 @@ class DbWritesFilter extends BaseLogFilter
 				continue;
 			}
 
+			if ($this->type != 'dbWritesFilter')
+			{
+				$statement = DbWritesParser::getInsertValues($statement, 'SQL');
+				if (!$statement)
+				{
+					continue;
+				}
+
+				// strip the SQL escaping of the value
+				$statement = str_replace(array('\\\\', '\\"', "\\'"), array('\\', '"', "'"), $statement);
+			}
+
 			list($server, $session) = $parsedComment;
 
 			$commands = self::gotoSessionCommands($server, $session, $timestamp);
-			$statement = self::prettyPrintStatement($statement, $commands);
+
+			if (preg_match('/^a:\d+:\{/', $statement) || preg_match('/^O:\d+:"/', $statement))
+			{
+				// Elastic updates are saved in serialized PHP
+				$decodedStatement = unserialize($statement);
+				if ($decodedStatement)
+				{
+					$statement = print_r($decodedStatement, true);
+				}
+			}
+			else
+			{
+				$statement = self::prettyPrintStatement($statement, $commands);
+			}
 
 			$line = array(
 				'timestamp' => $timestamp,

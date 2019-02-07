@@ -110,7 +110,7 @@ class ObjectInfoFilter extends BaseFilter
 			'Table' => $this->table,
 			'Object Id' => $this->objectId,
 		);
-		
+
 		return array(
 			'type' => 'searchResponse',
 			'columns' => $columns,
@@ -125,6 +125,15 @@ class ObjectInfoFilter extends BaseFilter
 		$objectIdFilter = self::filterFromColumn($objectIdColumn);
 
 		$selectColumns = array('COUNT(1)');
+
+		$primaryKeys = self::getPrimaryKeysMap();
+		$primaryKey = null;
+		if (isset($primaryKeys[$table]))
+		{
+			$primaryKey = $primaryKeys[$table][0];
+			$selectColumns[] = $primaryKey;
+		}
+
 		$groupBy = '';
 		if (isset($params['groupBy']))
 		{
@@ -135,7 +144,7 @@ class ObjectInfoFilter extends BaseFilter
 
 		$sql = "SELECT $selectColumns FROM $table WHERE $objectIdColumn = ?";
 		$values = array(
-			1 => $this->objectId
+			1 => $this->mainId
 		);
 
 		$extraFilters = array();
@@ -163,6 +172,12 @@ class ObjectInfoFilter extends BaseFilter
 
 			unset($row['COUNT(1)']);
 
+			if ($primaryKey)
+			{
+				$objectId = $row[$primaryKey];
+				unset($row[$primaryKey]);
+			}
+
 			$line = "$count related objects";
 			$groupBy = array();
 			foreach ($row as $key => $value)
@@ -175,23 +190,30 @@ class ObjectInfoFilter extends BaseFilter
 				$line .= ' with ' . implode(', ', $groupBy);
 			}
 
-			$relatedFilter = array(
-				'type' => 'objectListFilter',
-				'table' => $table,
-				$objectIdFilter => $this->objectId,
-			);
-
-			foreach ($row as $key => $value)
+			if ($count == 1 && $primaryKey)
 			{
-				$relatedFilter[self::filterFromColumn($key)] = $value;
+				$commands = self::objectInfoCommands($table, $objectId);
 			}
+			else
+			{
+				$relatedFilter = array(
+					'type' => 'objectListFilter',
+					'table' => $table,
+					$objectIdFilter => $this->mainId,
+				);
 
-			$relatedFilter = array_merge($relatedFilter, $extraFilters);
+				foreach ($row as $key => $value)
+				{
+					$relatedFilter[self::filterFromColumn($key)] = $value;
+				}
 
-			$commands = array(
-				array('label' => 'List related', 'action' => COMMAND_SEARCH, 'data' => $relatedFilter),
-				array('label' => 'List related in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $relatedFilter),
-			);
+				$relatedFilter = array_merge($relatedFilter, $extraFilters);
+
+				$commands = array(
+					array('label' => 'List related', 'action' => COMMAND_SEARCH, 'data' => $relatedFilter),
+					array('label' => 'List related in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $relatedFilter),
+				);
+			}
 
 			if ($block)
 			{
@@ -214,7 +236,14 @@ class ObjectInfoFilter extends BaseFilter
 		// TODO: support additional response formats
 
 		$primaryKeys = self::getPrimaryKeysMap();
-		$primaryKey = $primaryKeys[$this->table][0];
+		if ($this->table == 'flavor_asset' && !ctype_digit($this->objectId))
+		{
+			$primaryKey = 'id';
+		}
+		else
+		{
+			$primaryKey = $primaryKeys[$this->table][0];
+		}
 
 		$sql = "SELECT * FROM {$this->table} WHERE {$primaryKey} = ?";
 		$values = array(
@@ -225,6 +254,16 @@ class ObjectInfoFilter extends BaseFilter
 		if (!$row)
 		{
 			dieError(ERROR_NO_RESULTS, 'Cant find the object in the database');
+		}
+
+		if ($this->table == 'flavor_asset')
+		{
+			$this->mainId = $row['id'];
+			$this->objectId = $row['int_id'];
+		}
+		else
+		{
+			$this->mainId = $this->objectId;
 		}
 
 		$header = $this->getResponseHeader($row);
