@@ -8,6 +8,7 @@ import InputLabel from "@material-ui/core/InputLabel/InputLabel";
 import Select from "@material-ui/core/Select/Select";
 import Input from "@material-ui/core/Input/Input";
 import MenuItem from "@material-ui/core/MenuItem/MenuItem";
+import ClearableTextField from '../ClearableTextField';
 
 export default class APILogsParameters extends React.Component {
   state = {
@@ -41,7 +42,7 @@ export default class APILogsParameters extends React.Component {
   }
 
   render() {
-    const { textFilter, session, server, logTypes, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange } = this.props;
+    const { textFilter, session, server, logTypes, fromTime, toTime, onChange, onClear, className: classNameProp, onTextFilterChange } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
 
     return (
@@ -76,16 +77,18 @@ export default class APILogsParameters extends React.Component {
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField
+            <ClearableTextField
               fullWidth
               label="Search Criteria"
               name={'textFilter'}
+              onClear={() => onTextFilterChange("")}
               value={textFilter.text}
               onChange={(e) => onTextFilterChange(e.target.value)}
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField fullWidth
+            <ClearableTextField fullWidth
+                                onClear={onClear}
                        name="server"
                        label="Server"
                        value={server}
@@ -96,8 +99,9 @@ export default class APILogsParameters extends React.Component {
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField
+            <ClearableTextField
               fullWidth
+              onClear={onClear}
               name="session"
               label="Session"
               value={session}

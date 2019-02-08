@@ -8,6 +8,7 @@ import InputLabel from "@material-ui/core/InputLabel/InputLabel";
 import Select from "@material-ui/core/Select/Select";
 import Input from "@material-ui/core/Input/Input";
 import MenuItem from "@material-ui/core/MenuItem/MenuItem";
+import ClearableTextField from '../ClearableTextField';
 
 export default class ObjectListParameters extends React.Component {
   state = {
@@ -60,7 +61,7 @@ export default class ObjectListParameters extends React.Component {
   }
 
   render() {
-    const { table, entryIdIn, typeIn, objectIdIn, jobTypeIn, objectTypeIn, idIn, onChange, className: classNameProp } = this.props;
+    const { table, entryIdIn, typeIn, objectIdIn, jobTypeIn, objectTypeIn, idIn, onChange, onClear, className: classNameProp } = this.props;
 
     const objectIdInEnabled = ['batch_job_sep', 'metadata', 'file_sync'].indexOf(table) !== -1;
     const entryIdInEnabled = ['flavor_asset', 'batch_job_sep'].indexOf(table) !== -1;
@@ -91,10 +92,11 @@ export default class ObjectListParameters extends React.Component {
           </Grid>
           { entryIdInEnabled &&
           <Grid item xs={4}>
-            <TextField fullWidth
+            <ClearableTextField fullWidth
                        name="entryIdIn"
                        label="Entry ID in"
                        value={entryIdIn}
+                       onClear={onClear}
                        onChange={onChange}
                        InputLabelProps={{
                          shrink: true,
@@ -103,9 +105,10 @@ export default class ObjectListParameters extends React.Component {
           </Grid>}
           { idInEnabled &&
           <Grid item xs={4}>
-            <TextField fullWidth
+            <ClearableTextField fullWidth
                        name="idIn"
                        label="ID in"
+                       onClear={onClear}
                        value={idIn}
                        onChange={onChange}
                        InputLabelProps={{
@@ -115,8 +118,9 @@ export default class ObjectListParameters extends React.Component {
           </Grid>}
           { objectIdInEnabled &&
           <Grid item xs={4}>
-            <TextField fullWidth
+            <ClearableTextField fullWidth
                        name="objectIdIn"
+                       onClear={onClear}
                        label="Object ID in"
                        value={objectIdIn}
                        onChange={onChange}
@@ -127,8 +131,9 @@ export default class ObjectListParameters extends React.Component {
           </Grid>}
           { jobTypeInEnabled &&
           <Grid item xs={4}>
-            <TextField fullWidth
+            <ClearableTextField fullWidth
                        name="jobTypeIn"
+                       onClear={onClear}
                        label="Job Type in"
                        value={jobTypeIn}
                        onChange={onChange}
@@ -139,8 +144,9 @@ export default class ObjectListParameters extends React.Component {
           </Grid>}
           { typeInEnabled &&
           <Grid item xs={4}>
-            <TextField fullWidth
+            <ClearableTextField fullWidth
                        name="typeIn"
+                       onClear={onClear}
                        label="Type in"
                        value={typeIn}
                        onChange={onChange}
@@ -151,7 +157,8 @@ export default class ObjectListParameters extends React.Component {
           </Grid>}
           { objectTypeInEnabled &&
           <Grid item xs={4}>
-            <TextField fullWidth
+            <ClearableTextField fullWidth
+                       onClear={onClear}
                        name="objectTypeIn"
                        label="Object Type in"
                        value={objectTypeIn}

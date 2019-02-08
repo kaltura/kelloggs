@@ -2,12 +2,7 @@ import React from 'react';
 import Grid from "@material-ui/core/Grid/Grid";
 import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
-import moment from 'moment';
-import FormControl from "@material-ui/core/FormControl/FormControl";
-import InputLabel from "@material-ui/core/InputLabel/InputLabel";
-import Select from "@material-ui/core/Select/Select";
-import Input from "@material-ui/core/Input/Input";
-import MenuItem from "@material-ui/core/MenuItem/MenuItem";
+import ClearableTextField from '../ClearableTextField';
 
 export default class ObjectInfoParameters extends React.Component {
   state = {
@@ -41,14 +36,15 @@ export default class ObjectInfoParameters extends React.Component {
   }
 
   render() {
-    const { table, objectId, onChange, className: classNameProp, onTextFilterChange } = this.props;
+    const { table, objectId, onChange, onClear, className: classNameProp, onTextFilterChange } = this.props;
     const { tableValid, objectIdValid } = this.state;
 
     return (
       <Paper elevation={1} className={classNameProp}>
         <Grid container spacing={16} >
           <Grid item xs={4}>
-            <TextField
+            <ClearableTextField
+              onClear={onClear}
               error={!tableValid}
               fullWidth
               label={`Table ${tableValid ? '' : '(required)'}`}
@@ -59,7 +55,8 @@ export default class ObjectInfoParameters extends React.Component {
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField
+            <ClearableTextField
+              onClear={onClear}
               error={!objectIdValid}
               fullWidth
               label={`Object ID ${tableValid ? '' : '(required)'}`}
