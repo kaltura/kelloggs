@@ -12,6 +12,7 @@
     "lodash.isequal": "^4.5.0",
     "moment-timezone": "^0.5.23",
     "pako": "^1.0.8",
+    "prettier": "^1.16.4",
     "prop-types": "latest",
     "react": "latest",
     "react-dom": "latest",
