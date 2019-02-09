@@ -133,6 +133,9 @@ export default class GlobalCommands extends React.Component {
   }
 
   _changeTimezone = (value) => {
+
+
+
     this.setState({
       timezone: value
     })
