@@ -104,14 +104,15 @@ export default  class ResultsData {
             if (lastItemCount!==this.items.length || lastCompleted!==this.completed) {
                 lastItemCount=this.items.length;
                 lastCompleted=this.completed;
-                console.warn("added items ",lastItemCount, " ",this.completed)
+                console.warn("added items ",lastItemCount, " ",this.completed);
                 if (this.cb) {
                     this.cb(this.completed);
+                }
+                if (this.completed) {
                     clearInterval(intervalId);
                 }
             }
-
-        },100)
+        }, 100)
     }
 
 
