@@ -128,7 +128,7 @@ export default class GlobalCommands extends React.Component {
     items: [],
     timezone: 'EST',
     showCopiedToClipboard: false,
-    viewerCommand: null,
+    viewerCommand: false,
     initialParameters: getSearchParamsFromHash()
   }
 
