@@ -448,12 +448,19 @@ class ApiLogFilter extends BaseLogFilter
 		$selectStatement = str_replace(' WHERE ', " WHERE\n  ", $selectStatement);
 
 		// hide select fields by default
-		$result = array();
-		$result[] = array('text' => 'SELECT ');
-		$result[] = array('text' => '...', 'commands' => array( 
-			array('label' => 'Show fields', 'action' => COMMAND_TOOLTIP, 'data' => $selectFields)
-		));
-		$result[] = array('text' => $selectStatement);
+		if (strlen($selectFields) > 20)
+		{
+			$result = array();
+			$result[] = array('text' => 'SELECT ');
+			$result[] = array('text' => '...', 'commands' => array( 
+				array('label' => 'Show fields', 'action' => COMMAND_TOOLTIP, 'data' => $selectFields)
+			));
+			$result[] = array('text' => $selectStatement);
+		}
+		else
+		{
+			$result = array(array('text' => 'SELECT ' . $selectFields . $selectStatement));
+		}
 
 		if ($tableName && $objectId)
 		{

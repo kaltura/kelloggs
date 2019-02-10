@@ -7,6 +7,9 @@ define('TIME_FORMAT_DB_WRITES', '%Y-%m-%d %H:%M:%S');
 
 class DbWritesFilter extends BaseLogFilter
 {
+	const TYPE_DATABASE = 'dbWritesFilter';
+	const TYPE_SPHINX = 'sphinxWritesFilter';
+	
 	protected $type;
 	protected $table;
 	protected $objectId;
@@ -33,7 +36,7 @@ class DbWritesFilter extends BaseLogFilter
 
 	protected function searchIndexes($key, $fromTime, $toTime)
 	{
-		$logType = $this->type == 'dbWritesFilter' ? LOG_TYPE_DB_WRITES_INDEX : LOG_TYPE_SPHINX_WRITES_INDEX;
+		$logType = $this->type == self::TYPE_DATABASE ? LOG_TYPE_DB_WRITES_INDEX : LOG_TYPE_SPHINX_WRITES_INDEX;
 
 		$sql = 'SELECT file_path, ranges, parent_id FROM kelloggs_files WHERE start <= FROM_UNIXTIME(?) AND end >= FROM_UNIXTIME(?) AND start >= FROM_UNIXTIME(?) AND status = 2 AND type = ? ORDER BY start ASC';
 		$values = array(
@@ -204,7 +207,7 @@ class DbWritesFilter extends BaseLogFilter
 		}
 		else
 		{
-			$logType = $this->type == 'dbWritesFilter' ? LOG_TYPE_DB_WRITES : LOG_TYPE_SPHINX_WRITES;
+			$logType = $this->type == self::TYPE_DATABASE ? LOG_TYPE_DB_WRITES : LOG_TYPE_SPHINX_WRITES;
 			list($fileRanges, $totalSize, $ignore) = self::getFileRanges(array($logType), $this->fromTime, $this->toTime);
 		}
 
@@ -291,7 +294,7 @@ class DbWritesFilter extends BaseLogFilter
 		}
 		else
 		{
-			$columns[] = array('label' => 'Object Id', 'name' => 'objectId', 'type' => 'text');
+			$columns[] = array('label' => 'Object id', 'name' => 'objectId', 'type' => 'text');
 		}
 
 		$columns = array_merge($columns, array(
@@ -316,7 +319,7 @@ class DbWritesFilter extends BaseLogFilter
 			dieError(ERROR_INTERNAL_ERROR, 'Failed to get database schema');
 		}
 
-		$mode = $this->type == 'dbWritesFilter' ? DbWritesParser::MODE_DB_WRITES : DbWritesParser::MODE_SPHINX_WRITES;
+		$mode = $this->type == self::TYPE_DATABASE ? DbWritesParser::MODE_DB_WRITES : DbWritesParser::MODE_SPHINX_WRITES;
 		$parser = new DbWritesParser($primaryKeys, $mode);
 
 		// run the grep process
@@ -367,7 +370,7 @@ class DbWritesFilter extends BaseLogFilter
 				continue;
 			}
 
-			if ($this->type != 'dbWritesFilter')
+			if ($this->type == self::TYPE_SPHINX)
 			{
 				$statement = DbWritesParser::getInsertValues($statement, 'SQL');
 				if (!$statement)
@@ -376,14 +379,14 @@ class DbWritesFilter extends BaseLogFilter
 				}
 
 				// strip the SQL escaping of the value
-				$statement = str_replace(array('\\\\', '\\"', "\\'"), array('\\', '"', "'"), $statement);
+				$statement = str_replace(array('\\\\', '\\"', "\\'", '\\n', '\\r', '\\0'), array('\\', '"', "'", "\n", "\r", "\0"), $statement);
 			}
 
 			list($server, $session) = $parsedComment;
 
 			$commands = self::gotoSessionCommands($server, $session, $timestamp);
 
-			if (preg_match('/^a:\d+:\{/', $statement) || preg_match('/^O:\d+:"/', $statement))
+			if (preg_match('/^a:\d+:\{/', $statement))
 			{
 				// Elastic updates are saved in serialized PHP
 				$decodedStatement = unserialize($statement);
