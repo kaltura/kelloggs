@@ -208,7 +208,7 @@ class MainView extends React.Component {
 
   render() {
     const {classes, globalCommands } = this.props;
-    const {expanded, canCollapse, parameters, timeZone, searchStack } = this.state;
+    const {expanded, canCollapse, parameters, searchStack } = this.state;
 
     const inSearch = !!parameters;
     const hasBack = searchStack.length > 0;

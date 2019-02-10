@@ -1,6 +1,5 @@
 import React from 'react';
 import Grid from "@material-ui/core/Grid/Grid";
-import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
 import moment from 'moment';
 import FormControl from "@material-ui/core/FormControl/FormControl";
@@ -32,6 +31,8 @@ export default class ObjectListParameters extends React.Component {
         break;
       case 'file_sync':
         fieldList = ['type', 'table', 'objectIdIn', 'objectTypeIn'];
+        break;
+      default:
         break;
     }
 

@@ -30,10 +30,6 @@ class RichTextCommandMenu extends React.Component {
     anchorEl: null
   };
 
-  constructor(props) {
-    super(props);
-  }
-
   handleChange = (event, checked) => {
     this.setState({ auth: checked });
   };
@@ -95,34 +91,18 @@ var RichTextCommandMenuWithStyle=compose(
   withStyles(styles),
   withGlobalCommands)(RichTextCommandMenu);
 
-class RichTextView extends React.PureComponent {
-  state = {
-  };
-
-  constructor(props) {
-    super(props);
-  }
-
-
-  render() {
-    const { anchorEl } = this.state;
-    const { classes,globalCommands } = this.props;
-
-    return <div  style={{...this.props.style, paddingLeft: this.props.indent*35+"px"}}>
-      {
-        this.props.data.map((data,dataIndex) => {
-          if (data.commands) {
-
-            return <RichTextCommandMenuWithStyle key={"commandMenu-"+dataIndex} data={data} dataIndex={dataIndex} globalCommands={globalCommands}></RichTextCommandMenuWithStyle>;
-          }
-          return data.text;
-        })
-      }
+function RichTextView({globalCommands, style, indent, data}) {
+    return <div  style={{...style, paddingLeft: indent*35+"px"}}>
+        {
+            data.map((data,dataIndex) => {
+                if (data.commands) {
+                    return <RichTextCommandMenuWithStyle key={"commandMenu-" + dataIndex} data={data} dataIndex={dataIndex} globalCommands={globalCommands}/>;
+                }
+                return data.text;
+            })
+        }
     </div>
-  }
-
 }
-
 
 RichTextView.propTypes = {
   classes: PropTypes.object.isRequired,

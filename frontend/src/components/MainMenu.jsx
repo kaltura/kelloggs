@@ -11,8 +11,6 @@ const styles = {
   }
 }
 
-const ITEM_HEIGHT = 48;
-
 
 class MainMenu extends React.Component {
 

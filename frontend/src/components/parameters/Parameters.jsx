@@ -218,7 +218,7 @@ class Parameters extends React.Component
 
   render() {
     const { parameters } = this.state;
-    const { classes, onSearch } = this.props;
+    const { classes } = this.props;
 
     if (!parameters) {
       return null;

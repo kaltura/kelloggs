@@ -2,7 +2,7 @@ import * as pako from 'pako';
 
 export function isSafari() {
   const isChrome = !!window['chrome'] && !!window['chrome'].webstore;
-  return Object.prototype.toString.call(window['HTMLElement']).indexOf('Constructor') > 0 || !isChrome && window['webkitAudioContext'] !== undefined;
+    return !(Object.prototype.toString.call(window['HTMLElement']).indexOf('Constructor') <= 0 && !(!isChrome && window['webkitAudioContext'] !== undefined));
 }
 
 export function isIE11() {
@@ -13,14 +13,15 @@ export function copyToClipboardEnabled() {
   let enabled = true;
 
   if (isSafari()) {
+    console.log('safari');
     let nAgt = navigator.userAgent;
     let verOffset = nAgt.indexOf("Version");
     let fullVersion = nAgt.substring(verOffset + 8);
     let ix;
-    if ((ix = fullVersion.indexOf(";")) != -1) {
+    if ((ix = fullVersion.indexOf(";")) !== -1) {
       fullVersion = fullVersion.substring(0, ix);
     }
-    if ((ix = fullVersion.indexOf(" ")) != -1) {
+    if ((ix = fullVersion.indexOf(" ")) !== -1) {
       fullVersion = fullVersion.substring(0, ix);
     }
     let majorVersion = parseInt('' + fullVersion, 10);
@@ -33,7 +34,7 @@ export async function copyToClipboard(text) {
   let copied = false;
 
   try {
-        let result = await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(text);
       copied = true;
     }catch(e) {
       let textArea = document.createElement("textarea");
@@ -110,16 +111,15 @@ export function getSearchParamsFromHash() {
 }
 
 export function getQueryString() {
-  var match,
-    pl = /\+/g,  // Regex for replacing addition symbol with a space
+    let pl = /\+/g,  // Regex for replacing addition symbol with a space
     search = /([^&=]+)=?([^&]*)/g,
-    decode = function (s) {
-      return decodeURIComponent(s.replace(pl, " "));
-    },
+    decode = (s) => decodeURIComponent(s.replace(pl, " ")),
     query = window.location.search.substring(1);
 
   const urlParams = {};
-  while (match = search.exec(query)) {
+
+  while (search.exec(query)) {
+    const match = search.exec(query);
     const key = decode(match[1]);
     const value = decode(match[2])
     const keyMatch = /^(.+?)\[(.+?)\]$/.exec(key);
