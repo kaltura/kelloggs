@@ -3,6 +3,7 @@ import Grid from "@material-ui/core/Grid/Grid";
 import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
 import moment from 'moment';
+import ClearableTextField from '../ClearableTextField';
 
 export default class DBLogsParameters extends React.Component {
   state = {
@@ -36,7 +37,7 @@ export default class DBLogsParameters extends React.Component {
   }
 
   render() {
-    const { textFilter, objectId, table, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange } = this.props;
+    const { textFilter, objectId, table, fromTime, toTime, onChange, onClear, className: classNameProp, onTextFilterChange } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
 
     return (
@@ -71,8 +72,9 @@ export default class DBLogsParameters extends React.Component {
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField
+            <ClearableTextField
               fullWidth
+              onClear={() => onTextFilterChange("")}
               label="Search Criteria"
               name={'textFilter'}
               value={textFilter.text}
@@ -80,8 +82,9 @@ export default class DBLogsParameters extends React.Component {
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField fullWidth
+            <ClearableTextField fullWidth
                        name="table"
+                       onClear={onClear}
                        label="Table"
                        value={table}
                        onChange={onChange}
@@ -91,8 +94,9 @@ export default class DBLogsParameters extends React.Component {
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField
+            <ClearableTextField
               fullWidth
+              onClear={onClear}
               name="objectId"
               label="Object ID"
               value={objectId}

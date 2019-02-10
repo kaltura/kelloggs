@@ -165,7 +165,22 @@ class Parameters extends React.Component {
     });
   };
 
-  validateDate = date => {
+  _handleClear = (name) => {
+
+      this.setState(state => {
+          return (
+              {
+                  parameters: {
+                      ...state.parameters,
+                      [name]: ""
+                  }
+              }
+          )
+      })
+  }
+
+
+  validateDate = (date) => {
     if (!date) {
       return false;
     }
@@ -263,6 +278,7 @@ class Parameters extends React.Component {
                 ref={this.parametersFormRef}
                 {...this.state.parameters}
                 onTextFilterChange={this._handleTextFilter}
+                onClear={this._handleClear}
                 onChange={this._handleChange}
                 className={classes.parametersForm}
               />

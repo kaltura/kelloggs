@@ -16,3 +16,4 @@ define('LOG_TYPE_KMS_API', 11);
 define('LOG_TYPE_KMS_API_DEBUG', 12);
 define('LOG_TYPE_KMS_ACCESS', 13);
 define('LOG_TYPE_KMS_ERROR', 14);
+define('LOG_TYPE_KMS_FRONT', 15);
