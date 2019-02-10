@@ -159,6 +159,20 @@ class Parameters extends React.Component
     })
   }
 
+  _handleClear = (name) => {
+
+      this.setState(state => {
+          return (
+              {
+                  parameters: {
+                      ...state.parameters,
+                      [name]: ""
+                  }
+              }
+          )
+      })
+  }
+
 
   validateDate = (date) => {
     if (!date) {
@@ -245,12 +259,12 @@ class Parameters extends React.Component
             </Button>
           </Grid>
         <Grid item xs={12}>
-          { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
-          { parameters.type === 'kmsLogFilter' && <KMSLogParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></KMSLogParameters> }
-          { parameters.type === 'dbWritesFilter' && <DBLogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></DBLogsParameters> }
-          { parameters.type === 'sphinxWritesFilter' && <SphinxLogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></SphinxLogsParameters> }
-          { parameters.type === 'objectInfoFilter' && <ObjectInfoParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></ObjectInfoParameters> }
-          { parameters.type === 'objectListFilter' && <ObjectListParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onChange={this._handleChange} className={classes.parametersForm}></ObjectListParameters> }
+          { parameters.type === 'apiLogFilter' && <APILogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onClear={this._handleClear} onChange={this._handleChange} className={classes.parametersForm}></APILogsParameters> }
+          { parameters.type === 'kmsLogFilter' && <KMSLogParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onClear={this._handleClear} onChange={this._handleChange} className={classes.parametersForm}></KMSLogParameters> }
+          { parameters.type === 'dbWritesFilter' && <DBLogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onClear={this._handleClear} onChange={this._handleChange} className={classes.parametersForm}></DBLogsParameters> }
+          { parameters.type === 'sphinxWritesFilter' && <SphinxLogsParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onClear={this._handleClear} onChange={this._handleChange} className={classes.parametersForm}></SphinxLogsParameters> }
+          { parameters.type === 'objectInfoFilter' && <ObjectInfoParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onClear={this._handleClear} onChange={this._handleChange} className={classes.parametersForm}></ObjectInfoParameters> }
+          { parameters.type === 'objectListFilter' && <ObjectListParameters ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter} onClear={this._handleClear} onChange={this._handleChange} className={classes.parametersForm}></ObjectListParameters> }
         </Grid>
       </Grid>
       <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>

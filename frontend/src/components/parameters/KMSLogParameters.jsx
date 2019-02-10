@@ -3,11 +3,7 @@ import Grid from "@material-ui/core/Grid/Grid";
 import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
 import moment from 'moment';
-import FormControl from "@material-ui/core/FormControl/FormControl";
-import InputLabel from "@material-ui/core/InputLabel/InputLabel";
-import Select from "@material-ui/core/Select/Select";
-import Input from "@material-ui/core/Input/Input";
-import MenuItem from "@material-ui/core/MenuItem/MenuItem";
+import ClearableTextField from '../ClearableTextField';
 
 export default class KMSLogParameters extends React.Component {
   state = {
@@ -41,7 +37,7 @@ export default class KMSLogParameters extends React.Component {
   }
 
   render() {
-    const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange } = this.props;
+    const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange, onClear } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
 
     return (
@@ -76,31 +72,33 @@ export default class KMSLogParameters extends React.Component {
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField
+            <ClearableTextField
               fullWidth
+              onClear={() => onTextFilterChange("")}
               label="Search Criteria"
-              name={'textFilter'}
+              name='textFilter'
               value={textFilter.text}
               onChange={(e) => onTextFilterChange(e.target.value)}
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField fullWidth
-                       name="server"
-                       label="Server"
-                       value={server}
-                       onChange={onChange}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
+              <ClearableTextField fullWidth
+                onClear={onClear}
+              name="server"
+              label="Server"
+              value={server}
+              onChange={onChange}
+              InputLabelProps={{
+                shrink: true,
+          }}/>
           </Grid>
           <Grid item xs={4}>
-            <TextField
+            <ClearableTextField
               fullWidth
               name="session"
               label="Session"
               value={session}
+              onClear={onClear}
               onChange={onChange}
               InputLabelProps={{
                 shrink: true,
