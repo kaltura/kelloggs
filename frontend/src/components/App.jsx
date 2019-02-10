@@ -95,7 +95,7 @@ class App extends React.Component {
 
   render() {
     const { classes } = this.props;
-    const { expanded, canCollapse, parameters, isReady, ks, serviceUrl } = this.state;
+    const { isReady } = this.state;
 
     return (
       <div className={classes.root}>

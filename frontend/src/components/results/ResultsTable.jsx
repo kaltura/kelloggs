@@ -182,6 +182,12 @@ class ResultsTable extends React.PureComponent {
                             case "commands":
                                 fn = this._commandsCellRenderer;
                                 break;
+                            case "text":
+                                fn = this._textCellRenderer;
+                                break;
+                            default:
+                                break;
+
                             /*
                             case "index": return this._indexCellRenderer;
                             case "text": return this._textCellRenderer;
