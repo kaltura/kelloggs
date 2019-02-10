@@ -338,7 +338,7 @@ export default class GlobalCommands extends React.Component {
         <Dialog
 
           onClose={this._handleViewerClose}
-          open={this.state.viewerCommand}
+          open={!!this.state.viewerCommand}
         >
           <DialogTitle id="customized-dialog-title" onClose={this._handleViewerClose}>
             { this.state.viewerCommand && this.state.viewerCommand.label}

@@ -6,7 +6,7 @@ import RichTextView from './RichTextView'
 import CommandsMenu from '../CommandsMenu';
 import {compose} from "recompose";
 import {withGlobalCommands} from "../GlobalCommands";
-
+let uniqueId = 0;
 const styles = {
     table: {
         flexGrow: 1,
@@ -158,7 +158,9 @@ class ResultsTable extends React.PureComponent {
                         left += column.width ? column.width : this.state.defaultColumnWidth;
                         left += 13;
                         if (rowIndex === 0) {
-                            return this._headerRenderer({column, cellStyle})
+                            return (<div key={uniqueId++}>
+                                {this._headerRenderer({column, cellStyle})}
+                            </div>);
                         }
 
                         let row = this.results.items[rowIndex - 1];
@@ -187,7 +189,11 @@ class ResultsTable extends React.PureComponent {
                             case "text": return this._textCellRenderer;
                             default: return undefined;*/
                         }
-                        return fn({key, column, value, cellStyle});
+                        return (<div key={uniqueId++}>
+                            {
+                                fn({key, column, value, cellStyle})
+                            }
+                        </div>)
                     })
             }
         </div>
