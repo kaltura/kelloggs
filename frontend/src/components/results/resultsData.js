@@ -100,17 +100,19 @@ export default  class ResultsData {
         let lastItemCount=0;
         let lastCompleted=false;
 
-        setInterval( ()=> {
+        const intervalId = setInterval( ()=> {
             if (lastItemCount!==this.items.length || lastCompleted!==this.completed) {
                 lastItemCount=this.items.length;
                 lastCompleted=this.completed;
-                console.warn("added items ",lastItemCount, " ",this.completed)
+                console.warn("added items ",lastItemCount, " ",this.completed);
                 if (this.cb) {
                     this.cb(this.completed);
                 }
+                if (this.completed) {
+                    clearInterval(intervalId);
+                }
             }
-
-        },100)
+        }, 100)
     }
 
 
