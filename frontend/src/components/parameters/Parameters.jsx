@@ -1,62 +1,59 @@
-import * as React from 'react';
-import Grid from '@material-ui/core/Grid';
-import Input from '@material-ui/core/Input';
-import InputLabel from '@material-ui/core/InputLabel';
-import MenuItem from '@material-ui/core/MenuItem';
-import FormControl from '@material-ui/core/FormControl';
-import Typography from '@material-ui/core/Typography';
-import Select from '@material-ui/core/Select';
-import Button from '@material-ui/core/Button';
-import {withStyles} from "@material-ui/core";
-import APILogsParameters from './APILogsParameters';
-import moment from 'moment-timezone';
-import {compose} from "recompose";
-import {withGlobalCommands} from "../GlobalCommands";
-import isEqual from 'lodash.isequal';
+import * as React from "react";
+import Grid from "@material-ui/core/Grid";
+import Input from "@material-ui/core/Input";
+import InputLabel from "@material-ui/core/InputLabel";
+import MenuItem from "@material-ui/core/MenuItem";
+import FormControl from "@material-ui/core/FormControl";
+import Typography from "@material-ui/core/Typography";
+import Select from "@material-ui/core/Select";
+import Button from "@material-ui/core/Button";
+import { withStyles } from "@material-ui/core";
+import APILogsParameters from "./APILogsParameters";
+import moment from "moment-timezone";
+import { compose } from "recompose";
+import { withGlobalCommands } from "../GlobalCommands";
+import isEqual from "lodash.isequal";
 import DBLogsParameters from "./DBLogsParameters";
 import ObjectInfoParameters from "./ObjectInfoParameters";
 import ObjectListParameters from "./ObjectListParameters";
 import KMSLogParameters from "./KMSLogParameters";
 import SphinxLogsParameters from "./SphinxLogsParameters";
 
-
 const styles = {
   parametersForm: {
-    padding: '12px',
+    padding: "12px"
   },
-  fields: {
-  }
-}
-
-
-const parametersMap = {
-    apiLogFilter: APILogsParameters,
-    kmsLogFilter: KMSLogParameters,
-    dbWritesFilter: DBLogsParameters,
-    sphinxWritesFilter: SphinxLogsParameters,
-    objectInfoFilter: ObjectInfoParameters,
-    objectListFilter: ObjectListParameters
+  fields: {}
 };
 
-class Parameters extends React.Component
-{
+const parametersMap = {
+  apiLogFilter: APILogsParameters,
+  kmsLogFilter: KMSLogParameters,
+  dbWritesFilter: DBLogsParameters,
+  sphinxWritesFilter: SphinxLogsParameters,
+  objectInfoFilter: ObjectInfoParameters,
+  objectListFilter: ObjectListParameters
+};
+
+class Parameters extends React.Component {
   parametersFormRef = React.createRef();
 
   state = {
     parameters: null,
     prevSearchParams: null
-  }
+  };
 
-  _fixSearchParams = (parameters) => {
+  _fixSearchParams = parameters => {
+    const { globalCommands: { toAppDate } } = this.props;
 
-    const { globalCommands : { toAppDate } } = this.props;
-
-    const defaultFromTime = toAppDate(moment()).add(-1, 'days').startOf('day');
+    const defaultFromTime = toAppDate(moment())
+      .add(-1, "days")
+      .startOf("day");
     const defaultParameters = {
       type: "",
-      textFilter: { type: 'match', text: ''},
-      fromTime:defaultFromTime,
-      toTime: moment(defaultFromTime).add(10, 'minutes'),
+      textFilter: { type: "match", text: "" },
+      fromTime: defaultFromTime,
+      toTime: moment(defaultFromTime).add(10, "minutes"),
       server: "",
       session: "",
       table: "",
@@ -68,9 +65,9 @@ class Parameters extends React.Component
       typeIn: "",
       idIn: "",
       logTypes: "apiV3, ps2"
-    }
+    };
 
-    const { globalCommands : { toStringDate } } = this.props;
+    const { globalCommands: { toStringDate } } = this.props;
     const result = {
       ...defaultParameters,
       ...(parameters || {})
@@ -80,99 +77,105 @@ class Parameters extends React.Component
     result.toTime = result.toTime ? toStringDate(result.toTime) : "";
 
     return result;
-  }
+  };
 
   // TODO unify with handleSearch
   _updateSearchParams = (parameters, updateUrl) => {
-    this.setState({
-      parameters : this._fixSearchParams(parameters)
-    }, () => {
-      this._handleSearch(updateUrl);
-    });
-  }
+    this.setState(
+      {
+        parameters: this._fixSearchParams(parameters)
+      },
+      () => {
+        this._handleSearch(updateUrl);
+      }
+    );
+  };
 
   componentWillUnmount() {
     this.props.globalCommands.removeOnSearchParamsChanged();
     window.onpopstate = null;
   }
 
-  onPopState = (e) => {
-    const { searchParams: urlQueryParams } = this.props.globalCommands.extractQueryString();
+  onPopState = e => {
+    const {
+      searchParams: urlQueryParams
+    } = this.props.globalCommands.extractQueryString();
     const compareTo = this._fixSearchParams(urlQueryParams);
-    const { parameters }  = this.state;
-    if (!isEqual(parameters, compareTo))
-    {
+    const { parameters } = this.state;
+    if (!isEqual(parameters, compareTo)) {
       this._updateSearchParams(urlQueryParams, false);
     }
-  }
+  };
   componentDidMount() {
-    const {globalCommands} = this.props;
+    const { globalCommands } = this.props;
 
     window.onpopstate = this.onPopState;
 
-    globalCommands.addOnSearchParamsChanged((parameters) => this._updateSearchParams(parameters, true));
+    globalCommands.addOnSearchParamsChanged(parameters =>
+      this._updateSearchParams(parameters, true)
+    );
 
-    const initialParameters = this._fixSearchParams(globalCommands.getInitialParameters());
-    this.setState({
+    const initialParameters = this._fixSearchParams(
+      globalCommands.getInitialParameters()
+    );
+    this.setState(
+      {
         parameters: initialParameters
-      }, () => {
+      },
+      () => {
         if (this.state.parameters.type) {
           this._handleSearch(false);
         }
       }
     );
-
   }
 
-  _handleTextFilter = (text) => {
+  _handleTextFilter = text => {
     this.setState(state => ({
       parameters: {
         ...state.parameters,
         textFilter: {
-          type: 'match',
+          type: "match",
           text: text
         }
       }
-    }))
-  }
+    }));
+  };
 
-  _handleChange = (e) => {
-    const { globalCommands : { toStringDate, toAppDate } } = this.props;
+  _handleChange = e => {
+    const { globalCommands: { toStringDate, toAppDate } } = this.props;
     const { name, value } = e.target;
 
     const extra = {};
-    if (name === 'fromTime') {
+    if (name === "fromTime") {
       const date = toAppDate(value);
       const isValid = date.isValid();
       if (isValid) {
-        extra['toTime'] = toStringDate(date.add(10, 'minutes'));
+        extra["toTime"] = toStringDate(date.add(10, "minutes"));
       }
     }
     this.setState(state => {
-      return (
-        {
-          parameters: {
-            ...state.parameters,
-            [name]: value,
-            ...extra
-          }
+      return {
+        parameters: {
+          ...state.parameters,
+          [name]: value,
+          ...extra
         }
-      )
-    })
-  }
+      };
+    });
+  };
 
-
-  validateDate = (date) => {
+  validateDate = date => {
     if (!date) {
       return false;
     }
 
     return moment(date).isValid();
-  }
+  };
 
   _handleSearch = (updateUrl = true) => {
-    const {parameters: rawParameters} = this.state;
-    const {onSearch, globalCommands } = this.props;
+    const { parameters: rawParameters } = this.state;
+    const { onSearch, globalCommands } = this.props;
 
     let isValid = false;
     if (this.parametersFormRef.current) {
@@ -183,16 +186,18 @@ class Parameters extends React.Component
       return;
     }
 
-    let searchParameters =
-      {
-        ...rawParameters,
-        fromTime: globalCommands.toUnixDate(rawParameters.fromTime),
-        toTime: globalCommands.toUnixDate(rawParameters.toTime),
-      };
+    let searchParameters = {
+      ...rawParameters,
+      fromTime: globalCommands.toUnixDate(rawParameters.fromTime),
+      toTime: globalCommands.toUnixDate(rawParameters.toTime)
+    };
 
-    searchParameters = this.parametersFormRef.current.filterParameters(searchParameters);
+    searchParameters = this.parametersFormRef.current.filterParameters(
+      searchParameters
+    );
 
-    const removeTextFilter = !rawParameters.textFilter || !rawParameters.textFilter.text;
+    const removeTextFilter =
+      !rawParameters.textFilter || !rawParameters.textFilter.text;
     if (removeTextFilter) {
       delete searchParameters.textFilter;
     }
@@ -201,8 +206,8 @@ class Parameters extends React.Component
       globalCommands.updateURL(searchParameters);
     }
 
-    onSearch(searchParameters)
-  }
+    onSearch(searchParameters);
+  };
 
   render() {
     const { parameters } = this.state;
@@ -213,11 +218,11 @@ class Parameters extends React.Component
     }
     const Filter = parametersMap[parameters.type];
     return (
-      <div style={{width: '100%', height: '100%'}}>
-      <Grid  container spacing={16} alignItems={'flex-end'}>
-        <Grid item xs={4}>
-          <Typography variant={'headline'}>Search parameters</Typography>
-        </Grid>
+      <div style={{ width: "100%", height: "100%" }}>
+        <Grid container spacing={16} alignItems={"flex-end"}>
+          <Grid item xs={4}>
+            <Typography variant={"headline"}>Search parameters</Typography>
+          </Grid>
           <Grid item xs={4}>
             <FormControl fullWidth>
               <InputLabel shrink htmlFor="type-input">
@@ -233,34 +238,41 @@ class Parameters extends React.Component
                 <MenuItem value="">
                   <em>Select...</em>
                 </MenuItem>
-                <MenuItem value={'apiLogFilter'}>API Logs</MenuItem>
-                <MenuItem value={'kmsLogFilter'}>KMS Logs</MenuItem>
-                <MenuItem value={'dbWritesFilter'}>Database changes</MenuItem>
-                <MenuItem value={'sphinxWritesFilter'}>Sphinx changes</MenuItem>
-                <MenuItem value={'objectInfoFilter'}>Object Info</MenuItem>
-                <MenuItem value={'objectListFilter'}>Object List</MenuItem>
+                <MenuItem value={"apiLogFilter"}>API Logs</MenuItem>
+                <MenuItem value={"kmsLogFilter"}>KMS Logs</MenuItem>
+                <MenuItem value={"dbWritesFilter"}>Database changes</MenuItem>
+                <MenuItem value={"sphinxWritesFilter"}>Sphinx changes</MenuItem>
+                <MenuItem value={"objectInfoFilter"}>Object Info</MenuItem>
+                <MenuItem value={"objectListFilter"}>Object List</MenuItem>
               </Select>
             </FormControl>
           </Grid>
           <Grid item xs={4}>
-            <Button disabled={!parameters.type} variant="contained" style={{float: 'right'}} onClick={this._handleSearch}>
+            <Button
+              disabled={!parameters.type}
+              variant="contained"
+              style={{ float: "right" }}
+              onClick={this._handleSearch}
+            >
               Search
             </Button>
           </Grid>
-        <Grid item xs={12}>
-            {Filter &&
-            <Filter ref={this.parametersFormRef} {...this.state.parameters} onTextFilterChange={this._handleTextFilter}
-                    onChange={this._handleChange} className={classes.parametersForm}/>
-            }
+          <Grid item xs={12}>
+            {Filter && (
+              <Filter
+                ref={this.parametersFormRef}
+                {...this.state.parameters}
+                onTextFilterChange={this._handleTextFilter}
+                onChange={this._handleChange}
+                className={classes.parametersForm}
+              />
+            )}
+          </Grid>
         </Grid>
-      </Grid>
-      <div style={{background: 'rgba(0, 0, 0, 0.5)'}}></div>
-    </div>
-    )
+        <div style={{ background: "rgba(0, 0, 0, 0.5)" }} />
+      </div>
+    );
   }
 }
 
-export default compose(
-  withStyles(styles),
-  withGlobalCommands
-)(Parameters);
+export default compose(withStyles(styles), withGlobalCommands)(Parameters);
