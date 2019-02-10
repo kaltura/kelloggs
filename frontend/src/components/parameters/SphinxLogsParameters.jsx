@@ -4,6 +4,7 @@ import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
 import moment from 'moment';
 import ClearableTextField from '../ClearableTextField';
+import {Datepicker} from "../Datepicker";
 
 export default class SphinxLogsParameters extends React.Component {
   state = {
@@ -39,37 +40,37 @@ export default class SphinxLogsParameters extends React.Component {
   render() {
     const { textFilter, objectId, table, fromTime, toTime, onChange, onClear, className: classNameProp, onTextFilterChange } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
-
+    const InvalidDateMessage = () => (<span>Date is missing or invalid</span>);
     return (
       <Paper elevation={1} className={classNameProp}>
         <Grid container spacing={16} >
           <Grid item xs={4}>
-            <TextField fullWidth
-                       error={!isFromTimeValid}
-                       name="fromTime"
-                       label="From Time"
-                       value={fromTime}
-                       onChange={onChange}
-                       helperText={!isFromTimeValid && "Date is missing or invalid"}
-                       onBlur={() => this._validateDate('fromTime', 'isFromTimeValid')}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
+              <Datepicker
+                  keyboard
+                  name="fromTime"
+                  label="From Time"
+                  format={"YYYY-MM-DD hh:mm"}
+                  invalidDateMessage={<InvalidDateMessage />}
+                  fullWidth
+                  onBlur={() => this._validateDate("fromTime", "isFromTimeValid")}
+                  value={fromTime}
+                  onChange={onChange}
+              />
           </Grid>
           <Grid item xs={4}>
-            <TextField fullWidth
-                       error={!isToTimeValid}
-                       name="toTime"
-                       label="To Time"
-                       value={toTime}
-                       onChange={onChange}
-                       helperText={!isToTimeValid && "Date is missing or invalid"}
-                       onBlur={() => this._validateDate('toTime', 'isToTimeValid')}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
+              <Datepicker
+                  fullWidth
+                  keyboard
+                  name="toTime"
+                  label="To Time"
+                  value={toTime}
+                  onChange={onChange}
+                  invalidDateMessage={<InvalidDateMessage />}
+                  onBlur={() => this._validateDate("toTime", "isToTimeValid")}
+                  InputLabelProps={{
+                      shrink: true
+                  }}
+              />
           </Grid>
           <Grid item xs={4}>
             <ClearableTextField
