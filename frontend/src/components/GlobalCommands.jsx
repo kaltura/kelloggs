@@ -7,6 +7,9 @@ import classNames from "classnames";
 import CheckCircleIcon from "@material-ui/core/SvgIcon/SvgIcon";
 import IconButton from "@material-ui/core/IconButton/IconButton";
 import CloseIcon from '@material-ui/icons/Close';
+import CircularProgress from '@material-ui/core/CircularProgress';
+
+import axios from 'axios';
 import {
   getQueryString,
   copyToClipboardEnabled,
@@ -58,7 +61,20 @@ const DialogContent = withStyles(theme => ({
     margin: 0,
     padding: theme.spacing.unit * 2,
   },
-}))(MuiDialogContent);
+    loadingModal: {
+      display: "flex",
+      justifyContent: 'center',
+      alignItems: 'center',
+        marginTop: theme.spacing.unit * 2,
+    }
+}))(({isLoading, children, classes}) => {{
+  return (
+      <MuiDialogContent>
+          {isLoading && <div className={classes.loadingModal}><CircularProgress/> </div>}
+          {!isLoading && children}
+      </MuiDialogContent>
+  )
+}});
 
 const DialogActions = withStyles(theme => ({
   root: {
@@ -129,8 +145,10 @@ export default class GlobalCommands extends React.Component {
     timezone: 'EST',
     showCopiedToClipboard: false,
     viewerCommand: null,
+    viewerCommandData: null,
+    viewerCommandDataLoading: false,
     initialParameters: getSearchParamsFromHash()
-  }
+  };
 
   _changeTimezone = (value) => {
     this.setState({
@@ -141,7 +159,7 @@ export default class GlobalCommands extends React.Component {
   _toAppDate = (value) => {
     const { timezone } = this.state;
 
-    var dateRegex = /^\d+$/;
+    const dateRegex = /^\d+$/;
     if (dateRegex.test(value)) {
       return moment(value * 1000).tz(timezone);
     }
@@ -151,7 +169,7 @@ export default class GlobalCommands extends React.Component {
     }
 
     return moment.tz(value, timezone);
-  }
+  };
 
   _toStringDate = (value, withSeconds = false) => {
     const dateFormat = withSeconds ? displayDateFromatWithSeconds : displayDateFromat;
@@ -223,6 +241,27 @@ export default class GlobalCommands extends React.Component {
     });
   }
 
+  _fetchData = (url, command) => {
+    this.setState({
+        viewerCommand: command,
+        viewerCommandDataLoading: true,
+    })
+    axios.get(url)
+        .catch(e => {
+          console.error(`error loading command ${command} data, error: ${e}`);
+          this.setState({
+              viewerCommandDataLoading: false,
+          })
+        })
+        .then(result => {
+            this.setState({
+                viewerCommandData: result.data.join('\n'),
+                viewerCommandDataLoading: false,
+                viewerCommand: command
+            });
+    })
+  }
+
   _handleCommand = (command) => {
     let { onSearchParamsChanged } = this.state;
 
@@ -243,10 +282,9 @@ export default class GlobalCommands extends React.Component {
       case "link":
         openUrlInNewTab(command.data);
         break;
-      case "tooltip":
-          this.setState({
-            viewerCommand: command
-          });
+        case "tooltip":
+        // TODO: replace with a real URL we get from the command.
+          this._fetchData("https://baconipsum.com/api/?type=meat-and-filler", command);
         break;
       default:
         break;
@@ -295,7 +333,7 @@ export default class GlobalCommands extends React.Component {
 
   render() {
     const { children } = this.props;
-    const { items, config, initialParameters, showCopiedToClipboard, timezone } = this.state;
+    const { items, config, initialParameters, showCopiedToClipboard, timezone, viewerCommandData, viewerCommand, viewerCommandDataLoading } = this.state;
 
     const context = {
       timezone,
@@ -338,18 +376,23 @@ export default class GlobalCommands extends React.Component {
         <Dialog
 
           onClose={this._handleViewerClose}
-          open={!!this.state.viewerCommand}
+          open={!!viewerCommand}
         >
           <DialogTitle id="customized-dialog-title" onClose={this._handleViewerClose}>
-            { this.state.viewerCommand && this.state.viewerCommand.label}
+            { viewerCommand && viewerCommand.label}
           </DialogTitle>
-          <DialogContent>
-            <textarea style={{ overflow: 'auto', whiteSpace: 'nowrap', fontFamily: 'lucida console', width: '500px', height: '200px'}} readonly>
-              {this.state.viewerCommand && this.state.viewerCommand.data}
+          <DialogContent isLoading={viewerCommandDataLoading}>
+             <textarea style={{
+                 overflow: 'auto',
+                 whiteSpace: 'nowrap',
+                 fontFamily: 'lucida console',
+                 width: '500px',
+                 height: '200px'
+             }} readOnly value={viewerCommand && viewerCommand.data}>
             </textarea>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => this._copyToClipboard(this.state.viewerCommand.data)} color="primary">
+            <Button disabled={viewerCommandDataLoading} onClick={() => this._copyToClipboard(viewerCommand.data)} color="primary">
               Copy to clipboard
             </Button>
           </DialogActions>
