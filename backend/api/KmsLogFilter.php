@@ -40,7 +40,7 @@ class KmsLogFilter extends BaseLogFilter
 
 	protected function getGrepCommand()
 	{
-		list($fileRanges, $totalSize, $fileMap) = self::getFileRanges(array(LOG_TYPE_KMS), $this->fromTime, $this->toTime, $this->serverPattern);
+		list($fileRanges, $this->totalSize, $fileMap) = self::getFileRanges(array(LOG_TYPE_KMS), $this->fromTime, $this->toTime, $this->serverPattern);
 		if (!$fileRanges)
 		{
 			dieError(ERROR_NO_RESULTS, 'No logs matched the search filter');
@@ -149,6 +149,7 @@ class KmsLogFilter extends BaseLogFilter
 		}
 
 		$block = '';
+		$service = $action = null;
 		$result = array();
 		foreach ($output as $line)
 		{
@@ -194,20 +195,71 @@ class KmsLogFilter extends BaseLogFilter
 			}
 
 			// block finished
+			$commandsByRange = array();
+			$commands = array();
+
 			if (strpos($block, '[Stack: ') !== false)
 			{
 				$block = str_replace('>', " >\n  ", $block);
 			}
 
+			$curlPos = strpos($block, 'curl: ');
 			$postPos = strpos($block, 'post: ');
-			if ($postPos !== false)
+			if ($curlPos !== false)
+			{
+				$urlStart = $curlPos + strlen('curl: ');
+				$url = substr($block, $urlStart);
+
+				$service = $action = null;
+				if (preg_match('#/service/([^/]+)#', $url, $matches))
+				{
+					$service = $matches[1];
+				}
+				if (preg_match('#/action/([^/]+)#', $url, $matches))
+				{
+					$action = $matches[1];
+				}
+			}
+			else if ($postPos !== false)
 			{
 				$paramsStart = $postPos + strlen('post: ');
-				$params = json_decode(substr($block, $paramsStart));
+				$params = json_decode(substr($block, $paramsStart), true);
 				if ($params)
 				{
 					$block = substr($block, 0, $paramsStart) . json_encode($params, JSON_PRETTY_PRINT);
+					self::addKsCommands($commandsByRange, $block);
+
+					if ($service)
+					{
+						$params['service'] = $service;
+						$params['action'] = $action ? $action : 'null';
+						$params = flattenArray($params, '');
+
+						$kalcliCommand = genKalcliCommand($params);
+						if ($kalcliCommand)
+						{
+							$commands[] = array(
+								'label' => 'Copy kalcli command', 
+								'action' => COMMAND_COPY, 
+								'data' => $kalcliCommand,
+							);
+						}
+
+						$curlCommand = genCurlCommand($params);
+						if ($curlCommand)
+						{
+							$commands[] = array(
+								'label' => 'Copy curl command', 
+								'action' => COMMAND_COPY, 
+								'data' => $curlCommand,
+							);
+						}
+					}
 				}
+			}
+			else
+			{
+				$service = $action = null;
 			}
 
 			$resultPos = strpos($block, 'result (serialized): ');
@@ -223,9 +275,8 @@ class KmsLogFilter extends BaseLogFilter
 				}
 			}
 
-			$formattedBlock = self::formatBlock($block);
+			$formattedBlock = self::formatBlock($block, $commandsByRange);
 
-			$commands = array();
 			if (preg_match('/server: \[([^\]]+)\], session: \[(\d+)\]/', $block, $matches))
 			{
 				$commands = array_merge($commands,
@@ -321,16 +372,7 @@ class KmsLogFilter extends BaseLogFilter
 	protected function handleJsonFormat()
 	{
 		// run the grep process
-		$descriptorSpec = array(
-		   1 => array('pipe', 'w'),
-		   2 => array('pipe', 'w')
-		);
-
-		$process = proc_open($this->grepCommand, $descriptorSpec, $pipes, realpath('./'), array());
-		if (!is_resource($process))
-		{
-			dieError(ERROR_INTERNAL_ERROR, 'Failed to run process');
-		}
+		$pipe = $this->runGrepCommand();
 
 		// output the response header
 		$multiSession = !$this->server || !$this->session;
@@ -342,7 +384,7 @@ class KmsLogFilter extends BaseLogFilter
 		$block = '';
 		for (;;)
 		{
-			$line = fgets($pipes[1]);
+			$line = fgets($pipe);
 			if ($line === false)
 			{
 				break;
@@ -392,7 +434,7 @@ class KmsLogFilter extends BaseLogFilter
 			if ($multiSession)
 			{
 				$commands = array_merge($commands,
-					self::gotoSessionCommands($curServer, $curSession, $timestamp, null));
+					self::gotoSessionCommands($curServer, $curSession, $timestamp));
 			}
 			else
 			{
@@ -441,6 +483,8 @@ class KmsLogFilter extends BaseLogFilter
 			echo json_encode($bufferedLine) . "\n";
 			$bufferedLine = next($bufferedLines);
 		}
+
+		$this->grepCommandFinished();
 	}
 
 	protected function doMain()

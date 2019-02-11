@@ -18,6 +18,8 @@ class BaseLogFilter extends BaseFilter
 	protected $multiRanges;
 
 	protected $zblockgrep;
+	protected $process;
+	protected $totalSize;
 
 	protected static $errorLogSeverityMap = array(
 		'PHP Notice:' => 'warn',
@@ -249,6 +251,46 @@ class BaseLogFilter extends BaseFilter
 		return $result;
 	}
 
+	protected static function addKsCommands(&$commandsByRange, $block)
+	{
+		$kss = array();
+		if (preg_match_all("/[\[:]ks\] => (.*)$/m", $block, $matches))
+		{
+			$kss = array_merge($kss, $matches[1]);
+		}
+		if (preg_match_all("/'ks' => '([^']+)'/", $block, $matches))
+		{
+			$kss = array_merge($kss, $matches[1]);
+		}
+		if (preg_match_all('/"ks": "([^"]+)"/', $block, $matches))
+		{
+			$kss = array_merge($kss, $matches[1]);
+		}
+		$kss = array_unique($kss);
+
+		foreach ($kss as $ks)
+		{
+			DatabaseSecretRepository::init();
+			$ksObj = KalturaSession::getKsObject($ks);
+			if (!$ksObj)
+			{
+				continue;
+			}
+
+			$formattedKs = formatKs($ksObj);
+
+			$ksObj->valid_until = time() + 86400;
+			$renewedKs = $ksObj->generateKs();
+
+			$commands = array(
+				array('label' => 'Show ks info', 'action' => COMMAND_TOOLTIP, 'data' => $formattedKs),
+				array('label' => 'Renew + copy', 'action' => COMMAND_COPY, 'data' => $renewedKs),
+			);
+
+			self::addCommandsByString($commandsByRange, $block, $ks, $commands);
+		}
+	}
+
 	protected static function addSourceCodeCommands(&$commandsByRange, $conf, $block)
 	{
 		$sourceRefs = array();
@@ -321,7 +363,7 @@ class BaseLogFilter extends BaseFilter
 		}
 	}
 
-	protected static function gotoSessionCommands($server, $session, $timestamp, $logType = null, $margin = 300)
+	protected static function gotoSessionCommands($server, $session, $timestamp, $highlight = null, $logType = null, $margin = 300)
 	{
 		$sessionFilter = array(
 			'type' => 'apiLogFilter',
@@ -334,6 +376,11 @@ class BaseLogFilter extends BaseFilter
 		if ($logType)
 		{
 			$sessionFilter['logTypes'] = $logType;
+		}
+
+		if ($highlight)
+		{
+			$sessionFilter['highlight'] = $highlight;
 		}
 
 		return array(
@@ -532,5 +579,29 @@ class BaseLogFilter extends BaseFilter
 		}
 
 		return $result;
+	}
+
+	protected function runGrepCommand()
+	{
+		// run the grep process
+		$descriptorSpec = array(
+		   1 => array('pipe', 'w'),
+		   2 => array('pipe', 'w')
+		);
+
+		$this->process = proc_open($this->grepCommand, $descriptorSpec, $pipes, realpath('./'), array());
+		if (!is_resource($this->process))
+		{
+			dieError(ERROR_INTERNAL_ERROR, 'Failed to run process');
+		}
+
+		$this->grepStartTime = microtime(true);
+		return $pipes[1];
+	}
+
+	protected function grepCommandFinished()
+	{
+		// TODO: replace this with something else
+		error_log(get_class($this) . ' took ' . (microtime(true) - $this->grepStartTime) . ' size ' . $this->totalSize);
 	}
 }

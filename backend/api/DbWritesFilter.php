@@ -9,7 +9,7 @@ class DbWritesFilter extends BaseLogFilter
 {
 	const TYPE_DATABASE = 'dbWritesFilter';
 	const TYPE_SPHINX = 'sphinxWritesFilter';
-	
+
 	protected $type;
 	protected $table;
 	protected $objectId;
@@ -203,12 +203,12 @@ class DbWritesFilter extends BaseLogFilter
 	{
 		if ($this->table && $this->objectId && $this->toTime - $this->fromTime > 3600)
 		{
-			list($fileRanges, $totalSize) = $this->getFileRangesUsingIndex();
+			list($fileRanges, $this->totalSize) = $this->getFileRangesUsingIndex();
 		}
 		else
 		{
 			$logType = $this->type == self::TYPE_DATABASE ? LOG_TYPE_DB_WRITES : LOG_TYPE_SPHINX_WRITES;
-			list($fileRanges, $totalSize, $ignore) = self::getFileRanges(array($logType), $this->fromTime, $this->toTime);
+			list($fileRanges, $this->totalSize, $ignore) = self::getFileRanges(array($logType), $this->fromTime, $this->toTime);
 		}
 
 		if (!$fileRanges)
@@ -323,16 +323,7 @@ class DbWritesFilter extends BaseLogFilter
 		$parser = new DbWritesParser($primaryKeys, $mode);
 
 		// run the grep process
-		$descriptorSpec = array(
-		   1 => array('pipe', 'w'),
-		   2 => array('pipe', 'w')
-		);
-
-		$process = proc_open($this->grepCommand, $descriptorSpec, $pipes, realpath('./'), array());
-		if (!is_resource($process))
-		{
-			dieError(ERROR_INTERNAL_ERROR, 'Failed to run process');
-		}
+		$pipe = $this->runGrepCommand();
 
 		// output the response header
 		$header = $this->getResponseHeader();
@@ -341,7 +332,7 @@ class DbWritesFilter extends BaseLogFilter
 		$block = '';
 		for (;;)
 		{
-			$line = fgets($pipes[1]);
+			$line = fgets($pipe);
 			if ($line === false)
 			{
 				break;
@@ -420,6 +411,8 @@ class DbWritesFilter extends BaseLogFilter
 
 			echo json_encode($line) . "\n";
 		}
+
+		$this->grepCommandFinished();
 	}
 
 	protected function doMain()

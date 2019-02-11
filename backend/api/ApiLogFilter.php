@@ -16,6 +16,7 @@ define('TIME_FORMAT_API_ERROR', '%a %b %d %H:%M:%S %Y');
 
 class ApiLogFilter extends BaseLogFilter
 {
+	protected $queryCacheKey;
 	protected $logTypes;
 
 	protected static $logTypesMap = array(
@@ -26,6 +27,11 @@ class ApiLogFilter extends BaseLogFilter
 	protected function __construct($params, $filter)
 	{
 		parent::__construct($params, $filter);
+
+		if (isset($filter['queryCacheKey']))
+		{
+			$this->queryCacheKey = $filter['queryCacheKey'];
+		}
 
 		$logTypes = isset($filter['logTypes']) ? explode(',', $filter['logTypes']) : array();
 		$this->logTypes = array();
@@ -48,7 +54,7 @@ class ApiLogFilter extends BaseLogFilter
 
 	protected function getGrepCommand()
 	{
-		list($fileRanges, $totalSize, $fileMap) = self::getFileRanges($this->logTypes, $this->fromTime, $this->toTime, $this->serverPattern);
+		list($fileRanges, $this->totalSize, $fileMap) = self::getFileRanges($this->logTypes, $this->fromTime, $this->toTime, $this->serverPattern);
 		if (!$fileRanges)
 		{
 			dieError(ERROR_NO_RESULTS, 'No logs matched the search filter');
@@ -324,7 +330,7 @@ class ApiLogFilter extends BaseLogFilter
 		}
 	}
 
-	protected static function addQueryCacheCommands(&$commands, $func, $block)
+	protected static function addQueryCacheCommands(&$commands, $func, $block, $params)
 	{
 		if ($func != 'kQueryCache::getCachedQueryResults' ||
 			!startsWith($block, 'kQueryCache: returning from memcache'))
@@ -332,49 +338,34 @@ class ApiLogFilter extends BaseLogFilter
 			return;
 		}
 
-		if (!preg_match_all('/queryTime=(\d+) debugInfo=([^\]]+)\[(\d+)\]/', $block, $matches))
+		if (!preg_match_all('/key=([^ ]+) queryTime=(\d+) debugInfo=([^\]]+)\[(\d+)\]/', $block, $matches))
 		{
 			return;
 		}
 
+		$key = $matches[1][0];
+		$queryTime = $matches[2][0];
+		$server = $matches[3][0];
+		$session = $matches[4][0];
+
+		$showQueryParams = array(
+			'filter' => array(
+				'type' => 'apiLogFilter',
+				'server' => $server,
+				'session' => $session,
+				'fromTime' => $queryTime - 60,
+				'toTime' => $queryTime + 60,
+				'queryCacheKey' => $key,
+			),
+			'jwt' => $params['jwt'],
+		);
+
+		$baseApiUrl = K::Get()->getConfParam('BASE_KELLOGGS_API_URL');
+		$showQueryUrl = $baseApiUrl . '?' . http_build_query($showQueryParams);
+
 		$commands = array_merge($commands,
-			self::gotoSessionCommands($matches[2][0], $matches[3][0], $matches[1][0]));
-	}
-
-	protected static function addKsCommands(&$commandsByRange, $block)
-	{
-		$kss = array();
-		if (preg_match_all("/[\[:]ks\] => (.*)$/m", $block, $matches))
-		{
-			$kss = array_merge($kss, $matches[1]);
-		}
-		if (preg_match_all("/'ks' => '([^']+)'/", $block, $matches))
-		{
-			$kss = array_merge($kss, $matches[1]);
-		}
-		$kss = array_unique($kss);
-
-		foreach ($kss as $ks)
-		{
-			DatabaseSecretRepository::init();
-			$ksObj = KalturaSession::getKsObject($ks);
-			if (!$ksObj)
-			{
-				continue;
-			}
-
-			$formattedKs = formatKs($ksObj);
-
-			$ksObj->valid_until = time() + 86400;
-			$renewedKs = $ksObj->generateKs();
-
-			$commands = array(
-				array('label' => 'Show ks info', 'action' => COMMAND_TOOLTIP, 'data' => $formattedKs),
-				array('label' => 'Renew + copy', 'action' => COMMAND_COPY, 'data' => $renewedKs),
-			);
-
-			self::addCommandsByString($commandsByRange, $block, $ks, $commands);
-		}
+			self::gotoSessionCommands($server, $session, $queryTime, 'Updating memcache, key=' . $key));
+		$commands[] = array('label' => 'Show query', 'action' => COMMAND_LINK, 'data' => $showQueryUrl);		// TODO: change the command type once front supports async text
 	}
 
 	protected static function gotoObjectCommands($timestamp, $tableName, $objectId, $margin = 864000)
@@ -393,6 +384,42 @@ class ApiLogFilter extends BaseLogFilter
 				array('label' => 'Search updates', 'action' => COMMAND_SEARCH, 'data' => $sessionFilter),
 				array('label' => 'Search updates in new tab', 'action' => COMMAND_SEARCH_NEW_TAB, 'data' => $sessionFilter),
 			));
+	}
+
+	protected static function prettyPrintSelect($block, $primaryKeys)
+	{
+		$parseResult = DbWritesParser::parseSelectStatement($block, $primaryKeys);
+		if (!$parseResult)
+		{
+			return array(self::formatBlock($block), null, null);
+		}
+
+		list($selectFields, $selectStatement, $tableName, $objectId) = $parseResult;
+		if ($tableName)
+		{
+			$selectFields = str_replace($tableName . '.', '', $selectFields);
+			$selectStatement = str_replace($tableName . '.', '', $selectStatement);
+		}
+
+		$selectStatement = str_replace(' AND ', " AND\n  ", $selectStatement);
+		$selectStatement = str_replace(' WHERE ', " WHERE\n  ", $selectStatement);
+
+		// hide select fields by default
+		if (strlen($selectFields) > 20)
+		{
+			$result = array();
+			$result[] = array('text' => 'SELECT ');
+			$result[] = array('text' => '...', 'commands' => array( 
+				array('label' => 'Show fields', 'action' => COMMAND_TOOLTIP, 'data' => $selectFields)
+			));
+			$result[] = array('text' => $selectStatement);
+		}
+		else
+		{
+			$result = array(array('text' => 'SELECT ' . $selectFields . $selectStatement));
+		}
+
+		return array($result, $tableName, $objectId);
 	}
 
 	protected static function formatDbStatements($block, $timestamp, &$commands)
@@ -432,35 +459,7 @@ class ApiLogFilter extends BaseLogFilter
 			return self::formatBlock($block);
 		}
 
-		$parseResult = DbWritesParser::parseSelectStatement($block, $primaryKeys);
-		if (!$parseResult)
-		{
-			return self::formatBlock($block);
-		}
-
-		list($selectFields, $selectStatement, $tableName, $objectId) = $parseResult;
-		if ($tableName)
-		{
-			$selectFields = str_replace($tableName . '.', '', $selectFields);
-		}
-
-		$selectStatement = str_replace(' AND ', " AND\n  ", $selectStatement);
-		$selectStatement = str_replace(' WHERE ', " WHERE\n  ", $selectStatement);
-
-		// hide select fields by default
-		if (strlen($selectFields) > 20)
-		{
-			$result = array();
-			$result[] = array('text' => 'SELECT ');
-			$result[] = array('text' => '...', 'commands' => array( 
-				array('label' => 'Show fields', 'action' => COMMAND_TOOLTIP, 'data' => $selectFields)
-			));
-			$result[] = array('text' => $selectStatement);
-		}
-		else
-		{
-			$result = array(array('text' => 'SELECT ' . $selectFields . $selectStatement));
-		}
+		list($result, $tableName, $objectId) = self::prettyPrintSelect($block, $primaryKeys);
 
 		if ($tableName && $objectId)
 		{
@@ -475,13 +474,28 @@ class ApiLogFilter extends BaseLogFilter
 	{
 		$block = rtrim($block);
 
-		if ($func == 'KalturaStatement->execute' && startsWith($block, '/* '))
+		switch ($func)
 		{
-			return self::formatDbStatements($block, $timestamp, $commands);
-		}
-		if ($func == 'kSphinxSearchManager->execSphinx')
-		{
+		case 'KalturaStatement->execute':
+			if (startsWith($block, '/* '))
+			{
+				return self::formatDbStatements($block, $timestamp, $commands);
+			}
+			break;
+
+		case 'kSphinxSearchManager->execSphinx':
 			$block = self::prettyPrintStatement($block, $commands);
+			break;
+
+		case 'KalturaPDO->queryAndFetchAll':
+			if (startsWith($block, 'SELECT '))
+			{
+				$block = str_replace(' AND ', " AND\n  ", $block);
+				$block = str_replace(' WHERE ', " WHERE\n  ", $block);
+				$block = str_replace(' LIMIT ', "\n  LIMIT ", $block);
+				$block = str_replace(' OPTION ', "\n  OPTION ", $block);
+			}
+			break;
 		}
 
 		$commandsByRange = array();
@@ -490,19 +504,111 @@ class ApiLogFilter extends BaseLogFilter
 		return self::formatBlock($block, $commandsByRange);
 	}
 
+	protected function handleCachedSql()
+	{
+		$pipe = $this->runGrepCommand();
+
+		$block = '';
+		$inQuery = false;
+		for (;;)
+		{
+			$line = fgets($pipe);
+			if ($line === false)
+			{
+				break;
+			}
+
+			if ($line != BLOCK_DELIMITER . "\n")
+			{
+				if ($block)
+				{
+					$block .= $line;
+					continue;
+				}
+
+				if ($this->multiRanges)
+				{
+					$fileEndPos = strpos($line, ': ');
+					$line = substr($line, $fileEndPos + 2);
+				}
+
+				$splittedLine = explode(' ', $line, 9);
+				if (count($splittedLine) < 9)
+				{
+					continue;
+				}
+
+				$func = substr($splittedLine[6], 1, -1);
+				$block = $splittedLine[8];
+				continue;
+			}
+
+			switch ($func)
+			{
+			case 'kQueryCache::getCachedQueryResults':
+				if ((startsWith($block, 'kQueryCache: cache miss') || startsWith($block, 'kQueryCache: cached query invalid')) && 
+					strpos($block, $this->queryCacheKey) !== false)
+				{
+					$inQuery = true;
+					$result = null;
+				}
+				break;
+
+			case 'KalturaStatement->execute':
+				if (!$inQuery || $result || !startsWith($block, '/* '))
+				{
+					break;
+				}
+
+				$commentEnd = strpos($block, ' */');
+				if ($commentEnd === false)
+				{
+					break;
+				}
+
+				$block = trim(substr($block, $commentEnd + 3));
+				if (!startsWith($block, DbWritesParser::STMT_PREFIX_SELECT))
+				{
+					break;
+				}
+
+				list($formattedSelect, $ignore, $ignore) = self::prettyPrintSelect($block, array());
+
+				$result = '';
+				foreach ($formattedSelect as $curBlock)
+				{
+					$result .= $curBlock['text'];
+				}
+				break;
+
+			case 'kQueryCache::cacheQueryResults':
+				if (!$inQuery || !startsWith($block, 'kQueryCache: Updating memcache') && strpos($block, $this->queryCacheKey) !== false)
+				{
+					break;
+				}
+
+				if ($result)
+				{
+					echo $result . "\n";
+					die;
+				}
+
+				$inQuery = false;
+				break;
+			}
+
+			$block = '';
+		}
+
+		$this->grepCommandFinished();
+		echo "Not found\n";
+		die;
+	}
+
 	protected function handleJsonFormat()
 	{
 		// run the grep process
-		$descriptorSpec = array(
-		   1 => array('pipe', 'w'),
-		   2 => array('pipe', 'w')
-		);
-
-		$process = proc_open($this->grepCommand, $descriptorSpec, $pipes, realpath('./'), array());
-		if (!is_resource($process))
-		{
-			dieError(ERROR_INTERNAL_ERROR, 'Failed to run process');
-		}
+		$pipe = $this->runGrepCommand();
 
 		// output the response header
 		$multiSession = !$this->server || !$this->session;
@@ -516,7 +622,7 @@ class ApiLogFilter extends BaseLogFilter
 		$indent = 0;
 		for (;;)
 		{
-			$line = fgets($pipes[1]);
+			$line = fgets($pipe);
 			if ($line === false)
 			{
 				break;
@@ -573,15 +679,15 @@ class ApiLogFilter extends BaseLogFilter
 
 			if ($multiSession)
 			{
+				$logType = $curType ? array_search($curType, self::$logTypesMap) : null;
 				$commands = array_merge($commands,
-					self::gotoSessionCommands($curServer, $curSession, $timestamp, 
-					$curType ? array_search($curType, self::$logTypesMap) : null));
+					self::gotoSessionCommands($curServer, $curSession, $timestamp, null, $logType));
 			}
 			else
 			{
 				self::addKalcliCommands($commands, $func, $block);
 				self::addPS2CurlCommands($commands, $func, $block);
-				self::addQueryCacheCommands($commands, $func, $block);
+				self::addQueryCacheCommands($commands, $func, $block, $this->params);
 			}
 
 			if ($indent > 0 && startsWith($block, 'consumer ') && strpos($block, 'finished handling'))
@@ -631,11 +737,18 @@ class ApiLogFilter extends BaseLogFilter
 			echo json_encode($bufferedLine) . "\n";
 			$bufferedLine = next($bufferedLines);
 		}
+
+		$this->grepCommandFinished();
 	}
 
 	protected function doMain()
 	{
 		$this->getGrepCommand();
+
+		if ($this->queryCacheKey)
+		{
+			$this->handleCachedSql();
+		}
 
 		$this->handleRawFormats();
 
