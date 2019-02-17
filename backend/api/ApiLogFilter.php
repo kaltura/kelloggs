@@ -82,22 +82,7 @@ class ApiLogFilter extends BaseLogFilter
 		$delimiter = $this->responseFormat != RESPONSE_FORMAT_RAW ? '-d' . BLOCK_DELIMITER : '';
 		$this->grepCommand = $this->zblockgrep . " -p '$pattern' -c '$captureConditions' $textFilter $delimiter $fileRanges";
 
-		$serverNames = array();
-		foreach ($fileMap as $fileInfo)
-		{
-			$serverName = $fileInfo[0];
-			$serverNames[$serverName] = 1;
-			if (count($serverNames) > 1)
-			{
-				break;
-			}
-		}
-		if (count($serverNames) == 1)
-		{
-			reset($serverNames);
-			$this->server = key($serverNames);
-		}
-		$this->fileMap = $fileMap;
+		$this->setFileMap($fileMap);
 	}
 
 	protected function getAccessLogMetadataFields()
@@ -640,14 +625,12 @@ class ApiLogFilter extends BaseLogFilter
 				if ($this->multiRanges)
 				{
 					// get the server name
-					$fileEndPos = strpos($line, ': ');
-					$fileName = substr($line, 0, $fileEndPos);
-					if (!isset($this->fileMap[$fileName]))
+					$fileInfo = $this->stripFileNameFromLine($line);
+					if (!$fileInfo)
 					{
 						continue;
 					}
-					list($curServer, $curType) = $this->fileMap[$fileName];
-					$line = substr($line, $fileEndPos + 2);
+					list($curServer, $curType) = $fileInfo;
 				}
 
 				// parse the line fields

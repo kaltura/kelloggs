@@ -242,19 +242,7 @@ class DbWritesFilter extends BaseLogFilter
 			$filters[] = $this->textFilter;
 		}
 
-		if (count($filters) > 1)
-		{
-			$textFilter = self::getTextFilterParam(
-				array('type' => 'and', 'filters' => $filters));
-		}
-		else if (count($filters) > 0)
-		{
-			$textFilter = self::getTextFilterParam(reset($filters));
-		}
-		else
-		{
-			$textFilter = '';
-		}
+		$textFilter = self::getAndTextFilter($filters);
 
 		$this->grepCommand = $this->zblockgrep . " -h -p '$pattern' -c '$captureConditions' $textFilter $fileRanges";
 	}

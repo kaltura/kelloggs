@@ -9,6 +9,7 @@ define('LOG_TYPE_PS2', 5);
 define('LOG_TYPE_DB_WRITES_INDEX', 6);
 define('LOG_TYPE_SPHINX_WRITES', 7);
 define('LOG_TYPE_SPHINX_WRITES_INDEX', 8);
+define('LOG_TYPE_APIV3_ANALYTICS', 9);
 
 // kms
 define('LOG_TYPE_KMS', 10);

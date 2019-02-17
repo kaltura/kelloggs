@@ -52,22 +52,7 @@ class KmsLogFilter extends BaseLogFilter
 		$baseCommand = $this->getBaseGrepCommand();
 		$this->grepCommand = "$baseCommand $fileRanges";
 
-		$serverNames = array();
-		foreach ($fileMap as $fileInfo)
-		{
-			$serverName = $fileInfo[0];
-			$serverNames[$serverName] = 1;
-			if (count($serverNames) > 1)
-			{
-				break;
-			}
-		}
-		if (count($serverNames) == 1)
-		{
-			reset($serverNames);
-			$this->server = key($serverNames);
-		}
-		$this->fileMap = $fileMap;
+		$this->setFileMap($fileMap);
 	}
 
 	protected function getAccessLogMetadataFields()
@@ -402,14 +387,12 @@ class KmsLogFilter extends BaseLogFilter
 				if ($this->multiRanges)
 				{
 					// get the server name
-					$fileEndPos = strpos($line, ': ');
-					$fileName = substr($line, 0, $fileEndPos);
-					if (!isset($this->fileMap[$fileName]))
+					$fileInfo = $this->stripFileNameFromLine($line);
+					if (!$fileInfo)
 					{
 						continue;
 					}
-					list($curServer, $ignore) = $this->fileMap[$fileName];
-					$line = substr($line, $fileEndPos + 2);
+					list($curServer, $ignore) = $fileInfo;
 				}
 
 				// parse the line fields

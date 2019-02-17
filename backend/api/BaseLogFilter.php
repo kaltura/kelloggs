@@ -604,4 +604,55 @@ class BaseLogFilter extends BaseFilter
 		// TODO: replace this with something else
 		error_log(get_class($this) . ' took ' . (microtime(true) - $this->grepStartTime) . ' size ' . $this->totalSize);
 	}
+	
+	protected static function getAndTextFilter($filters)
+	{
+		if (count($filters) > 1)
+		{
+			$textFilter = self::getTextFilterParam(
+				array('type' => 'and', 'filters' => $filters));
+		}
+		else if (count($filters) > 0)
+		{
+			$textFilter = self::getTextFilterParam(reset($filters));
+		}
+		else
+		{
+			$textFilter = '';
+		}
+		
+		return $textFilter;
+	}
+	
+	protected function setFileMap($fileMap)
+	{
+		$serverNames = array();
+		foreach ($fileMap as $fileInfo)
+		{
+			$serverName = $fileInfo[0];
+			$serverNames[$serverName] = 1;
+			if (count($serverNames) > 1)
+			{
+				break;
+			}
+		}
+		if (count($serverNames) == 1)
+		{
+			reset($serverNames);
+			$this->server = key($serverNames);
+		}
+		$this->fileMap = $fileMap;
+	}
+	
+	protected function stripFileNameFromLine(&$line)
+	{
+		$fileEndPos = strpos($line, ': ');
+		$fileName = substr($line, 0, $fileEndPos);
+		if (!isset($this->fileMap[$fileName]))
+		{
+			return false;
+		}
+		$line = substr($line, $fileEndPos + 2);
+		return $this->fileMap[$fileName];
+	}
 }

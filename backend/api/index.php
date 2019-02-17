@@ -171,7 +171,9 @@ if (!isset($params['filter']))
 {
 	dieError(ERROR_BAD_REQUEST, 'Missing filter param');
 }
+$filter = $params['filter'];
 
+// get the query handler
 $filterTypeMap = array(
 	'apiLogFilter' => 'ApiLogFilter',
 	'dbWritesFilter' => 'DbWritesFilter',
@@ -181,15 +183,30 @@ $filterTypeMap = array(
 	'kmsLogFilter' => 'KmsLogFilter',
 );
 
-$filter = $params['filter'];
-if (!isset($filter['type']) || !isset($filterTypeMap[$filter['type']]))
+$filterLogTypeMap = array(
+	'apiLogFilter_apiV3Analytics' => 'ApiAnalyticsLogFilter',
+	'apiLogFilter_accessLog' => 'ApiAccessLogFilter',
+	'kmsLogFilter_kmsFront' => 'KmsFrontLogFilter',
+);
+
+$filterType = isset($filter['type']) ? $filter['type'] : null;
+$logTypes = isset($filter['logTypes']) ? $filter['logTypes'] : null;
+
+if (isset($filterLogTypeMap[$filterType . '_' . $logTypes]))
+{
+	$handler = $filterLogTypeMap[$filterType . '_' . $logTypes];
+}
+else if (isset($filterTypeMap[$filterType]))
+{
+	$handler = $filterTypeMap[$filterType];
+}
+else
 {
 	dieError(ERROR_BAD_REQUEST, 'Invalid filter type');
 }
 
-// run query handler
+// run the query handler
 ini_set('max_execution_time', K::get()->getConfParam('GREP_TIMEOUT'));
 
-$handler = $filterTypeMap[$filter['type']];
 require_once(dirname(__file__) . "/$handler.php");
 $handler::main($params, $filter);
