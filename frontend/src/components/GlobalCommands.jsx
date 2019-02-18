@@ -116,7 +116,7 @@ const CustomSnackbarContent = withStyles(SnackbarContentStyles)(function(props) 
   );
 });
 
-
+const linuxRegexp = new RegExp('^\\w\\w\\w\\s+?\\w\\w\\w\\s+?\\d\\d?\\s+?\\d{2}:\\d{2}:\\d{2}\\s+?EST\\s+?\\d{4}$', 'i');
 const GlobalCommandsContext = React.createContext({});
 
 const displayDateFromat = 'YYYY-MM-DD HH:mm';
@@ -150,7 +150,14 @@ export default class GlobalCommands extends React.Component {
       return value.tz(timezone);
     }
 
-    return moment.tz(value, timezone);
+    // special handling for unix date format Wed Feb  6 07:40:57 EST 2019
+    let unixDate = null;
+    if (linuxRegexp.test(value)) {
+      let strippedValue = value.replace(' EST','').replace(/\s+/g,' ');
+      unixDate = moment.tz(strippedValue, ['ddd MMM D HH:mm:ss YYYY'], true, 'EST');
+    }
+
+    return unixDate && unixDate.isValid() ? unixDate : moment.tz(value, timezone);
   }
 
   _toStringDate = (value, withSeconds = false) => {
