@@ -4,6 +4,11 @@ import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
 import moment from 'moment';
 import ClearableTextField from '../ClearableTextField';
+import FormControl from "@material-ui/core/FormControl/FormControl";
+import InputLabel from "@material-ui/core/InputLabel/InputLabel";
+import Select from "@material-ui/core/Select/Select";
+import Input from "@material-ui/core/Input/Input";
+import MenuItem from "@material-ui/core/MenuItem/MenuItem";
 
 export default class KMSLogParameters extends React.Component {
   state = {
@@ -13,11 +18,21 @@ export default class KMSLogParameters extends React.Component {
 
   filterParameters = (parameters) => {
     return Object.keys(parameters).reduce((acc, parameterName) => {
-      if (['type', 'fromTime', 'toTime', 'textFilter', 'session', 'server'].indexOf(parameterName) !== -1) {
+      if (['type', 'fromTime', 'toTime', 'textFilter', 'session', 'server', 'logTypes'].indexOf(parameterName) !== -1) {
         acc[parameterName] = parameters[parameterName];
       }
       return acc;
     }, {});
+  }
+
+  componentDidMount() {
+    const { onChange } = this.props;
+
+    if (['kms','kmsFront'].indexOf(this.props.logTypes) !== -1) {
+      return;
+    }
+
+    onChange({ target : { name: 'logTypes', value: 'kms'}});
   }
 
   validate = () => {
@@ -37,7 +52,7 @@ export default class KMSLogParameters extends React.Component {
   }
 
   render() {
-    const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange, onClear } = this.props;
+    const { textFilter, session, server, fromTime, toTime, onChange, className: classNameProp, onTextFilterChange, onClear, logTypes } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
 
     return (
@@ -104,6 +119,21 @@ export default class KMSLogParameters extends React.Component {
                 shrink: true,
               }}
             />
+          </Grid>
+          <Grid item xs={4}>
+            <FormControl
+              fullWidth
+            >
+              <InputLabel>Log Types</InputLabel>
+              <Select
+                value={logTypes}
+                onChange={onChange}
+                input={<Input name="logTypes" id="type-input" />}
+              >
+                <MenuItem value={'kms'}>KMS</MenuItem>
+                <MenuItem value={'kmsFront'}>KMS Front</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
       </Paper>
