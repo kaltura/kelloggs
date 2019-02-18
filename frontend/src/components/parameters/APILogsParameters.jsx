@@ -41,6 +41,16 @@ export default class APILogsParameters extends React.Component {
     return isValid;
   }
 
+  componentDidMount() {
+    const { onChange } = this.props;
+
+    if (['apiV3, ps2','apiV3', 'ps2','apiV3Analytics','accessLog'].indexOf(this.props.logTypes) !== -1) {
+      return;
+    }
+
+    onChange({ target : { name: 'logTypes', value: 'apiV3, ps2'}});
+  }
+
   render() {
     const { textFilter, session, server, logTypes, fromTime, toTime, onChange, onClear, className: classNameProp, onTextFilterChange } = this.props;
     const { isFromTimeValid, isToTimeValid } = this.state;
