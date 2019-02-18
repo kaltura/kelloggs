@@ -124,6 +124,8 @@ export default class APILogsParameters extends React.Component {
                 <MenuItem value={'apiV3, ps2'}>apiV3, ps2</MenuItem>
                 <MenuItem value={'apiV3'}>apiV3</MenuItem>
                 <MenuItem value={'ps2'}>ps2</MenuItem>
+                <MenuItem value={'apiV3Analytics'}>apiV3Analytics</MenuItem>
+                <MenuItem value={'accessLog'}>accessLog</MenuItem>
               </Select>
             </FormControl>
           </Grid>
