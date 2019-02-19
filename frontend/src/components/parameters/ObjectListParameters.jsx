@@ -8,6 +8,7 @@ import Select from "@material-ui/core/Select/Select";
 import Input from "@material-ui/core/Input/Input";
 import MenuItem from "@material-ui/core/MenuItem/MenuItem";
 import ClearableTextField from "../ClearableTextField";
+import { pick } from 'ramda';
 
 const FLAVOR_ASSET = {
   name: "Flavor Asset",
@@ -53,12 +54,7 @@ export default class ObjectListParameters extends React.Component {
       return {};
     }
     fields = [...fields, ...DEFAULT_FIELDS];
-    return Object.keys(parameters).reduce((acc, parameterName) => {
-      if (fields.indexOf(parameterName) !== -1) {
-        acc[parameterName] = parameters[parameterName];
-      }
-      return acc;
-    }, {});
+    return pick(fields, parameters);
   };
 
   validate = () => {
