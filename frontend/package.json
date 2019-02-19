@@ -22,11 +22,13 @@
   },
   "devDependencies": {
     "local-web-server": "^2.6.1",
+    "webpack-bundle-analyzer": "^3.0.4",
     "webserver": "^3.1.16"
   },
   "scripts": {
     "start": "HTTPS=true react-scripts start",
     "serve": "ws --spa index.html --https",
+    "analyze": "npm run build -- --stats && webpack-bundle-analyzer build/bundle-stats.json",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
