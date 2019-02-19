@@ -4,6 +4,9 @@ import TextField from "@material-ui/core/TextField/TextField";
 import Paper from "@material-ui/core/Paper/Paper";
 import moment from 'moment';
 import ClearableTextField from '../ClearableTextField';
+import {pick} from 'ramda';
+
+const defaultParams = ['type', 'fromTime', 'toTime', 'textFilter', 'table', 'objectId'];
 
 export default class DBLogsParameters extends React.Component {
   state = {
@@ -11,14 +14,7 @@ export default class DBLogsParameters extends React.Component {
     isToTimeValid: true
   }
 
-  filterParameters = (parameters) => {
-    return Object.keys(parameters).reduce((acc, parameterName) => {
-      if (['type', 'fromTime', 'toTime', 'textFilter', 'table', 'objectId'].indexOf(parameterName) !== -1) {
-        acc[parameterName] = parameters[parameterName];
-      }
-      return acc;
-    }, {});
-  }
+  filterParameters = pick(defaultParams);
 
   validate = () => {
     const isFromTimeValid = this._validateDate('fromTime', 'isFromTimeValid');

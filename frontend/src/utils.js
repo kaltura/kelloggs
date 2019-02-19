@@ -145,7 +145,6 @@ export function getPageUrl() {
   return window.location.href;
 }
 
-
 export function openUrlInNewTab(url) {
   window.open(url, '_blank');
 }
