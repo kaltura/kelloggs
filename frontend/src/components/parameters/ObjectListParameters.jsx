@@ -9,6 +9,29 @@ import Input from "@material-ui/core/Input/Input";
 import MenuItem from "@material-ui/core/MenuItem/MenuItem";
 import ClearableTextField from '../ClearableTextField';
 
+
+const FLAVOR_ASSET = {name: 'Flavor Asset', fields: ['entryIdIn', 'idIn', 'typeIn']};
+const BATCH_JOB_SEP = {name: 'Batch Job Sep' , fields: ['entryIdIn', 'objectIdIn', 'jobTypeIn']};
+const METADATA = {name: "Metadata", fields: ['objectIdIn', 'objectTypeIn']};
+const FILE_SYNC = {name: "File Sync", fields: ['objectIdIn', 'objectTypeIn']};
+
+const inputList = [
+    { name: "entryIdIn", label: "Entry ID in" },
+    { name: 'objectIdIn', label: 'Object ID in' },
+    { name: 'jobTypeIn', label: "Job Type in" },
+    { name: 'objectTypeIn', label: "Object Type in" },
+    { name: 'typeIn', label: "Type in" },
+    { name: 'idIn', label: "ID in" }
+];
+const tableMap = new Map([
+    ['flavor_asset', FLAVOR_ASSET],
+    ['batch_job_sep', BATCH_JOB_SEP],
+    ['metadata', METADATA],
+    ['file_sync', FILE_SYNC]
+]);
+
+const findInput = name => inputList.filter(input => input.name === name)[0] || {};
+
 export default class ObjectListParameters extends React.Component {
   state = {
     isFromTimeValid: true,
@@ -18,32 +41,16 @@ export default class ObjectListParameters extends React.Component {
   filterParameters = (parameters) => {
 
     const { table } = parameters;
-    let fieldList = [];
-    switch (table) {
-      case 'flavor_asset':
-        fieldList = ['type', 'table', 'entryIdIn', 'idIn', 'typeIn'];
-        break;
-      case 'batch_job_sep':
-        fieldList = ['type', 'table', 'entryIdIn', 'objectIdIn', 'jobTypeIn'];
-        break;
-      case 'metadata':
-        fieldList = ['type', 'table', 'objectIdIn', 'objectTypeIn'];
-        break;
-      case 'file_sync':
-        fieldList = ['type', 'table', 'objectIdIn', 'objectTypeIn'];
-        break;
-      default:
-        break;
-    }
+    const { fields } = tableMap.get(table) || {};
 
     return Object.keys(parameters).reduce((acc, parameterName) => {
 
-      if (fieldList.indexOf(parameterName) !== -1) {
+      if (fields.indexOf(parameterName) !== -1) {
         acc[parameterName] = parameters[parameterName];
       }
       return acc;
     }, {});
-  }
+  };
 
   validate = () => {
     const isFromTimeValid = this._validateDate('fromTime', 'isFromTimeValid');
@@ -61,16 +68,31 @@ export default class ObjectListParameters extends React.Component {
     return isValid;
   }
 
+  _renderInputs = fields => {
+    const {onClear, onChange} = this.props;
+    return fields.map(field => {
+          const {name, label} = findInput(field);
+          return (
+              <Grid item xs={4} key={name}>
+                  <ClearableTextField fullWidth
+                                      name={name}
+                                      label={label}
+                                      value={this.props[name]}
+                                      onClear={onClear}
+                                      onChange={onChange}
+                                      InputLabelProps={{
+                                          shrink: true,
+                                      }}
+                  />
+              </Grid>
+          )
+      })
+  }
+
   render() {
-    const { table, entryIdIn, typeIn, objectIdIn, jobTypeIn, objectTypeIn, idIn, onChange, onClear, className: classNameProp } = this.props;
-
-    const objectIdInEnabled = ['batch_job_sep', 'metadata', 'file_sync'].indexOf(table) !== -1;
-    const entryIdInEnabled = ['flavor_asset', 'batch_job_sep'].indexOf(table) !== -1;
-    const objectTypeInEnabled = ['metadata', 'file_sync'].indexOf(table) !== -1;
-    const jobTypeInEnabled = ['batch_job_sep'].indexOf(table) !== -1;
-    const idInEnabled = ['flavor_asset'].indexOf(table) !== -1;
-    const typeInEnabled = ['flavor_asset'].indexOf(table) !== -1;
-
+    const { table, onChange, onClear, className: classNameProp } = this.props;
+    const fields = tableMap.get(table);
+    
     return (
       <Paper elevation={1} className={classNameProp}>
         <Grid container spacing={16} >
@@ -84,91 +106,13 @@ export default class ObjectListParameters extends React.Component {
                 onChange={onChange}
                 input={<Input name="table" id="type-input" />}
               >
-                <MenuItem value={'flavor_asset'}>Flavor Asset</MenuItem>
-                <MenuItem value={'batch_job_sep'}>Batch Job Sep</MenuItem>
-                <MenuItem value={'metadata'}>Metadata</MenuItem>
-                <MenuItem value={'file_sync'}>File Sync</MenuItem>
+                  {Array.from(tableMap.keys()).map((fieldName, index)=> {
+                      return (<MenuItem key={index} value={fieldName}>{tableMap.get(fieldName).name}</MenuItem>)
+                  })}
               </Select>
             </FormControl>
           </Grid>
-          { entryIdInEnabled &&
-          <Grid item xs={4}>
-            <ClearableTextField fullWidth
-                       name="entryIdIn"
-                       label="Entry ID in"
-                       value={entryIdIn}
-                       onClear={onClear}
-                       onChange={onChange}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
-          </Grid>}
-          { idInEnabled &&
-          <Grid item xs={4}>
-            <ClearableTextField fullWidth
-                       name="idIn"
-                       label="ID in"
-                       onClear={onClear}
-                       value={idIn}
-                       onChange={onChange}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
-          </Grid>}
-          { objectIdInEnabled &&
-          <Grid item xs={4}>
-            <ClearableTextField fullWidth
-                       name="objectIdIn"
-                       onClear={onClear}
-                       label="Object ID in"
-                       value={objectIdIn}
-                       onChange={onChange}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
-          </Grid>}
-          { jobTypeInEnabled &&
-          <Grid item xs={4}>
-            <ClearableTextField fullWidth
-                       name="jobTypeIn"
-                       onClear={onClear}
-                       label="Job Type in"
-                       value={jobTypeIn}
-                       onChange={onChange}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
-          </Grid>}
-          { typeInEnabled &&
-          <Grid item xs={4}>
-            <ClearableTextField fullWidth
-                       name="typeIn"
-                       onClear={onClear}
-                       label="Type in"
-                       value={typeIn}
-                       onChange={onChange}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
-          </Grid>}
-          { objectTypeInEnabled &&
-          <Grid item xs={4}>
-            <ClearableTextField fullWidth
-                       onClear={onClear}
-                       name="objectTypeIn"
-                       label="Object Type in"
-                       value={objectTypeIn}
-                       onChange={onChange}
-                       InputLabelProps={{
-                         shrink: true,
-                       }}
-            />
-          </Grid>}
+            {fields && this._renderInputs(fields.fields)}
         </Grid>
       </Paper>
     )
