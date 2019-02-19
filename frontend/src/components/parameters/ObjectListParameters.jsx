@@ -17,8 +17,10 @@ const BATCH_JOB_SEP = {
   name: "Batch Job Sep",
   fields: ["entryIdIn", "objectIdIn", "jobTypeIn"]
 };
+const DEFAULT_FIELDS = ['type', 'table'];
 const METADATA = { name: "Metadata", fields: ["objectIdIn", "objectTypeIn"] };
 const FILE_SYNC = { name: "File Sync", fields: ["objectIdIn", "objectTypeIn"] };
+
 
 const inputList = [
   { name: "entryIdIn", label: "Entry ID in" },
@@ -46,8 +48,11 @@ export default class ObjectListParameters extends React.Component {
 
   filterParameters = parameters => {
     const { table } = parameters;
-    const { fields } = tableMap.get(table) || {};
-
+    let { fields } = tableMap.get(table);
+    if (!fields) {
+      return {};
+    }
+    fields = [...fields, ...DEFAULT_FIELDS];
     return Object.keys(parameters).reduce((acc, parameterName) => {
       if (fields.indexOf(parameterName) !== -1) {
         acc[parameterName] = parameters[parameterName];
