@@ -95,7 +95,7 @@ export default class ObjectListParameters extends React.Component {
   };
 
   render() {
-    const { table, onChange, onClear, className: classNameProp } = this.props;
+    const { table, onChange, className: classNameProp } = this.props;
     const fields = tableMap.get(table);
 
     return (
