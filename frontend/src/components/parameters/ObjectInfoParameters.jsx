@@ -2,6 +2,9 @@ import React from 'react';
 import Grid from "@material-ui/core/Grid/Grid";
 import Paper from "@material-ui/core/Paper/Paper";
 import ClearableTextField from '../ClearableTextField';
+import { pick } from 'ramda';
+
+const defaultParams = ['type', 'table', 'objectId'];
 
 export default class ObjectInfoParameters extends React.Component {
   state = {
@@ -9,14 +12,7 @@ export default class ObjectInfoParameters extends React.Component {
     objectIdValid: true
   }
 
-  filterParameters = (parameters) => {
-    return Object.keys(parameters).reduce((acc, parameterName) => {
-      if (['type', 'table', 'objectId'].indexOf(parameterName) !== -1) {
-        acc[parameterName] = parameters[parameterName];
-      }
-      return acc;
-    }, {});
-  }
+  filterParameters = pick(defaultParams);
 
   validate = () => {
     const isTableValid = this._validate('table');

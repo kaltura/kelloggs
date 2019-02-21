@@ -13,6 +13,7 @@
     "moment-timezone": "^0.5.23",
     "pako": "^1.0.8",
     "prop-types": "latest",
+    "ramda": "^0.26.1",
     "react": "latest",
     "react-dom": "latest",
     "react-scripts": "latest",

@@ -9,21 +9,17 @@ import InputLabel from "@material-ui/core/InputLabel/InputLabel";
 import Select from "@material-ui/core/Select/Select";
 import Input from "@material-ui/core/Input/Input";
 import MenuItem from "@material-ui/core/MenuItem/MenuItem";
+import {pick} from "ramda";
+
+const defaultParams = ['type', 'fromTime', 'toTime', 'textFilter', 'session', 'server', 'logTypes'];
 
 export default class KMSLogParameters extends React.Component {
   state = {
     isFromTimeValid: true,
     isToTimeValid: true
-  }
+  };
 
-  filterParameters = (parameters) => {
-    return Object.keys(parameters).reduce((acc, parameterName) => {
-      if (['type', 'fromTime', 'toTime', 'textFilter', 'session', 'server', 'logTypes'].indexOf(parameterName) !== -1) {
-        acc[parameterName] = parameters[parameterName];
-      }
-      return acc;
-    }, {});
-  }
+  filterParameters = pick(defaultParams);
 
   componentDidMount() {
     const { onChange } = this.props;
