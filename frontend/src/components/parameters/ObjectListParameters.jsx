@@ -39,8 +39,8 @@ const inputList = [
   { name: "jobTypeIn", label: "Job Type in" },
   { name: "objectTypeIn", label: "Object Type in" },
   { name: "typeIn", label: "Type in" },
-  { name: "idIn", label: "ID in" }
-  { name: "conversionProfileIdIn", label: "Conversion Profile ID in" }
+  { name: "idIn", label: "ID in" },
+  { name: "conversionProfileIdIn", label: "Conversion Profile ID in" },
   { name: "flavorParamsIdIn", label: "Flavor Params ID in" }
 ];
 const tableMap = new Map([
