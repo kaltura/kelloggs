@@ -47,7 +47,7 @@ const tableMap = new Map([
   ["flavor_asset", FLAVOR_ASSET],
   ["batch_job_sep", BATCH_JOB_SEP],
   ["metadata", METADATA],
-  ["file_sync", FILE_SYNC]
+  ["file_sync", FILE_SYNC],
   ["flavor_params_conversion_profile", FLAVOR_PARAMS_CONVERSION_PROFILE]
 ]);
 
