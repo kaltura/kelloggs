@@ -66,6 +66,11 @@ class ObjectInfoFilter extends BaseFilter
 				)
 			),
 		),
+		'conversion_profile_2' => array(
+			'flavor_params_conversion_profile' => array(
+				'objectIdColumn' => 'conversion_profile_id',
+			),
+		),
 	);
 
 	protected function __construct($params, $filter)
@@ -292,6 +297,10 @@ class ObjectInfoFilter extends BaseFilter
 			if (endsWith($key, '_id'))
 			{
 				$foreignTable = substr($key, 0, -3);
+				if ($foreignTable == 'conversion_profile')
+				{
+					$foreignTable .= '_2';
+				}
 				if (isset($primaryKeys[$foreignTable]))
 				{
 					$body['commands'] = self::objectInfoCommands($foreignTable, $value);

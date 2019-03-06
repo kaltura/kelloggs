@@ -107,7 +107,7 @@ class ApiLogFilter extends BaseLogFilter
 		foreach ($result as &$line)
 		{
 			$func = 'error_log';
-			$body = $line['body'];
+			$body = str_replace('\n', "\n", $line['body']);
 			$timestamp = $line['timestamp'];
 
 			$line['took'] = 0;

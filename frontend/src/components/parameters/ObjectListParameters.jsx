@@ -10,6 +10,8 @@ import MenuItem from "@material-ui/core/MenuItem/MenuItem";
 import ClearableTextField from "../ClearableTextField";
 import { pick } from 'ramda';
 
+const DEFAULT_FIELDS = ['type', 'table'];
+
 const FLAVOR_ASSET = {
   name: "Flavor Asset",
   fields: ["entryIdIn", "idIn", "typeIn"]
@@ -18,10 +20,18 @@ const BATCH_JOB_SEP = {
   name: "Batch Job Sep",
   fields: ["entryIdIn", "objectIdIn", "jobTypeIn"]
 };
-const DEFAULT_FIELDS = ['type', 'table'];
-const METADATA = { name: "Metadata", fields: ["objectIdIn", "objectTypeIn"] };
-const FILE_SYNC = { name: "File Sync", fields: ["objectIdIn", "objectTypeIn"] };
-
+const METADATA = {
+  name: "Metadata",
+  fields: ["objectIdIn", "objectTypeIn"]
+};
+const FILE_SYNC = {
+  name: "File Sync",
+  fields: ["objectIdIn", "objectTypeIn"]
+};
+const FLAVOR_PARAMS_CONVERSION_PROFILE = {
+  name: "Flavor Params Conversion Profile",
+  fields: ["conversionProfileIdIn", "flavorParamsIdIn"]
+};
 
 const inputList = [
   { name: "entryIdIn", label: "Entry ID in" },
@@ -30,12 +40,15 @@ const inputList = [
   { name: "objectTypeIn", label: "Object Type in" },
   { name: "typeIn", label: "Type in" },
   { name: "idIn", label: "ID in" }
+  { name: "conversionProfileIdIn", label: "Conversion Profile ID in" }
+  { name: "flavorParamsIdIn", label: "Flavor Params ID in" }
 ];
 const tableMap = new Map([
   ["flavor_asset", FLAVOR_ASSET],
   ["batch_job_sep", BATCH_JOB_SEP],
   ["metadata", METADATA],
   ["file_sync", FILE_SYNC]
+  ["flavor_params_conversion_profile", FLAVOR_PARAMS_CONVERSION_PROFILE]
 ]);
 
 const findInput = name =>

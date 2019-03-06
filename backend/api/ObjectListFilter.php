@@ -21,6 +21,10 @@ class ObjectListFilter extends BaseFilter
 			'required' => array('idIn', 'objectIdIn'),
 			'order' => 'id',
 		),
+		'flavor_params_conversion_profile' => array(
+			'required' => array('conversionProfileIdIn'),
+			'order' => 'id',
+		),
 	);
 
 	protected $table;
