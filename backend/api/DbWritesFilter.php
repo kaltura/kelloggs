@@ -81,6 +81,7 @@ class DbWritesFilter extends BaseLogFilter
 			}
 		}
 
+		$fileRanges = array_slice($fileRanges, -1000);
 		$fileRanges = implode(' ', $fileRanges);
 
 		$pattern = '([^ ]+) ';
@@ -196,6 +197,7 @@ class DbWritesFilter extends BaseLogFilter
 			}
 		}
 
+		$fileRanges = array_slice($fileRanges, -1000);
 		return array($fileRanges, $totalSize);
 	}
 
