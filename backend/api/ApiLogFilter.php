@@ -97,6 +97,7 @@ class ApiLogFilter extends BaseLogFilter
 			self::getAccessLogBaseMetadataFields($parsedLine), 
 			array(
 				'Protocol' => $parsedLine[11] == 'ON' ? 'HTTPS' : 'HTTP',
+				'Cache control' => $parsedLine[23],
 				'Partner id' => $parsedLine[24],
 			));
 	}
