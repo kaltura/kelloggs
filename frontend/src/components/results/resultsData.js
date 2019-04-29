@@ -132,7 +132,6 @@ export default  class ResultsData {
             type: "commands",
             width: 20
         });
-        this.timestampColumns=[];
 
         this.schema.columns.forEach( column=>{
             Object.assign(column,{},defaultColumnsProperties[column.name])
@@ -140,7 +139,7 @@ export default  class ResultsData {
 
         this.schema.columns.forEach( column=>{
             if (column.type==="timestamp") {
-                this.timestampColumns.push(column);
+                Object.assign(column,{},defaultColumnsProperties['timestamp'])
             }
          });
 
