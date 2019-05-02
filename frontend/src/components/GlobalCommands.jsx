@@ -126,7 +126,7 @@ export default class GlobalCommands extends React.Component {
 
   state = {
     items: [],
-    timezone: 'EST',
+    timezone: 'America/New_York',
     showCopiedToClipboard: false,
     viewerCommand: null,
     initialParameters: getSearchParamsFromHash()
@@ -154,7 +154,7 @@ export default class GlobalCommands extends React.Component {
     let unixDate = null;
     if (linuxRegexp.test(value)) {
       let strippedValue = value.replace(' EST','').replace(/\s+/g,' ');
-      unixDate = moment.tz(strippedValue, ['ddd MMM D HH:mm:ss YYYY'], true, 'EST');
+      unixDate = moment.tz(strippedValue, ['ddd MMM D HH:mm:ss YYYY'], true, 'America/New_York');
     }
 
     return unixDate && unixDate.isValid() ? unixDate : moment.tz(value, timezone);

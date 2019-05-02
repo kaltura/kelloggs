@@ -143,7 +143,7 @@ class MainView extends React.Component {
     expanded: true,
     canCollapse: false,
     parameters: null,
-    timeZone: 'est',
+    timeZone: 'America/New_York',
     searchStack: []
   }
 
@@ -255,7 +255,7 @@ class MainView extends React.Component {
                 name: 'timezone',
               }}
             >
-              <MenuItem value={'EST'}>EST Time</MenuItem>
+              <MenuItem value={'America/New_York'}>EST Time</MenuItem>
               <MenuItem value={'GMT'}>GMT Time</MenuItem>
               <MenuItem value={'LOCAL'}>Local Time</MenuItem>
             </Select>
