@@ -146,6 +146,7 @@ class BaseLogFilter extends BaseFilter
 			$curFileType = $row['type'];
 			$ranges = json_decode($row['ranges']);
 
+			$offsets = array();
 			$minOffset = null;
 			$maxOffset = null;
 			$curOffset = 0;
@@ -158,8 +159,14 @@ class BaseLogFilter extends BaseFilter
 
 				if ($curTime <= $toTime && $curTime + $duration >= $fromTime)
 				{
-					if (is_null($minOffset))
+					if (is_null($maxOffset))
 					{
+						$minOffset = $curOffset;
+					}
+					else if ($curOffset > $maxOffset + 1024 * 1024)
+					{
+						$offsets[] = array($minOffset, $maxOffset);
+
 						$minOffset = $curOffset;
 					}
 					$maxOffset = $curOffset + $size;
@@ -169,19 +176,28 @@ class BaseLogFilter extends BaseFilter
 				$curTime += $duration;
 			}
 
-			if ($minOffset >= $maxOffset)
+			if (!is_null($maxOffset))
+			{
+				$offsets[] = array($minOffset, $maxOffset);
+			}
+
+			if (count($offsets) == 0)
 			{
 				continue;
 			}
 
-			$rangeSize = $maxOffset - $minOffset;
-			$totalSize += $rangeSize;
 			$fileMap[$curFilePath] = array($curServer, $curFileType);
-			while (isset($fileRanges[$rangeSize]))
+			foreach ($offsets as $curRange)
 			{
-				$rangeSize++;
+				list($minOffset, $maxOffset) = $curRange;
+				$rangeSize = $maxOffset - $minOffset;
+				$totalSize += $rangeSize;
+				while (isset($fileRanges[$rangeSize]))
+				{
+					$rangeSize++;
+				}
+				$fileRanges[$rangeSize] = "'" . $curFilePath . ':' . $minOffset . '-' . $maxOffset . "'";
 			}
-			$fileRanges[$rangeSize] = "'" . $curFilePath . ':' . $minOffset . '-' . $maxOffset . "'";
 		}
 
 		ksort($fileRanges);		// sort by ascending size - if a log is not segmented it will be scanned last
@@ -604,7 +620,7 @@ class BaseLogFilter extends BaseFilter
 		// TODO: replace this with something else
 		error_log(get_class($this) . ' took ' . (microtime(true) - $this->grepStartTime) . ' size ' . $this->totalSize);
 	}
-	
+
 	protected static function getAndTextFilter($filters)
 	{
 		if (count($filters) > 1)
@@ -620,10 +636,10 @@ class BaseLogFilter extends BaseFilter
 		{
 			$textFilter = '';
 		}
-		
+
 		return $textFilter;
 	}
-	
+
 	protected function setFileMap($fileMap)
 	{
 		$serverNames = array();
@@ -643,7 +659,7 @@ class BaseLogFilter extends BaseFilter
 		}
 		$this->fileMap = $fileMap;
 	}
-	
+
 	protected function stripFileNameFromLine(&$line)
 	{
 		$fileEndPos = strpos($line, ': ');
