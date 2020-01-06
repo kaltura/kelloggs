@@ -163,7 +163,7 @@ class ObjectInfoFilter extends BaseFilter
 		}
 		$sql .= $groupBy;
 
-		$stmt = K::get()->getKelloggsPdo()->executeStatement($sql, $values, false);
+		$stmt = K::get()->getProdPdo()->executeStatement($sql, $values, false);
 		$rows = $stmt->fetchall(PDO::FETCH_ASSOC);
 
 		$block = array();
@@ -254,7 +254,7 @@ class ObjectInfoFilter extends BaseFilter
 		$values = array(
 			1 => $this->objectId
 		);
-		$stmt = K::get()->getKelloggsPdo()->executeStatement($sql, $values, false);
+		$stmt = K::get()->getProdPdo()->executeStatement($sql, $values, false);
 		$row = $stmt->fetch(PDO::FETCH_ASSOC);
 		if (!$row)
 		{

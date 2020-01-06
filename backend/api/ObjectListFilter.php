@@ -106,7 +106,7 @@ class ObjectListFilter extends BaseFilter
 			}
 		}
 
-		$stmt = K::get()->getKelloggsPdo()->queryRetry('DESCRIBE ' . $table);
+		$stmt = K::get()->getProdPdo()->queryRetry('DESCRIBE ' . $table);
 		if (!$stmt)
 		{
 			return false;
@@ -160,7 +160,7 @@ class ObjectListFilter extends BaseFilter
 		$header = $this->getResponseHeader();
 		echo json_encode($header) . "\n";
 
-		$stmt = K::get()->getKelloggsPdo()->executeStatement($this->sql, $this->values, false);
+		$stmt = K::get()->getProdPdo()->executeStatement($this->sql, $this->values, false);
 		$rows = $stmt->fetchall(PDO::FETCH_ASSOC);
 		if (!$rows)
 		{
