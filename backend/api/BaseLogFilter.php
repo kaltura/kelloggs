@@ -415,10 +415,14 @@ class BaseLogFilter extends BaseFilter
 		return isset($map[$str]) ? $map[$str] : '';
 	}
 
-	protected static function parseApacheExecutionTime($str)
+	protected static function parseExecutionTime($str)
 	{
-		$splitted = explode('/', $str);
-		$micros = end($splitted);
+		$slashPos = strpos($str, '/');
+		if ($slashPos === false)
+		{
+			return $str;		// nginx
+		}
+		$micros = substr($str, $slashPos + 1);
 		return strval($micros / 1000000.0);
 	}
 
@@ -503,7 +507,7 @@ class BaseLogFilter extends BaseFilter
 			// server -> client
 			'Status' => $parsedLine[6],
 			'Bytes sent' => $parsedLine[7],
-			'Execution time' => self::parseApacheExecutionTime($parsedLine[8]),
+			'Execution time' => self::parseExecutionTime($parsedLine[8]),
 			'Kaltura error' => $parsedLine[13],
 			'Connection status' => self::formatApacheConnectionStatus($parsedLine[17]),
 		);

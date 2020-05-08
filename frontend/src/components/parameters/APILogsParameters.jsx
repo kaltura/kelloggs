@@ -41,7 +41,7 @@ export default class APILogsParameters extends React.Component {
   componentDidMount() {
     const { onChange } = this.props;
 
-    if (['apiV3, ps2','apiV3', 'ps2','apiV3Analytics','accessLog'].indexOf(this.props.logTypes) !== -1) {
+    if (['apiV3, ps2','apiV3', 'ps2','apiV3Analytics','accessLog','vodAccessLog'].indexOf(this.props.logTypes) !== -1) {
       return;
     }
 
@@ -133,6 +133,7 @@ export default class APILogsParameters extends React.Component {
                 <MenuItem value={'ps2'}>ps2</MenuItem>
                 <MenuItem value={'apiV3Analytics'}>apiV3Analytics</MenuItem>
                 <MenuItem value={'accessLog'}>accessLog</MenuItem>
+                <MenuItem value={'vodAccessLog'}>vodAccessLog</MenuItem>
               </Select>
             </FormControl>
           </Grid>

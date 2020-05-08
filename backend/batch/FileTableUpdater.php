@@ -20,7 +20,7 @@ function getFilesFromDir($curGlobPatterns)
 	foreach ($curGlobPatterns as $curGlobPattern) 
 	{
 		writeLog("Info: getting file list $curGlobPattern");
-		$curInputFiles = array_filter(dateGlob($curGlobPattern, '5 days ago', 'now'), 'filterInputFile');
+		$curInputFiles = array_filter(dateGlob($curGlobPattern, '20 days ago', 'now'), 'filterInputFile');
 		$inputFiles = array_merge($inputFiles, $curInputFiles);
 	}
 	return $inputFiles;
