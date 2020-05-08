@@ -186,6 +186,7 @@ $filterTypeMap = array(
 $filterLogTypeMap = array(
 	'apiLogFilter_apiV3Analytics' => 'ApiAnalyticsLogFilter',
 	'apiLogFilter_accessLog' => 'ApiAccessLogFilter',
+	'apiLogFilter_vodAccessLog' => 'VodAccessLogFilter',
 	'kmsLogFilter_kmsFront' => 'KmsFrontLogFilter',
 );
 
