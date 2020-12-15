@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "local-web-server": "^2.6.1",
-    "webpack-bundle-analyzer": "^3.0.4",
+    "webpack-bundle-analyzer": "^3.3.2",
     "webserver": "^3.1.16"
   },
   "scripts": {
