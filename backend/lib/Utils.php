@@ -1,6 +1,7 @@
 <?php
 
 require_once(dirname(__file__) . '/IpAddressUtils.php');
+require_once(dirname(__file__) . '/Stream.php');
 
 define('CONF_GENERAL', 'general');
 
@@ -127,7 +128,8 @@ function dateGlob($pattern, $from = '7 days ago', $to = 'now', $interval = 'P1D'
 {
 	if (!preg_match_all('/%\w/', $pattern, $matches))
 	{
-		return glob($pattern);
+		$streamHelper = getStreamHelper($pattern);
+		return $streamHelper->glob($pattern);
 	}
 
 	$find = reset($matches);
@@ -153,9 +155,84 @@ function dateGlob($pattern, $from = '7 days ago', $to = 'now', $interval = 'P1D'
 	$result = array();
 	foreach ($patterns as $curPattern => $ignore)
 	{
-		$result = array_merge($result, glob($curPattern));
+		$streamHelper = getStreamHelper($curPattern);
+		$result = array_merge($result, $streamHelper->glob($curPattern));
 	}
 
 	return $result;
+}
+
+function getZBinGrepIndexCommand($filePath)
+{
+	$zBinGrepIndexCmd = K::Get()->getConfParam('ZGREPINDEX');
+	if(isS3Path($filePath) && generateS3CredCacheFile(true))
+	{
+		$zBinGrepIndexCmd .= " -i " . S3_CRED_FILE;
+	}
+	
+	return $zBinGrepIndexCmd;
+}
+
+function getZBlockGrepCommand()
+{
+	$zBlockGrepCmd = K::Get()->getConfParam('ZBLOCKGREP');
+	if(generateS3CredCacheFile(false))
+	{
+		$zBlockGrepCmd .= " -i " . S3_CRED_FILE;
+	}
+	
+	return $zBlockGrepCmd;
+}
+
+function isS3Path($filePath)
+{
+	return substr($filePath, 0, strlen(S3_PREFIX)) == S3_PREFIX;
+}
+
+function generateS3CredCacheFile($strict = true)
+{
+	if(!K::Get()->hasConfParam(S3_CONF_SECTION))
+	{
+		if($strict)
+		{
+			throw new Exception("Trying to read remote s3 file without providing s3 cred file");
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	$s3Config = K::Get()->getConfParam(S3_CONF_SECTION);
+	
+	if(!file_exists(S3_CRED_FILE))
+	{
+		return writeS3CredCacheFile($s3Config);
+	}
+	
+	$s3CachedConfig = parseIniFileNested(S3_CRED_FILE);
+	if(time() > $s3CachedConfig['s3']['expiration'])
+	{
+		return writeS3CredCacheFile($s3Config);
+	}
+	
+	return true;
+}
+
+function writeS3CredCacheFile($conf)
+{
+	$credConfig = "[s3]\n";
+	$credConfig .= "expiration = " . (time()+3600) . "\n";
+	
+	if (!isset($conf['S3_ARN']))
+	{
+		$credConfig .= "region = " . $conf['S3_REGION'] . "\n";
+		$credConfig .= "access_key = " . $conf['S3_ACCESS_KEY'] . "\n";
+		$credConfig .= "secret_key = " . $conf['S3_SECRET_KEY'] . "\n";
+	}
+	
+	file_put_contents(S3_CRED_FILE, $credConfig);
+	
+	return true;
 }
 
