@@ -78,7 +78,7 @@ function createDbWritesIndex($confFile, $pdo, $filePath, $mode, $outputType, $id
 	
 	if (isS3Path($indexPath) || isS3Path($outputPath))
 	{
-		initS3WrapperFromConf();
+		initS3Wrapper();
 	}
 
 	$commandLine = 'php ' . dirname(__file__) . "/IndexDBWrites.php '$confFile' '$filePath' '$mode' '$outputPath' '$indexRangesPath'";

@@ -26,11 +26,11 @@ function getDbWritesIndexFiles($pdo, $files)
 	$sql = 'SELECT id FROM kelloggs_files WHERE file_path IN (@ids@)';
 	$stmt = $pdo->executeInStatement($sql, $files);
 	$rows = $stmt->fetchall(PDO::FETCH_NUM);
-	if (count($rows) != count($files))
-	{
-		writeLog('Error: failed to fetch one or more index files from the database');
-		return array(false, false);
-	}
+//	if (count($rows) != count($files))
+//	{
+//		writeLog('Error: failed to fetch one or more index files from the database');
+//		return array(false, false);
+//	}
 	
 	$fileIds = array_map('reset', $rows);
 	
@@ -39,11 +39,11 @@ function getDbWritesIndexFiles($pdo, $files)
 	$sql = 'SELECT id, file_path FROM kelloggs_files WHERE parent_id IN (@ids@)';
 	$stmt = $pdo->executeInStatement($sql, $fileIds);
 	$rows = $stmt->fetchall(PDO::FETCH_NUM);
-	if (count($rows) != count($files))
-	{
-		writeLog('Error: failed to fetch one or more index files from the database');
-		return array(false, false);
-	}
+//	if (count($rows) != count($files))
+//	{
+//		writeLog('Error: failed to fetch one or more index files from the database');
+//		return array(false, false);
+//	}
 	
 	$fileIds = array_merge($fileIds, array_map('reset', $rows));
 	$childPaths = array();
@@ -52,7 +52,7 @@ function getDbWritesIndexFiles($pdo, $files)
 		$childPaths[] = $row[1];
 	}
 	
-	return array($childPaths, $fileIds);
+	return $childPaths;
 }
 
 function mergeInputFiles($files, $tempOutputPath)
@@ -118,29 +118,30 @@ function mergeDbWrites($pdo, $files, $outputPath)
 	}
 	
 	$tempOutputPath = $outputPath;
-	if(!isS3Path($outputPath))
+	if (!isS3Path($outputPath))
 	{
 		$tempOutputPath = $outputPath . '.tmp';
 	}
 	
 	//Get index files records
-	list($indexFilePaths, $fileIds) = getDbWritesIndexFiles($pdo, $files);
-	if(!$indexFilePaths && $fileIds)
+	$dbWritesIndexFiles = getDbWritesIndexFiles($pdo, $files);
+	if (!$dbWritesIndexFiles)
 	{
 		return false;
 	}
 	
 	// merge the input files
-	if(!mergeInputFiles($files, $tempOutputPath))
+	if (!mergeInputFiles($files, $tempOutputPath))
 	{
 		return false;
 	}
 	
-	deleteMergedFiles($files, $fileIds);
+	deleteMergedFiles($files, $dbWritesIndexFiles);
 	
 	// rename the output file
-	if(!isS3Path($tempOutputPath))
+	if (!isS3Path($tempOutputPath))
 	{
+		writeLog("Log: renaming output file from $tempOutputPath to $outputPath");
 		rename($tempOutputPath, $outputPath);
 	}
 	

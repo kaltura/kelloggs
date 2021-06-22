@@ -11,7 +11,6 @@ use Aws\S3\Enum\CannedAcl;
 
 define('S3_PREFIX', 's3://');
 define('S3_CONF_SECTION', 'S3');
-define('S3_CRED_FILE', '/tmp/s3_cred');
 
 /* @var S3Client $client */
 $client = null;
@@ -66,14 +65,15 @@ class GZipS3Reader
 		//		stream_filter_append($s, 'zlib.inflate', STREAM_FILTER_READ, array('window' => 30));
 		//		but this doesn't work since the nginx logs are composed of multiple blocks,
 		//		and once the stream filter gets the eof on the first block, it stops.
-		$profileParam = '';
+		
+		$cmd = "aws s3 cp ";
 		if ($profile)
 		{
-			$profileParam = " --profile $profile";
+			$cmd .= " --profile $profile ";
 		}
-		$cmdLine = "aws s3 cp $profileParam '{$inputFile}' - | gzip -d";
+		$cmd .= "'{$inputFile}' - | gzip -d";
 		
-		$this->process = proc_open($cmdLine, array(1 => array("pipe", "w")), $pipes);
+		$this->process = proc_open($cmd, array(1 => array("pipe", "w")), $pipes);
 		if (!is_resource($this->process))
 		{
 			writeLog('Error: failed to read s3 file');
@@ -133,7 +133,7 @@ class GZipS3CopyReader
 	protected $handle;
 	protected $tempFile;
 	
-	public function __construct($inputFile)
+	public function __construct($inputFile, $profile = null)
 	{
 		$this->tempFile = tempnam('/tmp/', 's3reader-');
 		if (!$this->tempFile)
@@ -142,7 +142,14 @@ class GZipS3CopyReader
 			die;
 		}
 		
-		exec("aws s3 cp {$inputFile} {$this->tempFile}", $output, $exitCode);
+		$cmd = "aws s3 cp ";
+		if ($profile)
+		{
+			$cmd .= " --profile $profile ";
+		}
+		$cmd .= "{$inputFile} {$this->tempFile}";
+		
+		exec($cmd, $output, $exitCode);
 		if ($exitCode)
 		{
 			writeLog("Error: failed to copy {$inputFile} to {$this->tempFile}");
@@ -308,20 +315,20 @@ function getGZipReader($inputFile, $maxLineSize = 16384, $copyS3Files = false)
 {
 	if (isS3Path($inputFile))
 	{
-		if(!K::Get()->hasConfParam(S3_CONF_SECTION))
+		if (!K::Get()->hasConfParam(S3_CONF_SECTION))
 		{
 			throw new Exception("Trying to read remote s3 file without providing s3 cred file");
 		}
 		
-		initS3WrapperFromConf();
+		$s3Config = K::Get()->getConfParam(S3_CONF_SECTION);
+		$profile = isset($s3Config['S3_PROFILE']) ? $s3Config['S3_PROFILE'] : null;
 		if ($copyS3Files)
 		{
-			return new GZipS3CopyReader($inputFile);
+			return new GZipS3CopyReader($inputFile, $profile);
 		}
 		else
 		{
-			$s3Config = K::Get()->getConfParam(S3_CONF_SECTION);
-			return new GZipS3Reader($inputFile, isset($s3Config['S3_PROFILE']) ? $s3Config['S3_PROFILE'] : null);
+			return new GZipS3Reader($inputFile, $profile);
 		}
 	}
 	else
@@ -334,12 +341,12 @@ function getGZipWriter($outputPath)
 {
 	if (isS3Path($outputPath))
 	{
-		if(!K::Get()->hasConfParam(S3_CONF_SECTION))
+		if (!K::Get()->hasConfParam(S3_CONF_SECTION))
 		{
 			throw new Exception("Trying to read remote s3 file without providing s3 cred file");
 		}
 		
-		initS3WrapperFromConf();
+		initS3Wrapper();
 		return new GZipS3Writer($outputPath);
 	}
 	else
@@ -360,7 +367,7 @@ class s3StreamHelper
 			$parent = dirname(substr($pattern, 0, $parentPattern[0][1] + 1));
 			$parentLength = strlen($parent);
 			$leftover = substr($pattern, $parentPattern[0][1]);
-			if (($index = strpos($leftover, '/')) !== FALSE)
+			if (($index = strpos($leftover, '/')) !== false)
 			{
 				$searchPattern = substr($pattern, $parentLength + 1, $parentPattern[0][1] - $parentLength + $index - 1);
 			}
@@ -383,7 +390,7 @@ class s3StreamHelper
 					{
 						if (preg_match("/^". $searchPattern ."$/", $dir))
 						{
-							if ($index === FALSE || strlen($leftover) == $index + 1)
+							if ($index === false || strlen($leftover) == $index + 1)
 							{
 								$files[] = $parent . "/" . $dir;
 							}
@@ -399,7 +406,7 @@ class s3StreamHelper
 				}
 			}
 		}
-		elseif(is_dir($pattern) || is_file($$pattern))
+		elseif (is_dir($pattern) || is_file($$pattern))
 		{
 			$files[] = $pattern;
 		}
@@ -414,7 +421,7 @@ class s3StreamHelper
 		
 		//Open local output stream
 		$outFh = fopen($localOutFile,"wb");
-		if($outFh === false)
+		if ($outFh === false)
 		{
 			writeLog('Error: invalid merged file size');
 			return false;
@@ -427,8 +434,8 @@ class s3StreamHelper
 			while($retries > 0)
 			{
 				$remoteFileSize = filesize($filePath);
-				$bytesWritten=self::concatChunk($outFh, $filePath, 10000000, $remoteFileSize);
-				if($bytesWritten !== false)
+				$bytesWritten=self::concatChunk($outFh, $filePath, 10 * 1024 * 1024, $remoteFileSize);
+				if ($bytesWritten !== false)
 				{
 					$mergedFileSize += $bytesWritten;
 					$mergeFileSuccess = true;
@@ -442,7 +449,8 @@ class s3StreamHelper
 				sleep(rand(1,3));
 			}
 			
-			if(!$mergeFileSuccess) {
+			if (!$mergeFileSuccess)
+			{
 				KalturaLog::debug("Failed to build merged file, Convert will fail, bytes fetched [$mergedFileSize]");
 				$rv = false;
 				break;
@@ -451,8 +459,8 @@ class s3StreamHelper
 		
 		fclose($outFh);
 		
-		writeLog("Log: File concat done, path $localOutFile size " . fileSize($localOutFile));
-		if(!copy($localOutFile, $outputFile))
+		writeLog("Log: File concat done, path $localOutFile size " . fileSize($localOutFile) . " uploading to $outputFile");
+		if (!copy($localOutFile, $outputFile))
 		{
 			writeLog("Error: Failed to copy file from $localOutFile to $outputFile");
 			$rv = false;
@@ -463,10 +471,10 @@ class s3StreamHelper
 		return  $rv;
 	}
 
-	static function concatChunk($fhd, $fileName, $rdSz=10000000, $expectedFileSize = null)
+	static function concatChunk($fhd, $fileName, $rdSz = 10 * 1024 * 1024, $expectedFileSize = null)
 	{
 		$inFh = fopen($fileName,"rb");
-		if($inFh === false)
+		if ($inFh === false)
 		{
 			return false;
 		}
@@ -475,10 +483,12 @@ class s3StreamHelper
 		while(!feof($inFh))
 		{
 			$iBuf = fread($inFh, $rdSz);
-			if($iBuf === false){
+			if ($iBuf === false)
+			{
 				return false;
 			}
-			if(($sz = fwrite($fhd, $iBuf, $rdSz))===false){
+			if (($sz = fwrite($fhd, $iBuf, $rdSz))===false)
+			{
 				return false;
 			}
 			$wrSz += $sz;
@@ -487,8 +497,10 @@ class s3StreamHelper
 		fclose($inFh);
 		writeLog("sz:$wrSz ex: $expectedFileSize " . $fileName);
 		
-		if($expectedFileSize && $expectedFileSize != $wrSz)
+		if ($expectedFileSize && $expectedFileSize != $wrSz)
+		{
 			return false;
+		}
 		
 		return $wrSz;
 	}
@@ -527,12 +539,12 @@ function getStreamHelper($path)
 {
 	if (isS3Path($path))
 	{
-		if(!K::Get()->hasConfParam(S3_CONF_SECTION))
+		if (!K::Get()->hasConfParam(S3_CONF_SECTION))
 		{
 			throw new Exception("Trying to read remote s3 file without providing s3 cred file");
 		}
 		
-		initS3WrapperFromConf();
+		initS3Wrapper();
 		return new s3StreamHelper($path);
 	}
 	else
@@ -541,51 +553,68 @@ function getStreamHelper($path)
 	}
 }
 
-function initS3WrapperFromConf()
+function getS3BaseArgs($s3Config)
+{
+	return array(
+		'region' => $s3Config['S3_REGION'],
+		'version' => $s3Config['S3_VERSION']
+	);
+}
+
+function getS3Credentials($s3Config, $s3Args)
+{
+	if (isset($s3Config['S3_ACCESS_KEY']) && isset($s3Config['S3_SECRET_KEY']))
+	{
+		return array(
+			'key'    => $s3Config['S3_ACCESS_KEY'],
+			'secret' => $s3Config['S3_SECRET_KEY'],
+		);
+	}
+	
+	return generateTempCredentials($s3Config, $s3Args);
+}
+
+function generateTempCredentials($s3Config, $s3Args)
+{
+	$stsClient = new Aws\Sts\StsClient($s3Args);
+	
+	$result = $stsClient->AssumeRole([
+		'RoleArn' => $s3Config['S3_ARN'],
+		'RoleSessionName' => $s3Config['S3_PROFILE'],
+		'DurationSeconds' => 10800,
+	]);
+	
+	return array(
+		'key' => $result['Credentials']['AccessKeyId'],
+		'secret' => $result['Credentials']['SecretAccessKey'],
+		'token'  => $result['Credentials']['SessionToken']
+	);
+}
+
+function loadAwsAutoLoader()
+{
+	require_once(dirname(__file__) . '/../../vendor/aws/aws-autoloader.php');
+}
+
+function initS3Wrapper()
 {
 	global $client;
 	
-	if($client)
+	if ($client)
 	{
 		return;
 	}
 	
-	$role = array();
 	$s3Config = K::Get()->getConfParam(S3_CONF_SECTION);
-	if (isset($s3Config['S3_ARN']))
+	if (!isset($s3Config['S3_ARN']) && !(isset($s3Config['S3_ACCESS_KEY']) && isset($s3Config['S3_SECRET_KEY'])))
 	{
-		$role['ARN'] = $s3Config['S3_ARN'];
-		$role['session_name'] = $s3Config['S3_PROFILE'];
-	}
-	initS3Wrapper(array(
-		'region' => $s3Config['S3_REGION'],
-		'version' => $s3Config['S3_VERSION']
-	), $role);
-}
-
-function initS3Wrapper($args = array('region' => 'us-east-1','version' => '2006-03-01'), $role = array())
-{
-	require_once(dirname(__file__) . '/../../vendor/aws/aws-autoloader.php');
-	
-	global $client;
-	
-	if (isset($role['ARN']) && isset($role['session_name']))
-	{
-		$stsClient = new Aws\Sts\StsClient($args);
-		$ARN = $role['ARN'];
-		$sessionName = $role['session_name'];
-		
-		$result = $stsClient->AssumeRole([
-			'RoleArn' => $ARN,
-			'RoleSessionName' => $sessionName,
-			'DurationSeconds' => 10800,
-		]);
-		
-		$args['credentials'] = array('key' => $result['Credentials']['AccessKeyId'],
-			'secret' => $result['Credentials']['SecretAccessKey'],
-			'token'  => $result['Credentials']['SessionToken']);
+		throw new Exception("Missing mandatory params to initiate s3 client");
 	}
 	
-	$client = new Aws\S3\S3Client($args);
+	loadAwsAutoLoader();;
+	$s3Args = getS3BaseArgs($s3Config);
+	$s3Args['credentials'] = getS3Credentials($s3Config, $s3Args);
+	
+	$client = new Aws\S3\S3Client($s3Args);
 	$client->registerStreamWrapper();
 }
