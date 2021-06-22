@@ -89,12 +89,6 @@ $runningIndexes = getRunningTaskIndexes($processGroupName);
 ksort($runningIndexes);
 writeLog('Info: running process indexes: ' . implode(',', array_keys($runningIndexes)));
 
-if (count($runningIndexes) == $workerProcesses)
-{
-	writeLog('Info: No open slots running ' . count($runningIndexes) . " available $workerProcesses");
-	exit(0);
-}
-
 for ($processIndex = 0; $processIndex < $workerProcesses; $processIndex++)
 {
 	if (isset($runningIndexes[$processIndex]))
