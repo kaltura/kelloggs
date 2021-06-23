@@ -487,7 +487,7 @@ class s3StreamHelper
 			{
 				return false;
 			}
-			if (($sz = fwrite($fhd, $iBuf, $rdSz))===false)
+			if (($sz = fwrite($fhd, $iBuf, $rdSz)) === false)
 			{
 				return false;
 			}
