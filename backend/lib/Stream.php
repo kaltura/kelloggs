@@ -563,6 +563,7 @@ function getS3BaseArgs($s3Config)
 
 function getS3Credentials($s3Config, $s3Args)
 {
+	loadAwsAutoLoader();
 	if (isset($s3Config['S3_ACCESS_KEY']) && isset($s3Config['S3_SECRET_KEY']))
 	{
 		return array(
@@ -611,7 +612,6 @@ function initS3Wrapper()
 		throw new Exception("Missing mandatory params to initiate s3 client");
 	}
 	
-	loadAwsAutoLoader();;
 	$s3Args = getS3BaseArgs($s3Config);
 	$s3Args['credentials'] = getS3Credentials($s3Config, $s3Args);
 	
