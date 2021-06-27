@@ -31,7 +31,7 @@ function lockTask($pdo)
 		$stmt = $pdo->executeStatement($sql, $values);
 		if ($stmt->rowCount() !== 1)
 		{
-			writeLog("Info: task $taskId already locked, retrying");
+			writeLog("Info: task $id already locked, retrying");
 			usleep(rand(0, 1000000));
 			continue;
 		}
@@ -67,22 +67,25 @@ function getRunningTaskIndexes($processGroupName)
 }
 
 // parse the command line
-if (count($argv) < 5)
+if (count($argv) < 3)
 {
-	echo "Usage:\n\t" . basename(__file__) . " <ini file paths> <workers ini> <process group name> <worker processes>\n";
+	echo "Usage:\n\t" . basename(__file__) . " <ini file paths> <workers ini>\n";
 	exit(1);
 }
 
-$dbConfFile = realpath($argv[1]);
-$workersFile = realpath($argv[2]);
-$processGroupName = $argv[3];
-$workerProcesses = $argv[4];
+// REad input params
+$kConfFilePath = realpath($argv[1]);
+$workersFilePath = realpath($argv[2]);
 
-// load the configuration
-$dbConf = loadIniFiles($dbConfFile);
-$pdo = PdoWrapper::create($dbConf['kelloggsdb'], array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
-$workers = loadIniFiles($workersFile);
+// Load ini files
+$kConf = loadIniFiles($kConfFilePath);
+$workers = loadIniFiles($workersFilePath);
+
+// Get run params
 $workers = getWorkerConfById($workers);
+$workerProcesses = $kConf['task_launcher']['MAX_PROCESSES'];
+$processGroupName = $kConf['task_launcher']['PROCESS_GROUP_NAME'];
+$pdo = PdoWrapper::create($kConf['kelloggsdb'], array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
 
 // get running task indexes
 $runningIndexes = getRunningTaskIndexes($processGroupName);
@@ -111,7 +114,7 @@ for ($processIndex = 0; $processIndex < $workerProcesses; $processIndex++)
 	$logPath = $logFolder . 'ranger-' . gethostname() . date('-Y-m-d-') . $processIndex . '.log';
 
 	// start the task
-	$commandLine = "php $scriptPath $processGroupName-$processIndex $dbConfFile $workersFile $type:$id:$filePath >> $logPath 2>&1 &";
+	$commandLine = "php $scriptPath $processGroupName-$processIndex $kConfFilePath $workersFilePath $type:$id:$filePath >> $logPath 2>&1 &";
 	writeLog("Info: running: $commandLine");
 	exec($commandLine);
 }
