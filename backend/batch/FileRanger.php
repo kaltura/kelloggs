@@ -183,6 +183,7 @@ for ($index = 4; $index < $argc; $index++)
 	if (!$ranges)
 	{
 		writeLog("Warning: no ranges found in file $filePath");
+		updateFileData($pdo, $id, 0, 0, '{}');
 		continue;
 	}
 	list($data, $start, $end) = $ranges;
