@@ -359,57 +359,31 @@ class s3StreamHelper
 {
 	function glob($pattern)
 	{
-		$files = array();
+		global $client;
 		
-		$patternFound = preg_match('(\*|\?|\[.+\])', $pattern, $parentPattern, PREG_OFFSET_CAPTURE);
-		if ($patternFound)
+		$files = array();
+		$s3Prefix = "s3:/";
+		
+		list($bucket, $patternFilePath) = explode("/", ltrim(substr($pattern, strlen($s3Prefix)), "/"), 2);
+		$pattern = str_replace("*", '', basename($patternFilePath));
+		$prefix = dirname($patternFilePath);
+		
+		$dirListObjectsRaw = $client->getIterator('ListObjects', array(
+			'Bucket' => $bucket,
+			'Prefix' => $prefix,
+		));
+		
+		foreach ($dirListObjectsRaw as $dirListObject)
 		{
-			$parent = dirname(substr($pattern, 0, $parentPattern[0][1] + 1));
-			$parentLength = strlen($parent);
-			$leftover = substr($pattern, $parentPattern[0][1]);
-			if (($index = strpos($leftover, '/')) !== false)
-			{
-				$searchPattern = substr($pattern, $parentLength + 1, $parentPattern[0][1] - $parentLength + $index - 1);
-			}
-			else
-			{
-				$searchPattern = substr($pattern, $parentLength + 1);
-			}
+			if(!preg_match("/$pattern/", $dirListObject['Key']))
+				continue;
 			
-			$replacement = [
-				'/\*/' => '.*',
-				'/\?/' => '.'
-			];
-			$searchPattern = preg_replace(array_keys($replacement), array_values($replacement), $searchPattern);
-			
-			if (is_dir($parent."/") && ($dh = opendir($parent."/")))
-			{
-				while($dir = readdir($dh))
-				{
-					if (!in_array($dir, ['.', '..']))
-					{
-						if (preg_match("/^". $searchPattern ."$/", $dir))
-						{
-							if ($index === false || strlen($leftover) == $index + 1)
-							{
-								$files[] = $parent . "/" . $dir;
-							}
-							else
-							{
-								if (strlen($leftover) > $index + 1)
-								{
-									$files = array_merge($files, s3glob("{$parent}/{$dir}" . substr($leftover, $index)));
-								}
-							}
-						}
-					}
-				}
-			}
+			$files[] = array(
+				'filePath' => $s3Prefix . "/" . $bucket . DIRECTORY_SEPARATOR . $dirListObject['Key'],
+				'fileSize' => $dirListObject['Size'],
+			);
 		}
-		elseif (is_dir($pattern) || is_file($$pattern))
-		{
-			$files[] = $pattern;
-		}
+		
 		return $files;
 	}
 	
@@ -510,7 +484,18 @@ class streamHelper
 {
 	function glob($pattern)
 	{
-		return glob($pattern);
+		$files = array();
+		
+		$filesMatching = glob($pattern);
+		foreach ($filesMatching as $file)
+		{
+			$files = array (
+				'filePath' => $file,
+				'fileSize' => filesize($file)
+			);
+		}
+		
+		return $files;
 	}
 	
 	function concat($files, $outputFile)
@@ -582,7 +567,7 @@ function generateTempCredentials($s3Config, $s3Args)
 	$result = $stsClient->AssumeRole([
 		'RoleArn' => $s3Config['S3_ARN'],
 		'RoleSessionName' => $s3Config['S3_PROFILE'],
-		'DurationSeconds' => 10800,
+		'DurationSeconds' => 36000,
 	]);
 	
 	return array(
