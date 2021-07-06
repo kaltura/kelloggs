@@ -232,12 +232,12 @@ function writeS3CredCacheFile($credentials, $region)
 	$credConfig .= "expiration = " . (time() + 3600) . "\n";
 	
 	$credConfig .= "region = " . $region . "\n";
-	$credConfig .= "access_key = \"" . $credentials['key'] . "\"\n";
-	$credConfig .= "secret_key = \"" . $credentials['secret'] . "\"\n";
+	$credConfig .= "access_key = " . $credentials['key'] . "\n";
+	$credConfig .= "secret_key = " . $credentials['secret'] . "\n";
 	
 	if (isset($credentials['token']))
 	{
-		$credConfig .= "security_token = \"" . $credentials['token'] . "\"";
+		$credConfig .= "security_token = " . $credentials['token'];
 	}
 	
 	$bytesWritten = file_put_contents($tmpCredFile, $credConfig);
