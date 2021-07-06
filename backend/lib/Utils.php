@@ -25,9 +25,9 @@ function endsWith($str, $postfix)
 	return (substr($str, -strlen($postfix)) === $postfix);
 }
 
-function parseIniFileNested($file)
+function parseIniFileNested($file, $scanner_mode = INI_SCANNER_NORMAL)
 {
-	$data = parse_ini_file($file, true);
+	$data = parse_ini_file($file, true, $scanner_mode);
 	if ($data === false)
 	{
 		return false;
@@ -213,7 +213,7 @@ function generateS3CredCacheFile($strict = true)
 		return writeS3CredCacheFile($credentials, $s3Config['S3_REGION']);
 	}
 	
-	$s3CachedConfig = parseIniFileNested(S3_CRED_FILE);
+	$s3CachedConfig = parseIniFileNested(S3_CRED_FILE, INI_SCANNER_RAW);
 	if (time() > $s3CachedConfig['s3']['expiration'])
 	{
 		$s3Args = getS3BaseArgs($s3Config);
@@ -232,12 +232,12 @@ function writeS3CredCacheFile($credentials, $region)
 	$credConfig .= "expiration = " . (time() + 3600) . "\n";
 	
 	$credConfig .= "region = " . $region . "\n";
-	$credConfig .= "access_key = " . $credentials['key'] . "\n";
-	$credConfig .= "secret_key = " . $credentials['secret'] . "\n";
+	$credConfig .= "access_key = \"" . $credentials['key'] . "\"\n";
+	$credConfig .= "secret_key = \"" . $credentials['secret'] . "\"\n";
 	
 	if (isset($credentials['token']))
 	{
-		$credConfig .= "security_token = " . $credentials['token'];
+		$credConfig .= "security_token = \"" . $credentials['token'] . "\"";
 	}
 	
 	$bytesWritten = file_put_contents($tmpCredFile, $credConfig);
