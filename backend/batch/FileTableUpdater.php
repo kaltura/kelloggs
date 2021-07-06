@@ -9,9 +9,14 @@ define('FILEMTIME_MARGIN', 900);
 define('MIN_LOG_FILE_SIZE', 32);
 define('DB_MAX_SELECT_IN', 100);
 
-function filterInputFile($fileName)
+function filterInputFile($fileInfo)
 {
-	return ($fileName[0] != '.' && substr($fileName, -3) == '.gz' && filesize($fileName) > MIN_LOG_FILE_SIZE);
+	return ($fileInfo['filePath'] != '.' && substr($fileInfo['filePath'], -3) == '.gz' && $fileInfo['fileSize'] > MIN_LOG_FILE_SIZE);
+}
+
+function getFilePath($fileInfo)
+{
+	return $fileInfo['filePath'];
 }
 
 function getFilesFromDir($curGlobPatterns) 
@@ -21,6 +26,7 @@ function getFilesFromDir($curGlobPatterns)
 	{
 		writeLog("Info: getting file list $curGlobPattern");
 		$curInputFiles = array_filter(dateGlob($curGlobPattern, '20 days ago', 'now'), 'filterInputFile');
+		$curInputFiles = array_map('getFilePath', $curInputFiles);
 		$inputFiles = array_merge($inputFiles, $curInputFiles);
 	}
 	return $inputFiles;

@@ -57,7 +57,7 @@ class BaseLogFilter extends BaseFilter
 
 		$this->textFilter = isset($filter['textFilter']) ? $filter['textFilter'] : null;
 
-		$this->zblockgrep = 'timeout ' . K::get()->getConfParam('GREP_TIMEOUT') . ' ' . K::get()->getConfParam('ZBLOCKGREP');
+		$this->zblockgrep = 'timeout ' . K::get()->getConfParam('GREP_TIMEOUT') . ' ' . getZBlockGrepCommand();
 	}
 
 	protected function getDownloadFileName()

@@ -1,8 +1,10 @@
 <?php
 
 require_once(dirname(__file__) . '/IpAddressUtils.php');
+require_once(dirname(__file__) . '/Stream.php');
 
 define('CONF_GENERAL', 'general');
+define('S3_CRED_FILE', '/tmp/s3_cred');
 
 function writeLog($msg)
 {
@@ -23,9 +25,9 @@ function endsWith($str, $postfix)
 	return (substr($str, -strlen($postfix)) === $postfix);
 }
 
-function parseIniFileNested($file)
+function parseIniFileNested($file, $scanner_mode = INI_SCANNER_NORMAL)
 {
-	$data = parse_ini_file($file, true);
+	$data = parse_ini_file($file, true, $scanner_mode);
 	if ($data === false)
 	{
 		return false;
@@ -127,7 +129,8 @@ function dateGlob($pattern, $from = '7 days ago', $to = 'now', $interval = 'P1D'
 {
 	if (!preg_match_all('/%\w/', $pattern, $matches))
 	{
-		return glob($pattern);
+		$streamHelper = getStreamHelper($pattern);
+		return $streamHelper->glob($pattern);
 	}
 
 	$find = reset($matches);
@@ -153,9 +156,96 @@ function dateGlob($pattern, $from = '7 days ago', $to = 'now', $interval = 'P1D'
 	$result = array();
 	foreach ($patterns as $curPattern => $ignore)
 	{
-		$result = array_merge($result, glob($curPattern));
+		$streamHelper = getStreamHelper($curPattern);
+		$result = array_merge($result, $streamHelper->glob($curPattern));
 	}
 
 	return $result;
+}
+
+function getZBinGrepIndexCommand($filePath)
+{
+	$zBinGrepIndexCmd = K::Get()->getConfParam('ZGREPINDEX');
+	if (isS3Path($filePath) && generateS3CredCacheFile(true))
+	{
+		$zBinGrepIndexCmd .= " -i " . S3_CRED_FILE;
+	}
+	
+	return $zBinGrepIndexCmd;
+}
+
+function getZBlockGrepCommand()
+{
+	$zBlockGrepCmd = K::Get()->getConfParam('ZBLOCKGREP');
+	if (generateS3CredCacheFile(false))
+	{
+		$zBlockGrepCmd .= " -i " . S3_CRED_FILE;
+	}
+	
+	return $zBlockGrepCmd;
+}
+
+function isS3Path($filePath)
+{
+	return substr($filePath, 0, strlen(S3_PREFIX)) == S3_PREFIX;
+}
+
+function generateS3CredCacheFile($strict = true)
+{
+	if (!K::Get()->hasConfParam(S3_CONF_SECTION))
+	{
+		if ($strict)
+		{
+			throw new Exception("Trying to read remote s3 file without providing s3 cred file");
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	$s3Config = K::Get()->getConfParam(S3_CONF_SECTION);
+	
+	if (!file_exists(S3_CRED_FILE))
+	{
+		$s3Args = getS3BaseArgs($s3Config);
+		$credentials = getS3Credentials($s3Config, $s3Args);
+		return writeS3CredCacheFile($credentials, $s3Config['S3_REGION']);
+	}
+	
+	$s3CachedConfig = parseIniFileNested(S3_CRED_FILE, INI_SCANNER_RAW);
+	if (time() > $s3CachedConfig['s3']['expiration'])
+	{
+		$s3Args = getS3BaseArgs($s3Config);
+		$credentials = getS3Credentials($s3Config, $s3Args);
+		return writeS3CredCacheFile($credentials, $s3Config['S3_REGION']);
+	}
+	
+	return true;
+}
+
+function writeS3CredCacheFile($credentials, $region)
+{
+	$tmpCredFile = S3_CRED_FILE.".tmp";
+	
+	$credConfig = "[s3]\n";
+	$credConfig .= "expiration = " . (time() + 3600) . "\n";
+	
+	$credConfig .= "region = " . $region . "\n";
+	$credConfig .= "access_key = " . $credentials['key'] . "\n";
+	$credConfig .= "secret_key = " . $credentials['secret'] . "\n";
+	
+	if (isset($credentials['token']))
+	{
+		$credConfig .= "security_token = " . $credentials['token'];
+	}
+	
+	$bytesWritten = file_put_contents($tmpCredFile, $credConfig);
+	if ($bytesWritten === false)
+	{
+		throw new Exception("Failed to write tmp credentials file to " . $tmpCredFile);
+	}
+	
+	return rename($tmpCredFile, S3_CRED_FILE);
 }
 

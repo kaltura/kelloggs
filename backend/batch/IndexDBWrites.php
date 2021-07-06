@@ -16,7 +16,7 @@ $ignoredTables = array(
 
 function buildIndex($inputPath, $primaryKeys, $mode)
 {
-	$reader = new GZipReader($inputPath, 1024 * 1024);
+	$reader = getGZipReader($inputPath, 1024 * 1024);
 	$parser = new DbWritesParser($primaryKeys, $mode);
 
 	$result = array();
@@ -54,7 +54,7 @@ function buildIndex($inputPath, $primaryKeys, $mode)
 function writeIndex($outputPath, $rangesPath, $index)
 {
 	$count = 0;
-	$writer = new GZipWriter($outputPath);
+	$writer = getGZipWriter($outputPath);
 
 	$rangesFile = fopen($rangesPath, 'w');
 

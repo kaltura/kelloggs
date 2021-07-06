@@ -75,6 +75,11 @@ function createDbWritesIndex($confFile, $pdo, $filePath, $mode, $outputType, $id
 		$outputPath = $indexPath;
 	}
 	$indexRangesPath = tempnam('/tmp', 'dbindex');
+	
+	if (isS3Path($indexPath) || isS3Path($outputPath))
+	{
+		initS3Wrapper();
+	}
 
 	$commandLine = 'php ' . dirname(__file__) . "/IndexDBWrites.php '$confFile' '$filePath' '$mode' '$outputPath' '$indexRangesPath'";
 	writeLog('Info: running ' . $commandLine);
@@ -174,10 +179,11 @@ for ($index = 4; $index < $argc; $index++)
 	}
 
 	// get the file ranges
-	$ranges = getFileRanges(K::Get()->getConfParam('ZGREPINDEX'), $params, $filePath);
+	$ranges = getFileRanges(getZBinGrepIndexCommand($filePath), $params, $filePath);
 	if (!$ranges)
 	{
 		writeLog("Warning: no ranges found in file $filePath");
+		updateFileData($pdo, $id, 0, 0, '{}');
 		continue;
 	}
 	list($data, $start, $end) = $ranges;
